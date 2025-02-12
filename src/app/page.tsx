@@ -1,13 +1,11 @@
 'use client'
-import { TextFieldWithClipboard } from '@/components/molecules/TextFieldWithClipboard'
+import { CommandField } from '@/components/organisms/CommandField'
 import { Box, Stack } from '@mui/system'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { register } from '@tauri-apps/plugin-global-shortcut'
 import styles from './page.module.css'
 
 export default function Home() {
-  const command = 'terraform plan'
-
   const registerShortcut = async () => {
     await register('Command+Shift+L', (event) => {
       if (event.state === 'Pressed') {
@@ -38,7 +36,18 @@ export default function Home() {
           justifyContent='center'
           sx={{ backgroundColor: '#ffffff' }}
         >
-          <TextFieldWithClipboard value={command} />
+          <Stack spacing={2}>
+            <CommandField description='planの実行' value='terraforom plan' />
+            <CommandField description='planの適用' value='terraform apply' />
+            <CommandField
+              description='refresh(実環境の内容をTFファイルに反映)の実行'
+              value='terraform apply -refresh-only'
+            />
+            <CommandField
+              description='フォーマットの実行'
+              value='terraform fmt -recursive'
+            />
+          </Stack>
         </Box>
       </Stack>
     </main>

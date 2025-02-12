@@ -37,6 +37,7 @@ export const TextFieldWithClipboard = (props: TextFieldWithClipboardProps) => {
     <TextField
       value={value}
       {...remainProps}
+      size='small'
       onClick={copy}
       onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
