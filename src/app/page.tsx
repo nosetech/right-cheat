@@ -3,11 +3,10 @@ import { TextFieldWithClipboard } from '@/components/molecules/TextFieldWithClip
 import { Box, Stack } from '@mui/system'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { register } from '@tauri-apps/plugin-global-shortcut'
-import { useState } from 'react'
 import styles from './page.module.css'
 
 export default function Home() {
-  const [command, setCommand] = useState<string>('git fetch -p')
+  const command = 'terraform plan'
 
   const registerShortcut = async () => {
     await register('Command+Shift+L', (event) => {
@@ -39,10 +38,7 @@ export default function Home() {
           justifyContent='center'
           sx={{ backgroundColor: '#ffffff' }}
         >
-          <TextFieldWithClipboard
-            value={command}
-            clipboardProps={{ value: command, size: 'small' }}
-          />
+          <TextFieldWithClipboard value={command} />
         </Box>
       </Stack>
     </main>
