@@ -1,5 +1,5 @@
 'use client'
-import { CommandField } from '@/components/organisms/CommandField'
+import { CommandField } from '@/components/molecules/CommandField'
 import { Box, Stack } from '@mui/system'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { register } from '@tauri-apps/plugin-global-shortcut'
@@ -27,8 +27,8 @@ export default function Home() {
   }
 
   return (
-    <main className={styles.main}>
-      <Stack alignItems='center' spacing={2}>
+    <main className={styles.main} tabIndex={-1}>
+      <Stack alignItems='center' spacing={2} tabIndex={-1}>
         <Box
           width='100%'
           display='flex'
@@ -36,16 +36,16 @@ export default function Home() {
           justifyContent='center'
           sx={{ backgroundColor: '#ffffff' }}
         >
-          <Stack spacing={2}>
-            <CommandField description='planの実行' value='terraforom plan' />
-            <CommandField description='planの適用' value='terraform apply' />
+          <Stack spacing={2} width='300px'>
+            <CommandField description='planの実行' command='terraforom plan' />
+            <CommandField description='planの適用' command='terraform apply' />
             <CommandField
               description='refresh(実環境の内容をTFファイルに反映)の実行'
-              value='terraform apply -refresh-only'
+              command='terraform apply -refresh-only'
             />
             <CommandField
               description='フォーマットの実行'
-              value='terraform fmt -recursive'
+              command='terraform fmt -recursive'
             />
           </Stack>
         </Box>
