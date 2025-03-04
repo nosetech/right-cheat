@@ -1,5 +1,10 @@
+mod api;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  let cheatsheets = api::cheat::CHEATSHEETS.lock().unwrap();
+  println!("読み込んだデータ: {:?}", cheatsheets);
+
   tauri::Builder::default()
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -38,12 +43,8 @@ pub fn run() {
             }
             Ok(())
         })
-    .invoke_handler(tauri::generate_handler![greet])
+    .invoke_handler(tauri::generate_handler![api::cheat::greet])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-   format!("Hello, {}!", name)
-}
