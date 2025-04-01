@@ -1,26 +1,35 @@
 use dirs;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use std::error::Error;
-use std::fs;
+use std::fmt;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
 #[tauri::command]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}!", name)
+pub fn get_cheat_titles() -> String {
+    let cheatsheets = CHEATSHEETS.lock().unwrap();
+    let titlelist = cheatsheets
+        .iter()
+        .map(|sheet| format!("\"{}\"", sheet.title))
+        .collect::<Vec<String>>()
+        .join(",");
+
+    format!("{{title: [{}]}}", titlelist)
 }
 
 #[tauri::command]
-pub fn getCheatTitles() -> String {
-    "{title: ['Terraform']}".to_string()
-}
+pub fn get_cheat_sheet(title: &str) -> String {
+    let cheatsheets = CHEATSHEETS.lock().unwrap();
+    let cheatsheet = cheatsheets.iter().find(|sheet| sheet.title == title);
+    let response = cheatsheet.map_or("{}".to_string(), |sheet| {
+        serde_json::to_string(&sheet).unwrap_or("{}".to_string())
+    });
 
-#[tauri::command]
-pub fn getCheatSheet(title: &str) -> String {
-    "{title: ['Terraform']}".to_string()
+    response
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,11 +37,31 @@ pub struct CheatSheet {
     title: String,
     commandlist: Vec<Command>,
 }
+impl fmt::Display for CheatSheet {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "title = {}, commandlist = ", self.title)?;
+        for command in self.commandlist.iter() {
+            write!(f, "(")?;
+            command.fmt(f)?;
+            write!(f, "),")?;
+        }
+        write!(f, "")
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Command {
     description: String,
     command: String,
+}
+impl fmt::Display for Command {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "description = {}, command = {}",
+            self.description, self.command
+        )
+    }
 }
 
 pub fn read_json_from_file(file_path: PathBuf) -> Result<Vec<CheatSheet>, Box<dyn Error>> {
