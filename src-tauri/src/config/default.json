@@ -23,5 +23,14 @@
         "command": "terraform fmt -recursive"
       }
     ]
+  },
+  {
+    "title": "Test",
+    "commandlist": [
+      {
+        "description": "tauri開発モード実行",
+        "command": "yarn tauri dev"
+      }
+    ]
   }
 ]
