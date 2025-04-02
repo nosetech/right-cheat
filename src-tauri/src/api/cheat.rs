@@ -18,7 +18,7 @@ pub fn get_cheat_titles() -> String {
         .collect::<Vec<String>>()
         .join(",");
 
-    format!("{{title: [{}]}}", titlelist)
+    format!("{{\"title\": [{}]}}", titlelist)
 }
 
 #[tauri::command]
