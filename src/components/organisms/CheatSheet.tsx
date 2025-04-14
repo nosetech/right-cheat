@@ -11,14 +11,18 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
+  Typography,
 } from '@mui/material'
 import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
+import { load } from '@tauri-apps/plugin-store'
 import { useEffect, useState } from 'react'
 
 export type CheatSheetProps = {}
 
 export const CheatSheet = (props: CheatSheetProps) => {
+  const [jsonInputPath, setJsonInputPath] = useState<string>()
+
   const [cheatSheetTitles, setCheatSheetTitles] = useState<
     CheatSheetTitleData | undefined
   >()
@@ -27,22 +31,39 @@ export const CheatSheet = (props: CheatSheetProps) => {
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData>()
 
   useEffect(() => {
-    invoke<string>('get_cheat_titles').then((response) => {
-      const titles: CheatSheetTitleData = JSON.parse(response)
-      setCheatSheetTitles(titles)
-      setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
-    })
+    ;(async () => {
+      const store = await load('rightcheat-settings.json', { autoSave: true })
+      await store.set('input_path', {
+        path: '/Users/hiroyuki/repo/right-cheat/src-tauri/src/config/default.json',
+      })
+      const input_path = await store.get<{ path: string }>('input_path')
+      setJsonInputPath(input_path != undefined ? input_path.path : undefined)
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    selectCheatSheet != '' &&
-      invoke<string>('get_cheat_sheet', { title: selectCheatSheet }).then(
+    jsonInputPath != undefined &&
+      invoke<string>('get_cheat_titles', { inputPath: jsonInputPath }).then(
         (response) => {
-          const data: CheatSheetData = JSON.parse(response)
-          setCheatSheetData(data)
+          const titles: CheatSheetTitleData = JSON.parse(response)
+          setCheatSheetTitles(titles)
+          setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
         },
       )
-  }, [selectCheatSheet])
+  }, [jsonInputPath])
+
+  useEffect(() => {
+    jsonInputPath != undefined &&
+      selectCheatSheet != '' &&
+      invoke<string>('get_cheat_sheet', {
+        inputPath: jsonInputPath,
+        title: selectCheatSheet,
+      }).then((response) => {
+        const data: CheatSheetData = JSON.parse(response)
+        setCheatSheetData(data)
+      })
+  }, [jsonInputPath, selectCheatSheet])
 
   const handleChange = (event: SelectChangeEvent) => {
     setCheatSheet(event.target.value as string)
@@ -50,31 +71,40 @@ export const CheatSheet = (props: CheatSheetProps) => {
 
   return (
     <Stack padding={1}>
-      <FormControl fullWidth>
-        <InputLabel id='demo-simple-select-label'>CheatSheet</InputLabel>
-        <Select
-          labelId='demo-simple-select-label'
-          id='demo-simple-select'
-          value={selectCheatSheet}
-          label='CheatSheet'
-          onChange={handleChange}
-        >
-          {cheatSheetTitles?.title.map((item, index) => (
-            <MenuItem key={index} value={item}>
-              {item}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <Stack padding={1} spacing={1} width='400px'>
-        {cheatSheetData?.commandlist.map((item: CommandData, index) => (
-          <CommandField
-            key={index}
-            description={item.description}
-            command={item.command}
-          />
-        ))}
-      </Stack>
+      {jsonInputPath == undefined ? (
+        <Typography variant='body1' color='error'>
+          入力ファイルのパスが指定されていません。[メニュー] -
+          [Preference]で入力ファイルパスを設定してください。
+        </Typography>
+      ) : (
+        <>
+          <FormControl fullWidth>
+            <InputLabel id='demo-simple-select-label'>CheatSheet</InputLabel>
+            <Select
+              labelId='demo-simple-select-label'
+              id='demo-simple-select'
+              value={selectCheatSheet}
+              label='CheatSheet'
+              onChange={handleChange}
+            >
+              {cheatSheetTitles?.title.map((item, index) => (
+                <MenuItem key={index} value={item}>
+                  {item}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Stack padding={1} spacing={1} width='400px'>
+            {cheatSheetData?.commandlist.map((item: CommandData, index) => (
+              <CommandField
+                key={index}
+                description={item.description}
+                command={item.command}
+              />
+            ))}
+          </Stack>
+        </>
+      )}
     </Stack>
   )
 }
