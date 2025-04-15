@@ -1,9 +1,53 @@
 mod api;
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
+        .menu(|handle| {
+            Menu::with_items(
+                handle,
+                &[
+                    &Submenu::with_items(
+                        handle,
+                        "",
+                        true,
+                        &[
+                            &MenuItem::with_id(
+                                handle,
+                                "id_about",
+                                "About RightCheat",
+                                true,
+                                None::<&str>,
+                            )?,
+                            &PredefinedMenuItem::separator(handle)?,
+                            &MenuItem::with_id(
+                                handle,
+                                "id_preferences",
+                                "Preferences ",
+                                true,
+                                Some("CmdOrCtrl+,"),
+                            )?,
+                            &PredefinedMenuItem::separator(handle)?,
+                            &PredefinedMenuItem::quit(handle, Some("Quit"))?,
+                        ],
+                    )?,
+                    &Submenu::with_items(
+                        handle,
+                        "Help",
+                        true,
+                        &[&MenuItem::with_id(
+                            handle,
+                            "id_help",
+                            "RightCheat Help",
+                            true,
+                            None::<&str>,
+                        )?],
+                    )?,
+                ],
+            )
+        })
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
