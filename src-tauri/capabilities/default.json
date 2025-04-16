@@ -20,6 +20,7 @@
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
     "global-shortcut:default",
-    "store:default"
+    "store:default",
+    "opener:default"
   ]
 }

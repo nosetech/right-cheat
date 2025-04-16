@@ -1,9 +1,11 @@
 mod api;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri_plugin_opener::OpenerExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .menu(|handle| {
             Menu::with_items(
@@ -47,6 +49,12 @@ pub fn run() {
                     )?,
                 ],
             )
+        })
+        .on_menu_event(|app, event| {
+            if event.id() == "id_help" {
+                let opener = app.opener();
+                let _ = opener.open_url("https://github.com/nosetech/right-cheat", None::<&str>);
+            }
         })
         .setup(|app| {
             if cfg!(debug_assertions) {
