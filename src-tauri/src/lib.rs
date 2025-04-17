@@ -1,5 +1,5 @@
 mod api;
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::menu::{AboutMetadataBuilder, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri_plugin_opener::OpenerExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -16,12 +16,17 @@ pub fn run() {
                         "",
                         true,
                         &[
-                            &MenuItem::with_id(
+                            &PredefinedMenuItem::about(
                                 handle,
-                                "id_about",
-                                "About RightCheat",
-                                true,
-                                None::<&str>,
+                                Some("About RightCheat"),
+                                Some(
+                                    AboutMetadataBuilder::new()
+                                        .name(Some("RightCheat"))
+                                        .version(Some("prototype 1.0"))
+                                        .short_version(Some("prototype 1.0"))
+                                        .copyright(Some("©︎ 2025 nosetech"))
+                                        .build(),
+                                ),
                             )?,
                             &PredefinedMenuItem::separator(handle)?,
                             &MenuItem::with_id(
@@ -50,10 +55,22 @@ pub fn run() {
                 ],
             )
         })
-        .on_menu_event(|app, event| {
-            if event.id() == "id_help" {
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "id_help" => {
                 let opener = app.opener();
                 let _ = opener.open_url("https://github.com/nosetech/right-cheat", None::<&str>);
+            }
+            "id_preferences" => {
+                let _ = tauri::webview::WebviewWindowBuilder::new(
+                    app,
+                    "preferences",
+                    tauri::WebviewUrl::App("/".into()),
+                )
+                .title("Preferences")
+                .build();
+            }
+            _ => {
+                println!("Event id={:?}", event.id());
             }
         })
         .setup(|app| {
