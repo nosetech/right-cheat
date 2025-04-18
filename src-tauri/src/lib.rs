@@ -1,4 +1,6 @@
 mod api;
+use std::path::Path;
+use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri_plugin_opener::OpenerExt;
 
@@ -25,6 +27,9 @@ pub fn run() {
                                         .version(Some("prototype 1.0"))
                                         .short_version(Some("prototype 1.0"))
                                         .copyright(Some("©︎ 2025 nosetech"))
+                                        .icon(Some(Image::from_path(Path::new(
+                                            "./icons/icon.png",
+                                        ))?))
                                         .build(),
                                 ),
                             )?,
