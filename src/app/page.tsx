@@ -1,7 +1,4 @@
 'use client'
-import { defaultTheme } from '@/theme/default'
-import CssBaseline from '@mui/material/CssBaseline'
-import { ThemeProvider } from '@mui/material/styles'
 
 import { CheatSheet } from '@/components/organisms/CheatSheet'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -27,12 +24,5 @@ export default function Home() {
     }
   }
 
-  return (
-    <ThemeProvider theme={defaultTheme}>
-      <CssBaseline />
-      <main>
-        <CheatSheet />
-      </main>
-    </ThemeProvider>
-  )
+  return <CheatSheet />
 }

@@ -7,6 +7,7 @@ use tauri_plugin_opener::OpenerExt;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .menu(|handle| {
@@ -69,9 +70,12 @@ pub fn run() {
                 let _ = tauri::webview::WebviewWindowBuilder::new(
                     app,
                     "preferences",
-                    tauri::WebviewUrl::App("/".into()),
+                    tauri::WebviewUrl::App("/preferences".into()),
                 )
                 .title("Preferences")
+                .inner_size(500.0, 150.0)
+                .max_inner_size(800.0, 150.0)
+                .min_inner_size(500.0, 150.0)
                 .build();
             }
             _ => {
@@ -120,7 +124,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             api::cheat::get_cheat_titles,
-            api::cheat::get_cheat_sheet
+            api::cheat::get_cheat_sheet,
+            api::cheat::reload_cheat_sheat
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
