@@ -1,5 +1,6 @@
 'use client'
 import { CommandField } from '@/components/molecules/CommandField'
+import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import {
   CheatSheetData,
   CheatSheetTitleData,
@@ -15,7 +16,7 @@ import {
 } from '@mui/material'
 import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
-import { load } from '@tauri-apps/plugin-store'
+import { listen } from '@tauri-apps/api/event'
 import { useEffect, useState } from 'react'
 
 export type CheatSheetProps = {}
@@ -30,15 +31,22 @@ export const CheatSheet = (props: CheatSheetProps) => {
 
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData>()
 
+  const { getCheatSheetFilePath } = usePreferencesStore()
+
+  listen<{}>('reload_cheat_sheat', (event) => {
+    ;(async () => {
+      console.log(event)
+      const inputpath = await getCheatSheetFilePath()
+      setJsonInputPath(inputpath)
+    })()
+  })
+
   useEffect(() => {
     ;(async () => {
-      const store = await load('rightcheat-settings.json', { autoSave: true })
-      await store.set('input_path', {
-        path: '/Users/hiroyuki/repo/right-cheat/src-tauri/src/config/default.json',
-      })
-      const input_path = await store.get<{ path: string }>('input_path')
-      setJsonInputPath(input_path != undefined ? input_path.path : undefined)
+      const inputpath = await getCheatSheetFilePath()
+      setJsonInputPath(inputpath)
     })()
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

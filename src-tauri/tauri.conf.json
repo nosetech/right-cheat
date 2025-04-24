@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "right-cheat",
+  "productName": "RightCheat",
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "right-cheat",
+        "title": "RightCheat",
         "width": 800,
         "minWidth": 800,
         "maxWidth": 800,

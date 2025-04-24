@@ -5,6 +5,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
+use tauri::{AppHandle, Emitter, EventTarget};
 
 #[tauri::command]
 pub fn get_cheat_titles(input_path: &str) -> String {
@@ -27,6 +28,17 @@ pub fn get_cheat_sheet(input_path: &str, title: &str) -> String {
     });
 
     response
+}
+
+#[tauri::command]
+pub fn reload_cheat_sheat(app: AppHandle) -> String {
+    let response;
+    match app.emit_to(EventTarget::app(), "reload_cheat_sheat", ()) {
+        Ok(_) => response = "success",
+        Err(_) => response = "fail",
+    }
+
+    format!("{{\"status\": {}}}", response)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
