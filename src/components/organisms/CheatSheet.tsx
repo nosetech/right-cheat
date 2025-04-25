@@ -102,7 +102,7 @@ export const CheatSheet = (props: CheatSheetProps) => {
               ))}
             </Select>
           </FormControl>
-          <Stack padding={1} spacing={1} width='400px'>
+          <Stack padding={1} spacing={1} width='100%'>
             {cheatSheetData?.commandlist.map((item: CommandData, index) => (
               <CommandField
                 key={index}
