@@ -26,7 +26,6 @@ pub fn run() {
                                     AboutMetadataBuilder::new()
                                         .name(Some("RightCheat"))
                                         .version(Some("prototype 1.0"))
-                                        .short_version(Some("prototype 1.0"))
                                         .copyright(Some("©︎ 2025 nosetech"))
                                         .icon(Some(Image::from_path(Path::new(
                                             "./icons/icon.png",
