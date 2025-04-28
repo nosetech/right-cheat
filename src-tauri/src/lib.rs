@@ -2,6 +2,8 @@ mod api;
 use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::Emitter;
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -94,30 +96,21 @@ pub fn run() {
         .setup(|app| {
             #[cfg(desktop)]
             {
-                use tauri_plugin_global_shortcut::{
-                    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
-                };
-
-                let ctrl_n_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyN);
+                let window_visible_shortcut =
+                    Shortcut::new(Some(Modifiers::CONTROL | Modifiers::META), Code::KeyR);
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
                         .with_handler(move |_app, shortcut, event| {
-                            println!("{:?}", shortcut);
-                            if shortcut == &ctrl_n_shortcut {
-                                match event.state() {
-                                    ShortcutState::Pressed => {
-                                        println!("Ctrl-N Pressed!");
-                                    }
-                                    ShortcutState::Released => {
-                                        println!("Ctrl-N Released!");
-                                    }
-                                }
+                            if shortcut == &window_visible_shortcut
+                                && event.state() == ShortcutState::Pressed
+                            {
+                                _app.emit("window_visible_change", ()).unwrap();
                             }
                         })
                         .build(),
                 )?;
 
-                app.global_shortcut().register(ctrl_n_shortcut)?;
+                app.global_shortcut().register(window_visible_shortcut)?;
             }
             Ok(())
         })

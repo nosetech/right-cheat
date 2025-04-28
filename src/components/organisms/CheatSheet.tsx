@@ -33,18 +33,17 @@ export const CheatSheet = (props: CheatSheetProps) => {
 
   const { getCheatSheetFilePath } = usePreferencesStore()
 
-  listen<{}>('reload_cheat_sheat', (event) => {
-    ;(async () => {
-      console.log(event)
-      const inputpath = await getCheatSheetFilePath()
-      setJsonInputPath(inputpath)
-    })()
-  })
-
   useEffect(() => {
     ;(async () => {
       const inputpath = await getCheatSheetFilePath()
       setJsonInputPath(inputpath)
+
+      listen<{}>('reload_cheat_sheat', () => {
+        ;(async () => {
+          const inputpath = await getCheatSheetFilePath()
+          setJsonInputPath(inputpath)
+        })()
+      })
     })()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
