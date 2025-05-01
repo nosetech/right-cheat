@@ -7,7 +7,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { Dispatch, SetStateAction } from 'react'
 
 export type FileOpenButtonProps = IconButtonProps & {
-  filePathSetter: Dispatch<SetStateAction<string | null>>
+  filePathSetter: Dispatch<SetStateAction<string | undefined>>
 }
 
 export const FileOpenButton = (props: FileOpenButtonProps) => {
@@ -24,7 +24,9 @@ export const FileOpenButton = (props: FileOpenButtonProps) => {
         },
       ],
     })
-    filePathSetter(file)
+    if (file != null) {
+      filePathSetter(file)
+    }
   }
 
   const colorScheme = {

@@ -50,7 +50,7 @@ export const CheatSheet = (props: CheatSheetProps) => {
   }, [])
 
   useEffect(() => {
-    jsonInputPath != undefined &&
+    jsonInputPath &&
       invoke<string>('get_cheat_titles', { inputPath: jsonInputPath }).then(
         (response) => {
           const titles: CheatSheetTitleData = JSON.parse(response)
@@ -61,8 +61,7 @@ export const CheatSheet = (props: CheatSheetProps) => {
   }, [jsonInputPath])
 
   useEffect(() => {
-    jsonInputPath != undefined &&
-      selectCheatSheet != '' &&
+    selectCheatSheet != '' &&
       invoke<string>('get_cheat_sheet', {
         inputPath: jsonInputPath,
         title: selectCheatSheet,
@@ -70,7 +69,8 @@ export const CheatSheet = (props: CheatSheetProps) => {
         const data: CheatSheetData = JSON.parse(response)
         setCheatSheetData(data)
       })
-  }, [jsonInputPath, selectCheatSheet])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectCheatSheet])
 
   const handleChange = (event: SelectChangeEvent) => {
     setCheatSheet(event.target.value as string)
