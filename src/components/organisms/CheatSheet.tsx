@@ -80,8 +80,15 @@ export const CheatSheet = (props: CheatSheetProps) => {
     <Stack padding={1}>
       {jsonInputPath == undefined ? (
         <Typography variant='body1' color='error'>
-          入力ファイルのパスが指定されていません。[メニュー] -
-          [Preference]で入力ファイルパスを設定してください。
+          入力ファイルのパスが指定されていません。
+          <br />
+          [メニュー] - [Preference]で入力ファイルパスを設定してください。
+        </Typography>
+      ) : selectCheatSheet == '' ? (
+        <Typography variant='body1' color='error'>
+          正しい内容の入力ファイルが指定されていないようです。
+          <br /> [メニュー] -
+          [Preference]で指定されている入力ファイルの内容を見直してください。
         </Typography>
       ) : (
         <>
