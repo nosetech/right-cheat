@@ -8,21 +8,22 @@ use tauri_plugin_opener::OpenerExt;
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin({
+            let mut logger = tauri_plugin_log::Builder::new()
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal);
+            if cfg!(dev) {
+                logger = logger.level(log::LevelFilter::Trace)
+            } else {
+                logger = logger.level(log::LevelFilter::Info)
+            }
+            logger.build()
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .menu(|handle| menu_configuration(handle))
         .on_menu_event(|handle, event| on_menu_event_configuration(handle, event))
-        .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
-            Ok(())
-        })
         .setup(|app| global_shortcut_configuration(app))
         .invoke_handler(tauri::generate_handler![
             api::cheatsheet::get_cheat_titles,
@@ -103,7 +104,7 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             .build();
         }
         _ => {
-            println!("Event id={:?}", event.id());
+            log::warn!("Unexpected event occurs. Event id={:?}", event.id());
         }
     }
 }

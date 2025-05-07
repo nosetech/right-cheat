@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { FileOpenButton, OverflowEllipsis } from '@/components/atoms'
 import { Box, Stack, Typography } from '@mui/material'
 import { invoke } from '@tauri-apps/api/core'
+import { debug } from '@tauri-apps/plugin-log'
 
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 
@@ -29,7 +30,7 @@ export default function Page() {
         setSettedInputFilePath(filePath)
         await setCheatSheetFilePath(filePath)
         invoke<string>('reload_cheat_sheat').then((response) => {
-          console.log(response)
+          debug(`invoke 'reload_cheat_sheat' response=${response}`)
         })
       }
     })()

@@ -17,6 +17,7 @@ import {
 import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { debug } from '@tauri-apps/plugin-log'
 import { useEffect, useState } from 'react'
 
 export type CheatSheetProps = {}
@@ -53,6 +54,7 @@ export const CheatSheet = (props: CheatSheetProps) => {
     jsonInputPath &&
       invoke<string>('get_cheat_titles', { inputPath: jsonInputPath }).then(
         (response) => {
+          debug(`invoke 'get_cheat_titles' response=${response}`)
           const titles: CheatSheetTitleData = JSON.parse(response)
           setCheatSheetTitles(titles)
           setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
@@ -66,6 +68,7 @@ export const CheatSheet = (props: CheatSheetProps) => {
         inputPath: jsonInputPath,
         title: selectCheatSheet,
       }).then((response) => {
+        debug(`invoke 'get_cheat_sheet' response=${response}`)
         const data: CheatSheetData = JSON.parse(response)
         setCheatSheetData(data)
       })
