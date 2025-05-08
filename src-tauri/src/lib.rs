@@ -48,14 +48,17 @@ fn menu_configuration<R: tauri::Runtime>(
                     &PredefinedMenuItem::about(
                         handle,
                         Some("About RightCheat"),
-                        Some(
-                            AboutMetadataBuilder::new()
-                                .name(Some("RightCheat"))
+                        Some({
+                            let mut metadata = AboutMetadataBuilder::new()
                                 .version(Some("prototype 1.0"))
-                                .copyright(Some("©︎ 2025 nosetech"))
-                                .icon(Some(Image::from_path(Path::new("./icons/icon.png"))?))
-                                .build(),
-                        ),
+                                .short_version(Some("0.1.0"))
+                                .copyright(Some("©︎ 2025 nosetech"));
+                            if cfg!(dev) {
+                                metadata = metadata
+                                    .icon(Some(Image::from_path(Path::new("./icons/icon.png"))?));
+                            }
+                            metadata.build()
+                        }),
                     )?,
                     &PredefinedMenuItem::separator(handle)?,
                     &MenuItem::with_id(
