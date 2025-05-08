@@ -20,9 +20,7 @@ import { listen } from '@tauri-apps/api/event'
 import { debug } from '@tauri-apps/plugin-log'
 import { useEffect, useState } from 'react'
 
-export type CheatSheetProps = {}
-
-export const CheatSheet = (props: CheatSheetProps) => {
+export const CheatSheet = () => {
   const [jsonInputPath, setJsonInputPath] = useState<string>()
 
   const [cheatSheetTitles, setCheatSheetTitles] = useState<

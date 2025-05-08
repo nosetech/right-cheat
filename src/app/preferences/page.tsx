@@ -44,9 +44,7 @@ export default function Page() {
         <FileOpenButton filePathSetter={setFilePath} size='small' />
         <Box padding={0.5} border={1} borderRadius={1} width='100%'>
           <OverflowEllipsis>
-            <Typography noWrap={true} width='100%'>
-              {settedInputFilePath}
-            </Typography>
+            <Typography noWrap={true}>{settedInputFilePath}</Typography>
           </OverflowEllipsis>
         </Box>
       </Stack>
