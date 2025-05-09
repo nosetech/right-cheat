@@ -1,4 +1,5 @@
 'use client'
+import { OverflowEllipsis } from '@/components/atoms'
 import { useClipboard } from '@/hooks/useClipboard'
 import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -48,7 +49,11 @@ export const CommandField = (props: CommandFieldProps) => {
 
   return (
     <Stack {...remainProps}>
-      <Typography variant='h3'>・{description}</Typography>
+      <OverflowEllipsis>
+        <Typography variant='h3' noWrap={true}>
+          ・{description}
+        </Typography>
+      </OverflowEllipsis>
       <Stack paddingLeft={1}>
         <Box
           tabIndex={tabIndex ?? 0}
@@ -61,7 +66,11 @@ export const CommandField = (props: CommandFieldProps) => {
             }
           }}
         >
-          <Typography variant='body1'>{command}</Typography>
+          <OverflowEllipsis>
+            <Typography variant='body1' noWrap={true}>
+              {command}
+            </Typography>
+          </OverflowEllipsis>
         </Box>
       </Stack>
     </Stack>

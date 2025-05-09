@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "run-p -l -c --aggregate-output lint:*",
     "lint:eslint": "eslint .",
@@ -20,7 +20,11 @@
     "@mui/icons-material": "^6.1.4",
     "@mui/material": "^6.1.4",
     "@tauri-apps/api": "^2.2.0",
+    "@tauri-apps/plugin-dialog": "~2",
     "@tauri-apps/plugin-global-shortcut": "~2",
+    "@tauri-apps/plugin-log": "~2",
+    "@tauri-apps/plugin-opener": "~2",
+    "@tauri-apps/plugin-store": "~2",
     "next": "14.2.5",
     "react": "19.0.0",
     "react-dom": "19.0.0"

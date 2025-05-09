@@ -1,3 +1,9 @@
+'use client'
+
+import { defaultTheme } from '@/theme/default'
+import CssBaseline from '@mui/material/CssBaseline'
+import { ThemeProvider } from '@mui/material/styles'
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -5,7 +11,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='ja'>
-      <body>{children}</body>
+      <body>
+        <ThemeProvider theme={defaultTheme}>
+          <CssBaseline />
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }
