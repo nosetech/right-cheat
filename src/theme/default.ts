@@ -1,7 +1,18 @@
+'use client'
+
 import { blue, cyan, green, pink, red, yellow } from '@mui/material/colors'
 import { createTheme } from '@mui/material/styles'
 
 import { grey } from '@/theme/color'
+
+import { Roboto } from 'next/font/google'
+
+const roboto = Roboto({
+  weight: ['300', '400', '500', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-roboto',
+})
 
 declare module '@mui/material/styles' {
   interface BreakpointOverrides {
@@ -87,7 +98,7 @@ export const defaultTheme = createTheme({
     },
   },
   typography: {
-    fontFamily: ['Roboto', '"Noto Sans JP"', 'Anton'].join(','),
+    fontFamily: roboto.style.fontFamily,
     fontSize: 15,
     htmlFontSize: 15,
     body1: { fontSize: 15 },

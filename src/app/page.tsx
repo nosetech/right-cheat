@@ -1,18 +1,18 @@
 'use client'
 
 import { CheatSheet } from '@/components/organisms/CheatSheet'
+import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { register } from '@tauri-apps/plugin-global-shortcut'
+import { useEffect } from 'react'
 
 export default function Home() {
-  const registerShortcut = async () => {
-    await register('Command+Shift+L', (event) => {
-      if (event.state === 'Pressed') {
+  useEffect(() => {
+    listen<{}>('window_visible_change', () => {
+      ;(async () => {
         changeWindowVisible()
-      }
+      })()
     })
-  }
-  registerShortcut()
+  }, [])
 
   const changeWindowVisible = async () => {
     const window = getCurrentWindow()

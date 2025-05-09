@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "RightCheat",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "biz.nosetech.rightcheat",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
@@ -13,10 +13,11 @@
     "windows": [
       {
         "title": "RightCheat",
-        "width": 800,
-        "minWidth": 800,
-        "maxWidth": 800,
-        "height": 600,
+        "x": 0,
+        "y": 0,
+        "width": 500,
+        "minWidth": 400,
+        "height": 800,
         "minHeight": 300,
         "resizable": true,
         "fullscreen": false
