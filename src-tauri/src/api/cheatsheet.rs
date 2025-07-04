@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use crate::common;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::error::Error;
@@ -95,7 +96,7 @@ pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
     *cache = None; // キャッシュをクリア
 
     let response;
-    match app.emit_to(EventTarget::app(), "reload_cheat_sheet", ()) {
+    match app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ()) {
         Ok(_) => response = "success",
         Err(_) => response = "fail",
     }

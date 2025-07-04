@@ -1,11 +1,6 @@
 'use client'
-import { CommandField } from '@/components/molecules/CommandField'
-import { usePreferencesStore } from '@/hooks/usePreferencesStore'
-import {
-  CheatSheetData,
-  CheatSheetTitleData,
-  CommandData,
-} from '@/types/api/CheatSheet'
+import { useEffect, useState } from 'react'
+
 import {
   FormControl,
   InputLabel,
@@ -18,7 +13,16 @@ import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { debug } from '@tauri-apps/plugin-log'
-import { useEffect, useState } from 'react'
+
+import { Event } from '@/common'
+import { CommandField } from '@/components/molecules/CommandField'
+import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import {
+  CheatSheetAPI,
+  CheatSheetData,
+  CheatSheetTitleData,
+  CommandData,
+} from '@/types/api/CheatSheet'
 
 export const CheatSheet = () => {
   const [jsonInputPath, setJsonInputPath] = useState<string>()
@@ -36,12 +40,12 @@ export const CheatSheet = () => {
 
   useEffect(() => {
     ;(async () => {
-      await listen<{}>('reload_cheat_sheet', () => {
+      await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
         ;(async () => {
           const inputpath = await getCheatSheetFilePath()
           if (inputpath) {
-            await setReloading(true)
-            await setCheatSheet('')
+            setReloading(true)
+            setCheatSheet('')
             await invoke<string>('get_cheat_titles', {
               inputPath: inputpath,
             }).then((response) => {
@@ -50,8 +54,8 @@ export const CheatSheet = () => {
               setCheatSheetTitles(titles)
               setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
             })
-            await setJsonInputPath(inputpath)
-            await setReloading(false)
+            setJsonInputPath(inputpath)
+            setReloading(false)
           }
         })()
       })
@@ -65,11 +69,11 @@ export const CheatSheet = () => {
 
   useEffect(() => {
     if (selectCheatSheet != '') {
-      invoke<string>('get_cheat_sheet', {
+      invoke<string>(CheatSheetAPI.GET_CHEAT_SHEET, {
         inputPath: jsonInputPath,
         title: selectCheatSheet,
       }).then((response) => {
-        debug(`invoke 'get_cheat_sheet' response=${response}`)
+        debug(`invoke '${CheatSheetAPI.GET_CHEAT_SHEET}' response=${response}`)
         const data: CheatSheetData = JSON.parse(response)
         setCheatSheetData(data)
       })

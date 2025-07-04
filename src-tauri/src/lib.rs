@@ -1,4 +1,6 @@
 mod api;
+mod common;
+
 use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
@@ -50,8 +52,8 @@ fn menu_configuration<R: tauri::Runtime>(
                         Some("About RightCheat"),
                         Some({
                             let mut metadata = AboutMetadataBuilder::new()
-                                .version(Some("prototype 1.0"))
-                                .short_version(Some("0.1.0"))
+                                .version(Some("prototype 1.1"))
+                                .short_version(Some("0.1.1"))
                                 .copyright(Some("©︎ 2025 nosetech"));
                             if cfg!(dev) {
                                 metadata = metadata
@@ -74,15 +76,24 @@ fn menu_configuration<R: tauri::Runtime>(
             )?,
             &Submenu::with_items(
                 handle,
-                "View ",
+                "View ", // NOTE: デフォルトメニューにならないよう、Viewの後にスペースを入れている。
                 true,
-                &[&MenuItem::with_id(
+                &[
+                &MenuItem::with_id(
+                    handle,
+                    "id_toggle_visible",
+                    "Toggle Visible",
+                    true,
+                    Some("Cmd+Ctrl+r"),
+                )?,
+                &MenuItem::with_id(
                     handle,
                     "id_reload",
                     "CheatSheet Reload",
                     true,
                     Some("Cmd+r"),
-                )?],
+                )?,
+                ],
             )?,
             &Submenu::with_items(
                 handle,
@@ -121,6 +132,11 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
         "id_reload" => {
             let _ = api::cheatsheet::reload_cheat_sheet(handle.clone());
         }
+        "id_toggle_visible" => {
+            handle
+                .emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
+                .unwrap();
+        }
         _ => {
             log::warn!("Unexpected event occurs. Event id={:?}", event.id());
         }
@@ -140,7 +156,8 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
                     if shortcut == &window_visible_shortcut
                         && event.state() == ShortcutState::Pressed
                     {
-                        _app.emit("window_visible_change", ()).unwrap();
+                        _app.emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
+                            .unwrap();
                     }
                 })
                 .build(),

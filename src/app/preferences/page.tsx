@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react'
 
-import { FileOpenButton, OverflowEllipsis } from '@/components/atoms'
 import { Box, Stack, Typography } from '@mui/material'
 import { invoke } from '@tauri-apps/api/core'
 import { debug } from '@tauri-apps/plugin-log'
 
+import { FileOpenButton, OverflowEllipsis } from '@/components/atoms'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { CheatSheetAPI } from '@/types/api/CheatSheet'
 
 export default function Page() {
   const [settedInputFilePath, setSettedInputFilePath] = useState<string>()
@@ -26,11 +27,15 @@ export default function Page() {
   const callback = (filepath: string) => {
     ;(async () => {
       debug(`callback ${filepath}`)
-      await setSettedInputFilePath(filepath)
+      setSettedInputFilePath(filepath)
       await setCheatSheetFilePath(filepath)
-      await invoke<string>('reload_cheat_sheet').then((response) => {
-        debug(`invoke 'reload_cheat_sheet' response=${response}`)
-      })
+      await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
+        (response) => {
+          debug(
+            `invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
+          )
+        },
+      )
     })()
   }
 
