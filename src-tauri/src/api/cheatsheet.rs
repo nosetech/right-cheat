@@ -1,5 +1,5 @@
-use lazy_static::lazy_static;
 use crate::common;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::error::Error;

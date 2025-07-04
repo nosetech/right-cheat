@@ -79,20 +79,20 @@ fn menu_configuration<R: tauri::Runtime>(
                 "View ", // NOTE: デフォルトメニューにならないよう、Viewの後にスペースを入れている。
                 true,
                 &[
-                &MenuItem::with_id(
-                    handle,
-                    "id_toggle_visible",
-                    "Toggle Visible",
-                    true,
-                    Some("Cmd+Ctrl+r"),
-                )?,
-                &MenuItem::with_id(
-                    handle,
-                    "id_reload",
-                    "CheatSheet Reload",
-                    true,
-                    Some("Cmd+r"),
-                )?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_toggle_visible",
+                        "Toggle Visible",
+                        true,
+                        Some("Cmd+Ctrl+r"),
+                    )?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_reload",
+                        "CheatSheet Reload",
+                        true,
+                        Some("Cmd+r"),
+                    )?,
                 ],
             )?,
             &Submenu::with_items(
