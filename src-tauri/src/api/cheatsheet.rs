@@ -1,4 +1,5 @@
 use crate::common;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::error::Error;
@@ -6,7 +7,12 @@ use std::fmt;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, EventTarget};
+
+lazy_static! {
+    static ref CACHE: Mutex<Option<Vec<CheatSheet>>> = Mutex::new(None);
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CheatSheet {
@@ -42,8 +48,17 @@ impl fmt::Display for Command {
 
 #[tauri::command]
 pub fn get_cheat_titles(input_path: &str) -> String {
-    let cheatsheets = read_json_from_file(PathBuf::from(input_path)).unwrap_or(vec![]);
-    let titlelist = cheatsheets
+    let mut cache = CACHE.lock().unwrap();
+
+    // キャッシュが空ならファイルから読み込む
+    if cache.is_none() {
+        log::debug!("Cache is empty, reading from file: {}", input_path);
+        *cache = read_json_from_file(PathBuf::from(input_path)).ok();
+    }
+
+    let titlelist = cache
+        .as_ref()
+        .unwrap_or(&vec![])
         .iter()
         .map(|sheet| format!("\"{}\"", sheet.title))
         .collect::<Vec<String>>()
@@ -54,8 +69,20 @@ pub fn get_cheat_titles(input_path: &str) -> String {
 
 #[tauri::command]
 pub fn get_cheat_sheet(input_path: &str, title: &str) -> String {
-    let cheatsheets = read_json_from_file(PathBuf::from(input_path)).unwrap_or(vec![]);
-    let cheatsheet = cheatsheets.iter().find(|sheet| sheet.title == title);
+    let mut cache = CACHE.lock().unwrap();
+
+    // キャッシュが空ならファイルから読み込む
+    if cache.is_none() {
+        log::debug!("Cache is empty, reading from file: {}", input_path);
+        *cache = read_json_from_file(PathBuf::from(input_path)).ok();
+    }
+
+    let binding = vec![];
+    let cheatsheet = cache
+        .as_ref()
+        .unwrap_or(&binding)
+        .iter()
+        .find(|sheet| sheet.title == title);
     let response = cheatsheet.map_or("{}".to_string(), |sheet| {
         serde_json::to_string(&sheet).unwrap_or("{}".to_string())
     });
@@ -64,9 +91,12 @@ pub fn get_cheat_sheet(input_path: &str, title: &str) -> String {
 }
 
 #[tauri::command]
-pub fn reload_cheat_sheat(app: AppHandle) -> String {
+pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
+    let mut cache = CACHE.lock().unwrap();
+    *cache = None; // キャッシュをクリア
+
     let response;
-    match app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEAT, ()) {
+    match app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ()) {
         Ok(_) => response = "success",
         Err(_) => response = "fail",
     }

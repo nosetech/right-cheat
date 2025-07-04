@@ -95,6 +95,7 @@ name = "app"
 version = "0.1.1"
 dependencies = [
  "dirs 6.0.0",
+ "lazy_static",
  "log",
  "once_cell",
  "serde",
