@@ -90,12 +90,12 @@ pub fn get_cheat_sheet(input_path: &str, title: &str) -> String {
 }
 
 #[tauri::command]
-pub fn reload_cheat_sheat(app: AppHandle) -> String {
+pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
     let mut cache = CACHE.lock().unwrap();
     *cache = None; // キャッシュをクリア
 
     let response;
-    match app.emit_to(EventTarget::app(), "reload_cheat_sheat", ()) {
+    match app.emit_to(EventTarget::app(), "reload_cheat_sheet", ()) {
         Ok(_) => response = "success",
         Err(_) => response = "fail",
     }

@@ -29,8 +29,8 @@ export default function Page() {
       if (filePath) {
         setSettedInputFilePath(filePath)
         await setCheatSheetFilePath(filePath)
-        invoke<string>('reload_cheat_sheat').then((response) => {
-          debug(`invoke 'reload_cheat_sheat' response=${response}`)
+        invoke<string>('reload_cheat_sheet').then((response) => {
+          debug(`invoke 'reload_cheat_sheet' response=${response}`)
         })
       }
     })()

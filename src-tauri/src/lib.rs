@@ -28,7 +28,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             api::cheatsheet::get_cheat_titles,
             api::cheatsheet::get_cheat_sheet,
-            api::cheatsheet::reload_cheat_sheat,
+            api::cheatsheet::reload_cheat_sheet,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -74,6 +74,18 @@ fn menu_configuration<R: tauri::Runtime>(
             )?,
             &Submenu::with_items(
                 handle,
+                "View ",
+                true,
+                &[&MenuItem::with_id(
+                    handle,
+                    "id_reload",
+                    "CheatSheet Reload",
+                    true,
+                    Some("Cmd+r"),
+                )?],
+            )?,
+            &Submenu::with_items(
+                handle,
                 "Help",
                 true,
                 &[&MenuItem::with_id(
@@ -105,6 +117,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             .max_inner_size(800.0, 150.0)
             .min_inner_size(500.0, 150.0)
             .build();
+        }
+        "id_reload" => {
+            let _ = api::cheatsheet::reload_cheat_sheet(handle.clone());
         }
         _ => {
             log::warn!("Unexpected event occurs. Event id={:?}", event.id());

@@ -30,38 +30,41 @@ export const CheatSheet = () => {
 
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData>()
 
+  const [reloading, setReloading] = useState<boolean>(false)
+
   const { getCheatSheetFilePath } = usePreferencesStore()
 
   useEffect(() => {
     ;(async () => {
-      const inputpath = await getCheatSheetFilePath()
-      setJsonInputPath(inputpath)
-
-      listen<{}>('reload_cheat_sheat', () => {
+      await listen<{}>('reload_cheat_sheet', () => {
         ;(async () => {
           const inputpath = await getCheatSheetFilePath()
-          setJsonInputPath(inputpath)
+          if (inputpath) {
+            await setReloading(true)
+            await setCheatSheet('')
+            await invoke<string>('get_cheat_titles', {
+              inputPath: inputpath,
+            }).then((response) => {
+              debug(`invoke 'get_cheat_titles' response=${response}`)
+              const titles: CheatSheetTitleData = JSON.parse(response)
+              setCheatSheetTitles(titles)
+              setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+            })
+            await setJsonInputPath(inputpath)
+            await setReloading(false)
+          }
         })()
       })
-    })()
 
+      await invoke<string>('reload_cheat_sheet').then((response) => {
+        debug(`invoke 'reload_cheat_sheet' response=${response}`)
+      })
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    jsonInputPath &&
-      invoke<string>('get_cheat_titles', { inputPath: jsonInputPath }).then(
-        (response) => {
-          debug(`invoke 'get_cheat_titles' response=${response}`)
-          const titles: CheatSheetTitleData = JSON.parse(response)
-          setCheatSheetTitles(titles)
-          setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
-        },
-      )
-  }, [jsonInputPath])
-
-  useEffect(() => {
-    selectCheatSheet != '' &&
+    if (selectCheatSheet != '') {
       invoke<string>('get_cheat_sheet', {
         inputPath: jsonInputPath,
         title: selectCheatSheet,
@@ -70,6 +73,7 @@ export const CheatSheet = () => {
         const data: CheatSheetData = JSON.parse(response)
         setCheatSheetData(data)
       })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectCheatSheet])
 
@@ -85,7 +89,7 @@ export const CheatSheet = () => {
           <br />
           [メニュー] - [Preference]で入力ファイルパスを設定してください。
         </Typography>
-      ) : selectCheatSheet == '' ? (
+      ) : reloading == false && selectCheatSheet == '' ? (
         <Typography variant='body1' color='error'>
           正しい内容の入力ファイルが指定されていないようです。
           <br /> [メニュー] -
