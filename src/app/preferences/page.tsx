@@ -10,7 +10,6 @@ import { debug } from '@tauri-apps/plugin-log'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 
 export default function Page() {
-  const [filePath, setFilePath] = useState<string>()
   const [settedInputFilePath, setSettedInputFilePath] = useState<string>()
 
   const { getCheatSheetFilePath, setCheatSheetFilePath } = usePreferencesStore()
@@ -24,24 +23,22 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
+  const callback = (filepath: string) => {
     ;(async () => {
-      if (filePath) {
-        setSettedInputFilePath(filePath)
-        await setCheatSheetFilePath(filePath)
-        invoke<string>('reload_cheat_sheet').then((response) => {
-          debug(`invoke 'reload_cheat_sheet' response=${response}`)
-        })
-      }
+      debug(`callback ${filepath}`)
+      await setSettedInputFilePath(filepath)
+      await setCheatSheetFilePath(filepath)
+      await invoke<string>('reload_cheat_sheet').then((response) => {
+        debug(`invoke 'reload_cheat_sheet' response=${response}`)
+      })
     })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filePath])
+  }
 
   return (
     <Stack padding={1} spacing={1}>
       <Typography variant='body1'>CheetSheet Json File</Typography>
       <Stack direction='row' padding={1} spacing={1}>
-        <FileOpenButton filePathSetter={setFilePath} size='small' />
+        <FileOpenButton callback={callback} size='small' />
         <Box padding={0.5} border={1} borderRadius={1} width='100%'>
           <OverflowEllipsis>
             <Typography noWrap={true}>{settedInputFilePath}</Typography>
