@@ -1,0 +1,24 @@
+[
+  {
+    "title": "Test1",
+    "commandlist": [
+      {
+        "description": "planの実行",
+        "command": "terraform plan"
+      },
+      {
+        "description": "test",
+        "command": "test2"
+      }
+    ]
+  },
+  {
+    "title": "Test2",
+    "commandlist": [
+      {
+        "description": "test3",
+        "command": "test3"
+      }
+    ]
+  }
+]
