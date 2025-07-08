@@ -7,17 +7,17 @@ on:
 
 jobs:
   frontend:
-    name: Frontend Lint
+    name: Frontend Test
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: .node-version
           cache: yarn
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -26,7 +26,7 @@ jobs:
         run: yarn lint
 
   backend:
-    name: Backend Lint & Test
+    name: Backend Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -43,9 +43,6 @@ jobs:
 
       - name: Run cargo fmt check
         run: cd src-tauri && cargo fmt -- --check
-
-      - name: Run cargo build
-        run: cd src-tauri && cargo build --verbose
 
       - name: Run cargo test
         run: cd src-tauri && cargo test --verbose
