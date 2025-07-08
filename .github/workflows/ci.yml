@@ -44,7 +44,7 @@ jobs:
       - name: Run cargo fmt check
         run: cd src-tauri && cargo fmt -- --check
 
-      - name: Run cargo test
+      - name: Run cargo build
         run: cd src-tauri && cargo build --verbose
 
       - name: Run cargo test
