@@ -27,7 +27,7 @@ jobs:
 
   backend:
     name: Backend Test
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,6 +43,9 @@ jobs:
 
       - name: Run cargo fmt check
         run: cd src-tauri && cargo fmt -- --check
+
+      - name: Run cargo test
+        run: cd src-tauri && cargo build --verbose
 
       - name: Run cargo test
         run: cd src-tauri && cargo test --verbose
