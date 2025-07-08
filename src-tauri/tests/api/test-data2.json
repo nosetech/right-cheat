@@ -1,0 +1,11 @@
+[
+  {
+    "title": "Test",
+    "commandlist": [
+      {
+        "description": "Test Command",
+        "command": "command"
+      }
+    ]
+  }
+]

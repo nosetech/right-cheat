@@ -1,5 +1,5 @@
-mod api;
-mod common;
+pub mod api;
+pub mod common;
 
 use std::path::Path;
 use tauri::image::Image;
