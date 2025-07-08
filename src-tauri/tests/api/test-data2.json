@@ -3,8 +3,8 @@
     "title": "Test",
     "commandlist": [
       {
-        "description": "test",
-        "command": "test"
+        "description": "Test Command",
+        "command": "command"
       }
     ]
   }
