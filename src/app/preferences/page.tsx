@@ -4,9 +4,14 @@ import { useEffect, useState } from 'react'
 
 import { Box, Stack, Typography } from '@mui/material'
 import { invoke } from '@tauri-apps/api/core'
-import { debug } from '@tauri-apps/plugin-log'
+import { debug, error } from '@tauri-apps/plugin-log'
+import { Command } from '@tauri-apps/plugin-shell'
 
-import { FileOpenButton, OverflowEllipsis } from '@/components/atoms'
+import {
+  FileEditButton,
+  FileOpenButton,
+  OverflowEllipsis,
+} from '@/components/atoms'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
 
@@ -39,6 +44,22 @@ export default function Page() {
     })()
   }
 
+  const openFileByEditor = () => {
+    if (settedInputFilePath) {
+      ;(async () => {
+        let result = await Command.create('exec-open', [
+          '-t',
+          settedInputFilePath,
+        ]).execute()
+        if (result.code != 0) {
+          error(
+            `Failed to open file: ${settedInputFilePath}, code: ${result.code}`,
+          )
+        }
+      })()
+    }
+  }
+
   return (
     <Stack padding={1} spacing={1}>
       <Typography variant='body1'>CheetSheet Json File</Typography>
@@ -49,6 +70,7 @@ export default function Page() {
             <Typography noWrap={true}>{settedInputFilePath}</Typography>
           </OverflowEllipsis>
         </Box>
+        <FileEditButton onClick={openFileByEditor} size='small' />
       </Stack>
     </Stack>
   )
