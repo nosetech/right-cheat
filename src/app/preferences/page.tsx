@@ -21,7 +21,7 @@ export default function Page() {
   const { getCheatSheetFilePath, setCheatSheetFilePath } = usePreferencesStore()
 
   useEffect(() => {
-    ; (async () => {
+    ;(async () => {
       const inputpath = await getCheatSheetFilePath()
       setSettedInputFilePath(inputpath)
     })()
@@ -30,7 +30,7 @@ export default function Page() {
   }, [])
 
   const callback = (filepath: string) => {
-    ; (async () => {
+    ;(async () => {
       debug(`callback ${filepath}`)
       setSettedInputFilePath(filepath)
       await setCheatSheetFilePath(filepath)
@@ -46,7 +46,7 @@ export default function Page() {
 
   const openFileByEditor = () => {
     if (settedInputFilePath) {
-      ; (async () => {
+      ;(async () => {
         let result = await Command.create('exec-open', [
           '-t',
           settedInputFilePath,
