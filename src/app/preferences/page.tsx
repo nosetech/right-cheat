@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
-import { Box, Divider, Stack, Typography } from '@mui/material'
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import { Box, Divider, Stack, Tooltip, Typography } from '@mui/material'
 import { invoke } from '@tauri-apps/api/core'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { Command } from '@tauri-apps/plugin-shell'
@@ -14,6 +15,7 @@ import {
   OverflowEllipsis,
 } from '@/components/atoms'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { grey } from '@/theme/color'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
 
 export default function Page() {
@@ -74,7 +76,15 @@ export default function Page() {
         <FileEditButton onClick={openFileByEditor} size='small' />
       </Stack>
       <Divider />
-      <Typography variant='body1'>Global Shortcut</Typography>
+      <Stack direction='row' spacing={1}>
+        <Typography variant='body1'>Global Shortcut</Typography>
+        <Tooltip
+          title='Restart the application to reflect the settings.'
+          placement='right'
+        >
+          <ErrorOutlineIcon fontSize='small' sx={{ color: grey[300] }} />
+        </Tooltip>
+      </Stack>
       <Stack padding={1}>
         <ShortcutEditField shortcutName='Toggle Visible' />
       </Stack>
