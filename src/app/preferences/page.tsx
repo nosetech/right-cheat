@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
-import { Box, Stack, Typography } from '@mui/material'
+import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
+import { Box, Divider, Stack, Typography } from '@mui/material'
 import { invoke } from '@tauri-apps/api/core'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { Command } from '@tauri-apps/plugin-shell'
@@ -71,6 +72,11 @@ export default function Page() {
           </OverflowEllipsis>
         </Box>
         <FileEditButton onClick={openFileByEditor} size='small' />
+      </Stack>
+      <Divider />
+      <Typography variant='body1'>Global Shortcut</Typography>
+      <Stack padding={1}>
+        <ShortcutEditField shortcutName='Toggle Visible' />
       </Stack>
     </Stack>
   )

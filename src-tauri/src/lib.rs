@@ -1,5 +1,6 @@
 pub mod api;
 pub mod common;
+pub mod settings_store;
 
 use std::path::Path;
 use tauri::image::Image;
@@ -125,9 +126,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(500.0, 150.0)
-            .max_inner_size(800.0, 150.0)
-            .min_inner_size(500.0, 150.0)
+            .inner_size(520.0, 230.0)
+            .max_inner_size(800.0, 230.0)
+            .min_inner_size(520.0, 230.0)
             .build();
         }
         "id_reload" => {
@@ -164,7 +165,15 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
                 .build(),
         )?;
 
-        app.global_shortcut().register(window_visible_shortcut)?
+        app.global_shortcut().register(window_visible_shortcut)?;
+        let input_path = settings_store::get_setting(app, "dummy");
+        match input_path {
+            Ok(value) => log::info!(
+                "input_path = {:?} in settings.json",
+                value.unwrap_or("failed to get value".into())
+            ),
+            Err(err) => log::error!("{:?}", err),
+        }
     }
     Ok(())
 }
