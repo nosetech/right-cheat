@@ -2,6 +2,7 @@ pub mod api;
 pub mod common;
 pub mod settings_store;
 
+use serde_json;
 use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
@@ -26,13 +27,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .menu(|handle| menu_configuration(handle))
         .on_menu_event(|handle, event| on_menu_event_configuration(handle, event))
         .setup(|app| global_shortcut_configuration(app))
         .invoke_handler(tauri::generate_handler![
             api::cheatsheet::get_cheat_titles,
             api::cheatsheet::get_cheat_sheet,
             api::cheatsheet::reload_cheat_sheet,
+            api::global_shortcut::get_toggle_visible_shortcut_settings,
+            api::global_shortcut::set_toggle_visible_shortcut_settings,
+            api::global_shortcut::restart_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -40,6 +43,7 @@ pub fn run() {
 
 fn menu_configuration<R: tauri::Runtime>(
     handle: &tauri::AppHandle<R>,
+    toggle_visible_shortcut: String,
 ) -> Result<Menu<R>, tauri::Error> {
     Menu::with_items(
         handle,
@@ -70,7 +74,7 @@ fn menu_configuration<R: tauri::Runtime>(
                         "id_preferences",
                         "Preferences ",
                         true,
-                        Some("CmdOrCtrl+,"),
+                        Some("Cmd+,"),
                     )?,
                     &PredefinedMenuItem::separator(handle)?,
                     &PredefinedMenuItem::quit(handle, Some("Quit"))?,
@@ -86,7 +90,7 @@ fn menu_configuration<R: tauri::Runtime>(
                         "id_toggle_visible",
                         "Toggle Visible",
                         true,
-                        Some("Cmd+Ctrl+r"),
+                        Some(toggle_visible_shortcut),
                     )?,
                     &MenuItem::with_id(
                         handle,
@@ -150,29 +154,35 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(desktop)]
     {
-        let window_visible_shortcut =
-            Shortcut::new(Some(Modifiers::CONTROL | Modifiers::META), Code::KeyR);
-        app.handle().plugin(
-            tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(move |_app, shortcut, event| {
-                    if shortcut == &window_visible_shortcut
-                        && event.state() == ShortcutState::Pressed
-                    {
-                        _app.emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
-                            .unwrap();
-                    }
-                })
-                .build(),
-        )?;
+        api::global_shortcut::init_toggle_visible_shortcut_settings(app.handle())?;
+        let shortcut_settings =
+            settings_store::get_setting(app.handle(), common::config::TOGGLE_VISIBLE_SHORTCUT)?;
+        if let Some(ref json) = shortcut_settings {
+            let settings: api::global_shortcut::ToggleVisibleShortcut =
+                serde_json::from_value(json.clone())?;
+            let window_visible_shortcut = settings.to_shortcut()?;
+            log::info!(
+                "Toggle visible shortcut settings : {}",
+                window_visible_shortcut
+            );
 
-        app.global_shortcut().register(window_visible_shortcut)?;
-        let input_path = settings_store::get_setting(app, "dummy");
-        match input_path {
-            Ok(value) => log::info!(
-                "input_path = {:?} in settings.json",
-                value.unwrap_or("failed to get value".into())
-            ),
-            Err(err) => log::error!("{:?}", err),
+            app.handle().plugin(
+                tauri_plugin_global_shortcut::Builder::new()
+                    .with_handler(move |_app, shortcut, event| {
+                        if shortcut == &window_visible_shortcut
+                            && event.state() == ShortcutState::Pressed
+                        {
+                            _app.emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
+                                .unwrap();
+                        }
+                    })
+                    .build(),
+            )?;
+
+            app.global_shortcut().register(window_visible_shortcut)?;
+
+            let menu = menu_configuration(app.handle(), settings.to_shortcut_for_menu()?)?;
+            app.set_menu(menu)?;
         }
     }
     Ok(())
