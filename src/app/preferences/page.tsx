@@ -93,7 +93,6 @@ export default function Page() {
     commandKey: boolean,
     hotKey: string,
   ) => {
-    // TODO: MUIのダイアログコンポーネントを使って、確認メッセージを出す.
     ; (async () => {
       await invoke<string>(
         GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
