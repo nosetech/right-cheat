@@ -33,9 +33,15 @@
           "name": "exec-open",
           "cmd": "open",
           "sidecar": false,
-          "args": ["-t", { "validator": "\\S+" }]
+          "args": [
+            "-t",
+            {
+              "validator": "\\S+"
+            }
+          ]
         }
       ]
-    }
+    },
+    "process:default"
   ]
 }

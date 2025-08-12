@@ -18,13 +18,13 @@ impl fmt::Display for ShortcutDefError {
 impl Error for ShortcutDefError {}
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ToggleVisibleShortcut {
+pub struct ShortcutDef {
     ctrl: bool,
     option: bool,
     command: bool,
     hotkey: String,
 }
-impl fmt::Display for ToggleVisibleShortcut {
+impl fmt::Display for ShortcutDef {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -34,7 +34,7 @@ impl fmt::Display for ToggleVisibleShortcut {
     }
 }
 
-impl ToggleVisibleShortcut {
+impl ShortcutDef {
     pub fn to_shortcut(&self) -> Result<Shortcut, Box<dyn Error>> {
         let mut modifiers = Modifiers::empty();
         if self.ctrl {
@@ -132,7 +132,7 @@ pub fn init_toggle_visible_shortcut_settings<R: tauri::Runtime>(
                 log::info!("Toggle visible shortcut settings already exists: {}", value);
             }
             None => {
-                let default_shortcut = ToggleVisibleShortcut {
+                let default_shortcut = ShortcutDef {
                     ctrl: true,
                     option: false,
                     command: true,
@@ -171,17 +171,17 @@ pub fn get_toggle_visible_shortcut_settings<R: tauri::Runtime>(app: AppHandle<R>
     match shortcut_settings {
         Ok(result) => match result {
             Some(value) => {
-                response = "success";
+                response = "\"success\"";
                 message = format!("{}", value);
             }
             None => {
-                response = "fail";
+                response = "\"fail\"";
                 message = String::from("No settings found for toggle visible shortcut.");
             }
         },
         Err(err) => {
             log::error!("{:?}", err);
-            response = "fail";
+            response = "\"fail\"";
             message = format!("{}", err);
         }
     }
@@ -192,7 +192,7 @@ pub fn get_toggle_visible_shortcut_settings<R: tauri::Runtime>(app: AppHandle<R>
 #[tauri::command]
 pub fn set_toggle_visible_shortcut_settings<R: tauri::Runtime>(
     app: AppHandle<R>,
-    shortcut: ToggleVisibleShortcut,
+    shortcut: ShortcutDef,
 ) -> String {
     let result = settings_store::set_setting(
         &app,
@@ -204,20 +204,15 @@ pub fn set_toggle_visible_shortcut_settings<R: tauri::Runtime>(
     let message;
     match result {
         Ok(()) => {
-            response = "success";
-            message = String::from("");
+            response = "\"success\"";
+            message = format!("{}", json!(shortcut));
         }
         Err(err) => {
             log::error!("{:?}", err);
-            response = "fail";
+            response = "\"fail\"";
             message = format!("{}", err);
         }
     }
 
     format!("{{\"status\": {}, \"message\": {}}}", response, message)
-}
-
-#[tauri::command]
-pub fn restart_app<R: tauri::Runtime>(app: AppHandle<R>) {
-    app.restart();
 }

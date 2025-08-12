@@ -7,7 +7,7 @@ use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
 pub fn run() {
@@ -24,6 +24,7 @@ pub fn run() {
             }
             logger.build()
         })
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -35,7 +36,6 @@ pub fn run() {
             api::cheatsheet::reload_cheat_sheet,
             api::global_shortcut::get_toggle_visible_shortcut_settings,
             api::global_shortcut::set_toggle_visible_shortcut_settings,
-            api::global_shortcut::restart_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -130,9 +130,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(520.0, 230.0)
-            .max_inner_size(800.0, 230.0)
-            .min_inner_size(520.0, 230.0)
+            .inner_size(520.0, 240.0)
+            .max_inner_size(800.0, 240.0)
+            .min_inner_size(520.0, 240.0)
             .build();
         }
         "id_reload" => {
@@ -158,8 +158,7 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
         let shortcut_settings =
             settings_store::get_setting(app.handle(), common::config::TOGGLE_VISIBLE_SHORTCUT)?;
         if let Some(ref json) = shortcut_settings {
-            let settings: api::global_shortcut::ToggleVisibleShortcut =
-                serde_json::from_value(json.clone())?;
+            let settings: api::global_shortcut::ShortcutDef = serde_json::from_value(json.clone())?;
             let window_visible_shortcut = settings.to_shortcut()?;
             log::info!(
                 "Toggle visible shortcut settings : {}",

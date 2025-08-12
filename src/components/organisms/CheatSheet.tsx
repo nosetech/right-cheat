@@ -46,10 +46,12 @@ export const CheatSheet = () => {
           if (inputpath) {
             setReloading(true)
             setCheatSheet('')
-            await invoke<string>('get_cheat_titles', {
+            await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES, {
               inputPath: inputpath,
             }).then((response) => {
-              debug(`invoke 'get_cheat_titles' response=${response}`)
+              debug(
+                `invoke '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`,
+              )
               const titles: CheatSheetTitleData = JSON.parse(response)
               setCheatSheetTitles(titles)
               setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
@@ -60,9 +62,13 @@ export const CheatSheet = () => {
         })()
       })
 
-      await invoke<string>('reload_cheat_sheet').then((response) => {
-        debug(`invoke 'reload_cheat_sheet' response=${response}`)
-      })
+      await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
+        (response) => {
+          debug(
+            `invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
+          )
+        },
+      )
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
