@@ -28,7 +28,7 @@ export default function Page() {
     useState<ShortcutDef>()
 
   useEffect(() => {
-    ; (async () => {
+    ;(async () => {
       const inputpath = await getCheatSheetFilePath()
       setSettedInputFilePath(inputpath)
       await invoke<string>(
@@ -57,7 +57,7 @@ export default function Page() {
   }, [])
 
   const fileOpenCallback = (filepath: string) => {
-    ; (async () => {
+    ;(async () => {
       debug(`callback ${filepath}`)
       setSettedInputFilePath(filepath)
       await setCheatSheetFilePath(filepath)
@@ -73,7 +73,7 @@ export default function Page() {
 
   const openFileByEditor = () => {
     if (settedInputFilePath) {
-      ; (async () => {
+      ;(async () => {
         let result = await Command.create('exec-open', [
           '-t',
           settedInputFilePath,
@@ -93,7 +93,7 @@ export default function Page() {
     commandKey: boolean,
     hotKey: string,
   ) => {
-    ; (async () => {
+    ;(async () => {
       await invoke<string>(
         GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
         {
