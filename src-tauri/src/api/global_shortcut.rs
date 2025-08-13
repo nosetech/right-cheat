@@ -35,6 +35,15 @@ impl fmt::Display for ShortcutDef {
 }
 
 impl ShortcutDef {
+    pub fn new(ctrl: bool, option: bool, command: bool, hotkey: String) -> Self {
+        ShortcutDef {
+            ctrl,
+            option,
+            command,
+            hotkey,
+        }
+    }
+
     pub fn to_shortcut(&self) -> Result<Shortcut, Box<dyn Error>> {
         let mut modifiers = Modifiers::empty();
         if self.ctrl {
@@ -176,7 +185,7 @@ pub fn get_toggle_visible_shortcut_settings<R: tauri::Runtime>(app: AppHandle<R>
             }
             None => {
                 response = "\"fail\"";
-                message = String::from("No settings found for toggle visible shortcut.");
+                message = String::from("\"No settings found for toggle visible shortcut.\"");
             }
         },
         Err(err) => {
