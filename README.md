@@ -18,7 +18,7 @@ Mac Sequoia 15.4.1 (ARM)
 
 ## インストール方法
 
-[dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/prototype-0.1.1/RightCheat_0.1.1_aarch64.dmg)し、インストールしてください。  
+[dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/prototype-0.1.2/RightCheat_0.1.2_aarch64.dmg)し、インストールしてください。  
 アプリケーションの初回起動時には正常に起動できない場合がございます。その際は、Appleメニューから［システム設定］→［プライバシーとセキュリティ］を開いてください。  
 画面下部のセキュリティ欄に表示される「お使いのMacを保護するために"RightCheat"がブロックされました」というメッセージ内の「このまま開く」をクリックしてください。
 
