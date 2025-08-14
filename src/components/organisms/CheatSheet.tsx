@@ -1,11 +1,6 @@
 'use client'
-import { CommandField } from '@/components/molecules/CommandField'
-import { usePreferencesStore } from '@/hooks/usePreferencesStore'
-import {
-  CheatSheetData,
-  CheatSheetTitleData,
-  CommandData,
-} from '@/types/api/CheatSheet'
+import { useEffect, useState } from 'react'
+
 import {
   FormControl,
   InputLabel,
@@ -18,7 +13,16 @@ import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { debug } from '@tauri-apps/plugin-log'
-import { useEffect, useState } from 'react'
+
+import { Event } from '@/common'
+import { CommandField } from '@/components/molecules/CommandField'
+import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import {
+  CheatSheetAPI,
+  CheatSheetData,
+  CheatSheetTitleData,
+  CommandData,
+} from '@/types/api/CheatSheet'
 
 export const CheatSheet = () => {
   const [jsonInputPath, setJsonInputPath] = useState<string>()
@@ -30,46 +34,56 @@ export const CheatSheet = () => {
 
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData>()
 
+  const [reloading, setReloading] = useState<boolean>(false)
+
   const { getCheatSheetFilePath } = usePreferencesStore()
 
   useEffect(() => {
     ;(async () => {
-      const inputpath = await getCheatSheetFilePath()
-      setJsonInputPath(inputpath)
-
-      listen<{}>('reload_cheat_sheat', () => {
+      await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
         ;(async () => {
           const inputpath = await getCheatSheetFilePath()
-          setJsonInputPath(inputpath)
+          if (inputpath) {
+            setReloading(true)
+            setCheatSheet('')
+            await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES, {
+              inputPath: inputpath,
+            }).then((response) => {
+              debug(
+                `invoke '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`,
+              )
+              const titles: CheatSheetTitleData = JSON.parse(response)
+              setCheatSheetTitles(titles)
+              setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+            })
+            setJsonInputPath(inputpath)
+            setReloading(false)
+          }
         })()
       })
-    })()
 
+      await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
+        (response) => {
+          debug(
+            `invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
+          )
+        },
+      )
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    jsonInputPath &&
-      invoke<string>('get_cheat_titles', { inputPath: jsonInputPath }).then(
-        (response) => {
-          debug(`invoke 'get_cheat_titles' response=${response}`)
-          const titles: CheatSheetTitleData = JSON.parse(response)
-          setCheatSheetTitles(titles)
-          setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
-        },
-      )
-  }, [jsonInputPath])
-
-  useEffect(() => {
-    selectCheatSheet != '' &&
-      invoke<string>('get_cheat_sheet', {
+    if (selectCheatSheet != '') {
+      invoke<string>(CheatSheetAPI.GET_CHEAT_SHEET, {
         inputPath: jsonInputPath,
         title: selectCheatSheet,
       }).then((response) => {
-        debug(`invoke 'get_cheat_sheet' response=${response}`)
+        debug(`invoke '${CheatSheetAPI.GET_CHEAT_SHEET}' response=${response}`)
         const data: CheatSheetData = JSON.parse(response)
         setCheatSheetData(data)
       })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectCheatSheet])
 
@@ -85,7 +99,7 @@ export const CheatSheet = () => {
           <br />
           [メニュー] - [Preference]で入力ファイルパスを設定してください。
         </Typography>
-      ) : selectCheatSheet == '' ? (
+      ) : reloading == false && selectCheatSheet == '' ? (
         <Typography variant='body1' color='error'>
           正しい内容の入力ファイルが指定されていないようです。
           <br /> [メニュー] -

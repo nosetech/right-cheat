@@ -6,9 +6,7 @@
     "*"
   ],
   "platforms": [
-    "linux",
-    "macOS",
-    "windows"
+    "macOS"
   ],
   "permissions": [
     "core:window:default",
@@ -27,6 +25,23 @@
     "core:event:default",
     "core:event:allow-listen",
     "log:default",
-    "log:default"
+    "log:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "exec-open",
+          "cmd": "open",
+          "sidecar": false,
+          "args": [
+            "-t",
+            {
+              "validator": "\\S+"
+            }
+          ]
+        }
+      ]
+    },
+    "process:default"
   ]
 }

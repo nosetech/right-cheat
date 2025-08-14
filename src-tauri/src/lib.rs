@@ -1,13 +1,18 @@
-mod api;
+pub mod api;
+pub mod common;
+pub mod settings_store;
+
+use serde_json;
 use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin({
             let mut logger = tauri_plugin_log::Builder::new()
@@ -19,16 +24,18 @@ pub fn run() {
             }
             logger.build()
         })
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .menu(|handle| menu_configuration(handle))
         .on_menu_event(|handle, event| on_menu_event_configuration(handle, event))
         .setup(|app| global_shortcut_configuration(app))
         .invoke_handler(tauri::generate_handler![
             api::cheatsheet::get_cheat_titles,
             api::cheatsheet::get_cheat_sheet,
-            api::cheatsheet::reload_cheat_sheat,
+            api::cheatsheet::reload_cheat_sheet,
+            api::global_shortcut::get_toggle_visible_shortcut_settings,
+            api::global_shortcut::set_toggle_visible_shortcut_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -36,6 +43,7 @@ pub fn run() {
 
 fn menu_configuration<R: tauri::Runtime>(
     handle: &tauri::AppHandle<R>,
+    toggle_visible_shortcut: String,
 ) -> Result<Menu<R>, tauri::Error> {
     Menu::with_items(
         handle,
@@ -50,8 +58,8 @@ fn menu_configuration<R: tauri::Runtime>(
                         Some("About RightCheat"),
                         Some({
                             let mut metadata = AboutMetadataBuilder::new()
-                                .version(Some("prototype 1.0"))
-                                .short_version(Some("0.1.0"))
+                                .version(Some("prototype 1.2"))
+                                .short_version(Some("0.1.2"))
                                 .copyright(Some("©︎ 2025 nosetech"));
                             if cfg!(dev) {
                                 metadata = metadata
@@ -66,10 +74,31 @@ fn menu_configuration<R: tauri::Runtime>(
                         "id_preferences",
                         "Preferences ",
                         true,
-                        Some("CmdOrCtrl+,"),
+                        Some("Cmd+,"),
                     )?,
                     &PredefinedMenuItem::separator(handle)?,
                     &PredefinedMenuItem::quit(handle, Some("Quit"))?,
+                ],
+            )?,
+            &Submenu::with_items(
+                handle,
+                "View ", // NOTE: デフォルトメニューにならないよう、Viewの後にスペースを入れている。
+                true,
+                &[
+                    &MenuItem::with_id(
+                        handle,
+                        "id_toggle_visible",
+                        "Toggle Visible",
+                        true,
+                        Some(toggle_visible_shortcut),
+                    )?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_reload",
+                        "CheatSheet Reload",
+                        true,
+                        Some("Cmd+r"),
+                    )?,
                 ],
             )?,
             &Submenu::with_items(
@@ -101,10 +130,18 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(500.0, 150.0)
-            .max_inner_size(800.0, 150.0)
-            .min_inner_size(500.0, 150.0)
+            .inner_size(520.0, 240.0)
+            .max_inner_size(800.0, 240.0)
+            .min_inner_size(520.0, 240.0)
             .build();
+        }
+        "id_reload" => {
+            let _ = api::cheatsheet::reload_cheat_sheet(handle.clone());
+        }
+        "id_toggle_visible" => {
+            handle
+                .emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
+                .unwrap();
         }
         _ => {
             log::warn!("Unexpected event occurs. Event id={:?}", event.id());
@@ -117,21 +154,35 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(desktop)]
     {
-        let window_visible_shortcut =
-            Shortcut::new(Some(Modifiers::CONTROL | Modifiers::META), Code::KeyR);
-        app.handle().plugin(
-            tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(move |_app, shortcut, event| {
-                    if shortcut == &window_visible_shortcut
-                        && event.state() == ShortcutState::Pressed
-                    {
-                        _app.emit("window_visible_change", ()).unwrap();
-                    }
-                })
-                .build(),
-        )?;
+        api::global_shortcut::init_toggle_visible_shortcut_settings(app.handle())?;
+        let shortcut_settings =
+            settings_store::get_setting(app.handle(), common::config::TOGGLE_VISIBLE_SHORTCUT)?;
+        if let Some(ref json) = shortcut_settings {
+            let settings: api::global_shortcut::ShortcutDef = serde_json::from_value(json.clone())?;
+            let window_visible_shortcut = settings.to_shortcut()?;
+            log::info!(
+                "Toggle visible shortcut settings : {}",
+                window_visible_shortcut
+            );
 
-        app.global_shortcut().register(window_visible_shortcut)?
+            app.handle().plugin(
+                tauri_plugin_global_shortcut::Builder::new()
+                    .with_handler(move |_app, shortcut, event| {
+                        if shortcut == &window_visible_shortcut
+                            && event.state() == ShortcutState::Pressed
+                        {
+                            _app.emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
+                                .unwrap();
+                        }
+                    })
+                    .build(),
+            )?;
+
+            app.global_shortcut().register(window_visible_shortcut)?;
+
+            let menu = menu_configuration(app.handle(), settings.to_shortcut_for_menu()?)?;
+            app.set_menu(menu)?;
+        }
     }
     Ok(())
 }

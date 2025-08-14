@@ -1,6 +1,6 @@
 {
   "name": "right-cheat",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -24,6 +24,8 @@
     "@tauri-apps/plugin-global-shortcut": "~2",
     "@tauri-apps/plugin-log": "~2",
     "@tauri-apps/plugin-opener": "~2",
+    "@tauri-apps/plugin-process": "~2",
+    "@tauri-apps/plugin-shell": "~2",
     "@tauri-apps/plugin-store": "~2",
     "next": "14.2.5",
     "react": "19.0.0",

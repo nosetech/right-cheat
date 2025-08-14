@@ -4,14 +4,13 @@ import FileOpenOutlinedIcon from '@mui/icons-material/FileOpenOutlined'
 import { IconButton, IconButtonProps } from '@mui/material'
 import { blue } from '@mui/material/colors'
 import { open } from '@tauri-apps/plugin-dialog'
-import { Dispatch, SetStateAction } from 'react'
 
 export type FileOpenButtonProps = IconButtonProps & {
-  filePathSetter: Dispatch<SetStateAction<string | undefined>>
+  callback: (filepath: string) => void
 }
 
 export const FileOpenButton = (props: FileOpenButtonProps) => {
-  const { filePathSetter, ...remainProps } = props
+  const { callback, ...remainProps } = props
 
   const openDialog = async () => {
     const file = await open({
@@ -25,7 +24,7 @@ export const FileOpenButton = (props: FileOpenButtonProps) => {
       ],
     })
     if (file != null) {
-      filePathSetter(file)
+      callback(file)
     }
   }
 
