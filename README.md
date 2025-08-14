@@ -14,7 +14,7 @@ ITエンジニアの業務利用を想定しております。
 
 ## 動作確認済みOS
 
-Mac Sequoia 15.4.1 (ARM)
+Mac Sequoia 15.6 (ARM)
 
 ## インストール方法
 
@@ -39,39 +39,44 @@ RightCheat のアプリケーションファイルを削除してください。
 
 チートシート JSON ファイルのサンプル
 
-```
+```json
 [
-    {
-        "title": "チートシートのタイトル",
-        "commandlist": [
-            {
-                "description": "コマンド（ショートカット）の説明",
-                "command": "コマンド"
-            }
-        ]
-    },
-    {
-        "title": "Tauri開発",
-        "commandlist": [
-            {
-                "description": "devモード",
-                "command": "yarn tauri dev"
-            },
-            {
-                "description": "ビルド",
-                "command": "yarn tauri build"
-            }
-        ]
-    }
+  {
+    "title": "チートシートのタイトル",
+    "commandlist": [
+      {
+        "description": "コマンド（ショートカット）の説明",
+        "command": "コマンド"
+      }
+    ]
+  },
+  {
+    "title": "Tauri開発",
+    "commandlist": [
+      {
+        "description": "devモード",
+        "command": "yarn tauri dev"
+      },
+      {
+        "description": "ビルド",
+        "command": "yarn tauri build"
+      }
+    ]
+  }
 ]
 ```
 
 2. メニューの［RightCheat］→［Preferences］を開いてください。
 3. Preferences 画面にて、作成した JSON ファイルを読み込んでください。
 
+> [!NOTE] チートシートJSONファイルの保存場所について
+> チートシートJSONファイルは任意の場所に保存できますが、管理しやすいように ~/Documents/RightCheat/ フォルダなどを作成して保存することをおすすめします。
+
 ### アプリケーションの操作方法
 
 - コマンドをクリックすることで、クリップボードにコピーされます。
 - キーボード操作の場合、フォーカスの移動は Tab または Shift+Tab で行い、Enter キーでコピーを実行します。
 - 表示するチートシートを変更したい場合は、メインウィンドウ上部のリストボックスから切り替えてください。
-- メインウィンドウの表示・非表示は、キーボードショートカットの Cmd+Ctrl+R で切り替えることができます（現時点では、キーボード操作のみでの切り替えに対応しています）。
+- メインウィンドウの表示・非表示は、メニューの[View] → [Toggle Visible]かキーボードショートカットの Cmd+Ctrl+R で切り替えることができます。
+  - キーボードショートカットはPreferences画面で変更することができます。設定できるキーボードショートカットはToggle Visible機能のみとなっています。
+- アプリケーション上でチートシート JSONファイルを更新する機能はまだありませんが、Preferences画面のチートシートJSONファイルパスが表示されているテキストボックスの右側にあるアイコンをクリックするとOSでデフォルト設定されているエディタを起動してチートシートJSONファイルを開いて編集することができます。エディタでファイルを編集・保存したらメニューの[View] → [CheatSheet Reload]かキーボードショートカットのCmd+RでチートシートJSONファイルを再読み込みできます。
