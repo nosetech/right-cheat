@@ -9,6 +9,7 @@ use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMen
 use tauri::Emitter;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
+use settings_store::{SettingsStore, TauriSettingsStore};
 
 pub fn run() {
     tauri::Builder::default()
@@ -154,9 +155,10 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(desktop)]
     {
+        let settings_store = TauriSettingsStore;
         api::global_shortcut::init_toggle_visible_shortcut_settings(app.handle())?;
         let shortcut_settings =
-            settings_store::get_setting(app.handle(), common::config::TOGGLE_VISIBLE_SHORTCUT)?;
+            settings_store.get_setting(app.handle(), common::config::TOGGLE_VISIBLE_SHORTCUT)?;
         if let Some(ref json) = shortcut_settings {
             let settings: api::global_shortcut::ShortcutDef = serde_json::from_value(json.clone())?;
             let window_visible_shortcut = settings.to_shortcut()?;

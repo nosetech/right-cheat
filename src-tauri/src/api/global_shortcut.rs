@@ -1,5 +1,5 @@
 use crate::common;
-use crate::settings_store;
+use crate::settings_store::{SettingsStore, TauriSettingsStore};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::error::Error;
@@ -132,8 +132,9 @@ impl ShortcutDef {
 pub fn init_toggle_visible_shortcut_settings<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
 ) -> Result<(), tauri_plugin_store::Error> {
+    let settings_store = TauriSettingsStore;
     let shortcut_settings =
-        settings_store::get_setting(app, common::config::TOGGLE_VISIBLE_SHORTCUT);
+        settings_store.get_setting(app, common::config::TOGGLE_VISIBLE_SHORTCUT);
 
     match shortcut_settings {
         Ok(result) => match result {
@@ -147,7 +148,7 @@ pub fn init_toggle_visible_shortcut_settings<R: tauri::Runtime>(
                     command: true,
                     hotkey: String::from("R"),
                 };
-                if let Err(err) = settings_store::set_setting(
+                if let Err(err) = settings_store.set_setting(
                     app,
                     common::config::TOGGLE_VISIBLE_SHORTCUT,
                     json!(default_shortcut),
@@ -172,8 +173,16 @@ pub fn init_toggle_visible_shortcut_settings<R: tauri::Runtime>(
 
 #[tauri::command]
 pub fn get_toggle_visible_shortcut_settings<R: tauri::Runtime>(app: AppHandle<R>) -> String {
+    let settings_store = TauriSettingsStore;
+    get_toggle_visible_shortcut_settings_with_store(&app, &settings_store)
+}
+
+pub fn get_toggle_visible_shortcut_settings_with_store<R: tauri::Runtime, S: SettingsStore>(
+    app: &AppHandle<R>,
+    settings_store: &S,
+) -> String {
     let shortcut_settings =
-        settings_store::get_setting(&app, common::config::TOGGLE_VISIBLE_SHORTCUT);
+        settings_store.get_setting(app, common::config::TOGGLE_VISIBLE_SHORTCUT);
 
     let response;
     let message;
@@ -203,8 +212,17 @@ pub fn set_toggle_visible_shortcut_settings<R: tauri::Runtime>(
     app: AppHandle<R>,
     shortcut: ShortcutDef,
 ) -> String {
-    let result = settings_store::set_setting(
-        &app,
+    let settings_store = TauriSettingsStore;
+    set_toggle_visible_shortcut_settings_with_store(&app, shortcut, &settings_store)
+}
+
+pub fn set_toggle_visible_shortcut_settings_with_store<R: tauri::Runtime, S: SettingsStore>(
+    app: &AppHandle<R>,
+    shortcut: ShortcutDef,
+    settings_store: &S,
+) -> String {
+    let result = settings_store.set_setting(
+        app,
         common::config::TOGGLE_VISIBLE_SHORTCUT,
         json!(shortcut),
     );
