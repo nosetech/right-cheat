@@ -16,7 +16,9 @@ mod get_toggle_visible_shortcut_settings {
             .plugin(tauri_plugin_store::Builder::new().build());
         let settings_store = TauriSettingsStore;
         settings_store.initialize_settings(TEST_SETTING_FILENAME);
-        settings_store.clear_settings(&app.handle().clone()).unwrap();
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
 
         let result = get_toggle_visible_shortcut_settings(app.handle().clone());
         assert_eq!(result, "{\"status\": \"fail\", \"message\": \"No settings found for toggle visible shortcut.\"}");
@@ -30,7 +32,9 @@ mod get_toggle_visible_shortcut_settings {
             .plugin(tauri_plugin_store::Builder::new().build());
         let settings_store = TauriSettingsStore;
         settings_store.initialize_settings(TEST_SETTING_FILENAME);
-        settings_store.clear_settings(&app.handle().clone()).unwrap();
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
 
         init_toggle_visible_shortcut_settings(&app.handle().clone()).unwrap();
 
@@ -40,17 +44,17 @@ mod get_toggle_visible_shortcut_settings {
 
     // モック用のSettings Store実装
     struct MockErrorSettingsStore;
-    
+
     impl app_lib::settings_store::SettingsStore for MockErrorSettingsStore {
         fn initialize_settings(&self, _filename: &str) {}
-        
+
         fn clear_settings<R: tauri::Runtime>(
-            &self, 
-            _app: &tauri::AppHandle<R>
+            &self,
+            _app: &tauri::AppHandle<R>,
         ) -> Result<(), tauri_plugin_store::Error> {
             Ok(())
         }
-        
+
         fn get_setting<R: tauri::Runtime>(
             &self,
             _app: &tauri::AppHandle<R>,
@@ -58,10 +62,10 @@ mod get_toggle_visible_shortcut_settings {
         ) -> Result<Option<tauri_plugin_store::JsonValue>, tauri_plugin_store::Error> {
             Err(tauri_plugin_store::Error::Io(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
-                "Mock error"
+                "Mock error",
             )))
         }
-        
+
         fn set_setting<R: tauri::Runtime>(
             &self,
             _app: &tauri::AppHandle<R>,
@@ -78,13 +82,13 @@ mod get_toggle_visible_shortcut_settings {
         let _ = app
             .handle()
             .plugin(tauri_plugin_store::Builder::new().build());
-        
+
         let mock_store = MockErrorSettingsStore;
         let result = app_lib::api::global_shortcut::get_toggle_visible_shortcut_settings_with_store(
             &app.handle().clone(),
             &mock_store,
         );
-        
+
         // Error時は"fail"ステータスが返されることを確認
         assert!(result.contains("\"status\": \"fail\""));
         assert!(result.contains("Mock error"));
@@ -111,7 +115,9 @@ mod set_toggle_visible_shortcut_settings {
             .plugin(tauri_plugin_store::Builder::new().build());
         let settings_store = TauriSettingsStore;
         settings_store.initialize_settings(TEST_SETTING_FILENAME);
-        settings_store.clear_settings(&app.handle().clone()).unwrap();
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
 
         let shortcut = ShortcutDef::new(false, true, false, String::from("C"));
 
@@ -124,17 +130,17 @@ mod set_toggle_visible_shortcut_settings {
 
     // モック用のSettings Store実装（set_settingでエラーを返す）
     struct MockSetErrorSettingsStore;
-    
+
     impl app_lib::settings_store::SettingsStore for MockSetErrorSettingsStore {
         fn initialize_settings(&self, _filename: &str) {}
-        
+
         fn clear_settings<R: tauri::Runtime>(
-            &self, 
-            _app: &tauri::AppHandle<R>
+            &self,
+            _app: &tauri::AppHandle<R>,
         ) -> Result<(), tauri_plugin_store::Error> {
             Ok(())
         }
-        
+
         fn get_setting<R: tauri::Runtime>(
             &self,
             _app: &tauri::AppHandle<R>,
@@ -142,7 +148,7 @@ mod set_toggle_visible_shortcut_settings {
         ) -> Result<Option<tauri_plugin_store::JsonValue>, tauri_plugin_store::Error> {
             Ok(None)
         }
-        
+
         fn set_setting<R: tauri::Runtime>(
             &self,
             _app: &tauri::AppHandle<R>,
@@ -151,7 +157,7 @@ mod set_toggle_visible_shortcut_settings {
         ) -> Result<(), tauri_plugin_store::Error> {
             Err(tauri_plugin_store::Error::Io(std::io::Error::new(
                 std::io::ErrorKind::PermissionDenied,
-                "Mock set error"
+                "Mock set error",
             )))
         }
     }
@@ -162,16 +168,16 @@ mod set_toggle_visible_shortcut_settings {
         let _ = app
             .handle()
             .plugin(tauri_plugin_store::Builder::new().build());
-        
+
         let shortcut = ShortcutDef::new(false, true, false, String::from("C"));
         let mock_store = MockSetErrorSettingsStore;
-        
+
         let result = app_lib::api::global_shortcut::set_toggle_visible_shortcut_settings_with_store(
             &app.handle().clone(),
             shortcut,
             &mock_store,
         );
-        
+
         // Error時は"fail"ステータスが返されることを確認
         assert!(result.contains("\"status\": \"fail\""));
         assert!(result.contains("Mock set error"));

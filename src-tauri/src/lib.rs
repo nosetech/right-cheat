@@ -3,13 +3,13 @@ pub mod common;
 pub mod settings_store;
 
 use serde_json;
+use settings_store::{SettingsStore, TauriSettingsStore};
 use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
-use settings_store::{SettingsStore, TauriSettingsStore};
 
 pub fn run() {
     tauri::Builder::default()

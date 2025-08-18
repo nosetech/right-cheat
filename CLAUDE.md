@@ -28,6 +28,10 @@ RightCheat is a desktop cheat sheet application built with Tauri 2 + Next.js + R
 ### Testing
 - `cargo test` - Run Rust tests (from src-tauri directory)
 
+### Rust Code Formatting
+- **IMPORTANT**: Always run `cargo fmt` after modifying Rust code to maintain consistent formatting
+- Rust code should follow standard formatting conventions using rustfmt
+
 ## Architecture Overview
 
 ### Frontend (Next.js/React)

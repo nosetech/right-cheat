@@ -62,4 +62,3 @@ impl SettingsStore for TauriSettingsStore {
         Ok(())
     }
 }
-
