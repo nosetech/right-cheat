@@ -60,7 +60,7 @@ fn menu_configuration<R: tauri::Runtime>(
                         Some({
                             let app_version = handle.package_info().version.to_string();
                             let mut metadata = AboutMetadataBuilder::new()
-                                .version(Some(format!("prototype {}", app_version)))
+                                .version(Some(format!("バージョン {}", app_version)))
                                 .short_version(Some(app_version))
                                 .copyright(Some("©︎ 2025 nosetech"));
                             if cfg!(dev) {
