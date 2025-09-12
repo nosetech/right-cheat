@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import {
-  FileEditButton,
-  FileOpenButton,
-  OverflowEllipsis,
-} from '@/components/atoms'
+import { FileEditButton, FileOpenButton } from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { grey } from '@/theme/color'
@@ -133,10 +129,23 @@ export default function Page() {
       <Typography variant='body1'>CheetSheet Json File</Typography>
       <Stack direction='row' padding={1} spacing={1}>
         <FileOpenButton callback={fileOpenCallback} size='small' />
-        <Box padding={0.5} border={1} borderRadius={1} width='100%'>
-          <OverflowEllipsis>
-            <Typography noWrap={true}>{settedInputFilePath}</Typography>
-          </OverflowEllipsis>
+        <Box
+          padding={0.5}
+          border={1}
+          borderRadius={1}
+          maxWidth='85%'
+          width='fit-content'
+        >
+          <Typography
+            noWrap={true}
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {settedInputFilePath}
+          </Typography>
         </Box>
         <FileEditButton onClick={openFileByEditor} size='small' />
       </Stack>

@@ -1,71 +1,101 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは、Claude Code (claude.ai/code) がこのリポジトリのコードを扱う際のガイダンスを提供します。
 
-## Project Overview
+## プロジェクト概要
 
-RightCheat is a desktop cheat sheet application built with Tauri 2 + Next.js + React + Material-UI. It displays frequently used commands and shortcuts that can be copied to clipboard via click or keyboard navigation. The app supports global shortcuts for window toggle and loads command data from JSON files.
+RightCheat は Tauri 2 + Next.js + React + Material-UI で構築されたデスクトップチートシートアプリケーションです。頻繁に使用するコマンドやショートカットを表示し、クリックやキーボードナビゲーションでクリップボードにコピーできます。ウィンドウ切り替えのグローバルショートカットをサポートし、JSONファイルからコマンドデータを読み込みます。
 
-## Development Commands
+## 開発コマンド
 
-### Frontend (Next.js)
-- `yarn dev` - Start Next.js development server
-- `yarn build` - Build Next.js frontend for production
-- `yarn start` - Start Next.js production server
+### フロントエンド (Next.js)
+- `yarn dev` - Next.js 開発サーバーを起動
+- `yarn build` - 本番用 Next.js フロントエンドをビルド
+- `yarn start` - Next.js 本番サーバーを起動
 
-### Code Quality
-- `yarn lint` - Run all linters (ESLint + Prettier)
-- `yarn lint:eslint` - Run ESLint only
-- `yarn lint:prettier` - Check Prettier formatting only
-- `yarn fix` - Fix all formatting and linting issues
-- `yarn fix:eslint` - Fix ESLint issues only
-- `yarn fix:prettier` - Fix Prettier formatting only
+### コード品質
+- `yarn lint` - 全てのリンター（ESLint + Prettier）を実行
+- `yarn lint:eslint` - ESLint のみ実行
+- `yarn lint:prettier` - Prettier フォーマットのチェックのみ
+- `yarn fix` - 全てのフォーマットとリンティング問題を修正
+- `yarn fix:eslint` - ESLint 問題のみ修正
+- `yarn fix:prettier` - Prettier フォーマットのみ修正
 
 ### Tauri
-- `yarn tauri dev` - Start Tauri app in development mode
-- `yarn tauri build` - Build Tauri app for production
+- `yarn tauri dev` - 開発モードで Tauri アプリを起動
+- `yarn tauri build` - 本番用 Tauri アプリをビルド
 
-### Testing
-- `cargo test` - Run Rust tests (from src-tauri directory)
+### テスト
+- `cargo test` - Rust テストを実行（src-tauri ディレクトリから）
 
-### Rust Code Formatting
-- **IMPORTANT**: Always run `cargo fmt` after modifying Rust code to maintain consistent formatting
-- Rust code should follow standard formatting conventions using rustfmt
+### Rust コードフォーマット
+- **重要**: Rust コードを修正した後は必ず `cargo fmt` を実行して一貫したフォーマットを維持する
+- Rust コードは rustfmt を使用した標準的なフォーマット規則に従う
 
-## Architecture Overview
+## アーキテクチャ概要
 
-### Frontend (Next.js/React)
-- **App Router**: Uses Next.js 14 app directory structure
-- **Main Components**:
-  - `CheatSheet.tsx`: Main UI component managing state and API calls
-  - `CommandField.tsx`: Individual command display with clipboard functionality
-  - Atomic design pattern with atoms/molecules/organisms structure
-- **State Management**: Custom hooks (usePreferencesStore, useClipboard)
-- **Tauri Integration**: Uses @tauri-apps/api for backend communication
+### フロントエンド (Next.js/React)
+- **App Router**: Next.js 14 app ディレクトリ構造を使用
+- **主要コンポーネント**:
+  - `CheatSheet.tsx`: 状態管理と API 呼び出しを管理するメイン UI コンポーネント
+  - `CommandField.tsx`: クリップボード機能付きの個別コマンド表示
+  - atoms/molecules/organisms 構造でのアトミックデザインパターン
+- **状態管理**: カスタムフック（usePreferencesStore, useClipboard）
+- **Tauri 統合**: バックエンド通信に @tauri-apps/api を使用
 
-### Backend (Rust/Tauri)
-- **API Layer**: Modular API structure in src-tauri/src/api/
-  - `cheatsheet.rs`: JSON file reading, caching, and command management
-  - `global_shortcut.rs`: Keyboard shortcut configuration and handling
-- **Data Flow**: JSON file → Cache → Frontend via Tauri commands
-- **Settings**: Persistent storage using tauri-plugin-store
-- **Menu System**: Native macOS menu with preferences and help options
+### バックエンド (Rust/Tauri)
+- **API レイヤー**: src-tauri/src/api/ のモジュラー API 構造
+  - `cheatsheet.rs`: JSON ファイル読み込み、キャッシュ、コマンド管理
+  - `global_shortcut.rs`: キーボードショートカットの設定と処理
+- **データフロー**: JSON ファイル → キャッシュ → Tauri コマンド経由でフロントエンド
+- **設定**: tauri-plugin-store を使用した永続化ストレージ
+- **メニューシステム**: 設定とヘルプオプション付きのネイティブ macOS メニュー
 
-### Key Design Patterns
-- **Lazy Loading**: CheatSheet data cached in memory on first load
-- **Event-Driven**: Uses Tauri events for window visibility toggle and reload
-- **Type Safety**: Shared TypeScript types between frontend and backend communication
+### 主要な設計パターン
+- **遅延読み込み**: CheatSheet データは初回読み込み時にメモリにキャッシュ
+- **イベント駆動**: ウィンドウの表示切り替えとリロードに Tauri イベントを使用
+- **型安全性**: フロントエンドとバックエンド間通信で TypeScript 型を共有
 
-### File Structure
-- `src/`: Next.js frontend code
-- `src-tauri/`: Rust backend code and Tauri configuration
-- `src-tauri/tests/`: Rust unit tests with test data files
-- JSON configuration defines cheat sheet categories and commands
+### ファイル構造
+- `src/`: Next.js フロントエンドコード
+- `src-tauri/`: Rust バックエンドコードと Tauri 設定
+- `src-tauri/tests/`: テストデータファイル付き Rust ユニットテスト
+- JSON 設定でチートシートのカテゴリとコマンドを定義
 
-## Important Notes
+## 重要な注意事項
 
-- Application targets Japanese users (UI text in Japanese)
-- Security-focused: No internet communication, local file access only
-- Uses Yarn package manager
-- TypeScript strict mode enabled
-- Material-UI v6 for component library
+- **プラットフォーム**: macOS 専用アプリケーション（macOS での動作に注力、他OSはサポート対象外）
+- 日本人ユーザーをターゲット（UI テキストは日本語）
+- セキュリティ重視: インターネット通信なし、ローカルファイルアクセスのみ
+- Yarn パッケージマネージャーを使用
+- TypeScript strict モードを有効
+- コンポーネントライブラリに Material-UI v6 を使用
+
+## Journaling workflow
+
+InkdropのMCPサーバーを使用できる状態の場合、あなた (AI エージェント) は、このプロジェクトで行った作業を、タスクの終了ごとに私の Inkdrop ノートに報告してください。
+
+「RightCheat」ノートブックに「Log: <Job title>」というタイトルで作成します。
+
+タスクの終了ごとに、次の形式でノートを書いてください。:
+
+## Log: <task title>
+
+- **Prompt**: <受け取った指示>
+- **Issue**: <課題の内容>
+
+### What I did: <やったことの要約>
+
+...
+
+### How I did it: <どうやって解決したか>
+
+...
+
+### What were challenging: <難しかったこと>
+
+...
+
+### Future work (optional)
+
+- <今後の改善案など>
