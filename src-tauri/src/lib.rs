@@ -58,9 +58,10 @@ fn menu_configuration<R: tauri::Runtime>(
                         handle,
                         Some("About RightCheat"),
                         Some({
+                            let app_version = handle.package_info().version.to_string();
                             let mut metadata = AboutMetadataBuilder::new()
-                                .version(Some("prototype 1.2"))
-                                .short_version(Some("0.1.2"))
+                                .version(Some(format!("バージョン {}", app_version)))
+                                .short_version(Some(app_version))
                                 .copyright(Some("©︎ 2025 nosetech"));
                             if cfg!(dev) {
                                 metadata = metadata

@@ -1,6 +1,15 @@
 {
   "permissions": {
-    "allow": ["Bash(gh issue create:*)"],
+    "allow": [
+      "Bash(gh issue create:*)",
+      "Bash(gh issue view:*)",
+      "Bash(cargo test:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "mcp__inkdrop__list-notebooks",
+      "mcp__inkdrop__create-note"
+    ],
     "deny": [],
     "ask": []
   }
