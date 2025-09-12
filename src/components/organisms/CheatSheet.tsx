@@ -115,6 +115,7 @@ export const CheatSheet = () => {
               value={selectCheatSheet}
               label='CheatSheet'
               onChange={handleChange}
+              size='small'
             >
               {cheatSheetTitles?.title.map((item, index) => (
                 <MenuItem key={index} value={item}>

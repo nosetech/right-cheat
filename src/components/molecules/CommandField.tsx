@@ -1,5 +1,4 @@
 'use client'
-import { OverflowEllipsis } from '@/components/atoms'
 import { useClipboard } from '@/hooks/useClipboard'
 import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -21,15 +20,14 @@ export const CommandField = (props: CommandFieldProps) => {
       color: theme.palette.text.primary,
       backgroundColor: theme.palette.primary.main,
       border: 2,
-      borderColor: 'base.main',
-      borderRadius: 1,
+      borderColor: 'base.pale',
       '&:hover': {
         borderColor: 'alert.main',
       },
       '&:focus-visible': {
         outlineStyle: 'outset',
         outlineColor: 'alert.main',
-        outlineWidth: 3,
+        outlineWidth: 2,
       },
     }
     if (error) {
@@ -48,31 +46,43 @@ export const CommandField = (props: CommandFieldProps) => {
   }
 
   return (
-    <Stack {...remainProps}>
-      <OverflowEllipsis>
-        <Typography variant='h3' noWrap={true}>
-          ・{description}
-        </Typography>
-      </OverflowEllipsis>
-      <Stack paddingLeft={1}>
-        <Box
-          tabIndex={tabIndex ?? 0}
-          padding={1}
-          sx={colorScheme()}
-          onClick={copy}
-          onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-            if (event.key === 'Enter') {
-              copy()
-            }
+    <Stack direction='row' spacing={1} alignItems='baseline' {...remainProps}>
+      <Box
+        maxWidth='100%'
+        width='fit-content'
+        tabIndex={tabIndex ?? 0}
+        padding={0.5}
+        sx={colorScheme()}
+        onClick={copy}
+        onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+          if (event.key === 'Enter') {
+            copy()
+          }
+        }}
+      >
+        <Typography
+          variant='body1'
+          noWrap={true}
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
-          <OverflowEllipsis>
-            <Typography variant='body1' noWrap={true}>
-              {command}
-            </Typography>
-          </OverflowEllipsis>
-        </Box>
-      </Stack>
+          {command}
+        </Typography>
+      </Box>
+      <Typography
+        variant='h3'
+        noWrap={true}
+        sx={{
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {description}
+      </Typography>
     </Stack>
   )
 }
