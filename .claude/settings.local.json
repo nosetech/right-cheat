@@ -8,7 +8,8 @@
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
       "mcp__inkdrop__list-notebooks",
-      "mcp__inkdrop__create-note"
+      "mcp__inkdrop__create-note",
+      "Bash(cargo fmt:*)"
     ],
     "deny": [],
     "ask": []
