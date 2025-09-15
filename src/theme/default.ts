@@ -1,7 +1,7 @@
 'use client'
 
 import { blue, cyan, green, pink, red, yellow } from '@mui/material/colors'
-import { createTheme } from '@mui/material/styles'
+import { createTheme, Theme } from '@mui/material/styles'
 
 import { grey } from '@/theme/color'
 
@@ -48,7 +48,7 @@ declare module '@mui/material/styles' {
   }
 }
 
-export const defaultTheme = createTheme({
+const baseThemeOptions = {
   spacing: 8,
   breakpoints: {
     values: {
@@ -59,7 +59,40 @@ export const defaultTheme = createTheme({
       xl: 1200,
     },
   },
+  typography: {
+    fontFamily: roboto.style.fontFamily,
+    fontSize: 15,
+    htmlFontSize: 15,
+    body1: { fontSize: 15 },
+    body2: {
+      fontSize: 15,
+    },
+    button: {
+      fontSize: 13,
+      color: '#ffffff',
+    },
+    h1: {
+      fontSize: 20,
+      fontWeight: 700,
+    },
+    h2: {
+      fontSize: 18,
+      fontWeight: 700,
+    },
+    h3: {
+      fontSize: 15,
+      fontWeight: 500,
+    },
+    h4: {
+      fontSize: 14,
+    },
+  },
+}
+
+export const lightTheme: Theme = createTheme({
+  ...baseThemeOptions,
   palette: {
+    mode: 'light',
     primary: {
       main: blue[300],
     },
@@ -95,35 +128,68 @@ export const defaultTheme = createTheme({
     },
     background: {
       default: grey[0],
+      paper: grey[0],
     },
   },
   typography: {
-    fontFamily: roboto.style.fontFamily,
-    fontSize: 15,
-    htmlFontSize: 15,
-    body1: { fontSize: 15 },
+    ...baseThemeOptions.typography,
     body2: {
       fontSize: 15,
       color: grey[300],
     },
-    button: {
-      fontSize: 13,
-      color: '#ffffff',
+  },
+})
+
+export const darkTheme: Theme = createTheme({
+  ...baseThemeOptions,
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: blue[400],
     },
-    h1: {
-      fontSize: 20,
-      fontWeight: 700,
+    secondary: {
+      main: pink[400],
     },
-    h2: {
-      fontSize: 18,
-      fontWeight: 700,
+    error: {
+      main: red[400],
     },
-    h3: {
+    warning: {
+      main: yellow[600],
+    },
+    info: {
+      main: cyan[400],
+    },
+    success: {
+      main: green[400],
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#B8B8B8',
+      disabled: '#707070',
+    },
+    alert: {
+      main: '#FF6161',
+    },
+    base: {
+      main: '#f5f5f5',
+      deep: '#E8E8E8',
+      middle: '#CFCFCF',
+      pale: '#5A5A5A',
+      bright: '#252525',
+    },
+    background: {
+      default: grey[900],
+      paper: grey[800],
+    },
+  },
+  typography: {
+    ...baseThemeOptions.typography,
+    body2: {
       fontSize: 15,
-      fontWeight: 500,
-    },
-    h4: {
-      fontSize: 14,
+      color: grey[600],
     },
   },
 })
+
+// 後方互換性のためのデフォルトテーマ
+export const defaultTheme = lightTheme

@@ -1,8 +1,7 @@
 'use client'
 
-import { defaultTheme } from '@/theme/default'
+import { ThemeProviderWrapper } from '@/components/ThemeProviderWrapper'
 import CssBaseline from '@mui/material/CssBaseline'
-import { ThemeProvider } from '@mui/material/styles'
 
 export default function RootLayout({
   children,
@@ -12,10 +11,10 @@ export default function RootLayout({
   return (
     <html lang='ja'>
       <body>
-        <ThemeProvider theme={defaultTheme}>
+        <ThemeProviderWrapper>
           <CssBaseline />
           {children}
-        </ThemeProvider>
+        </ThemeProviderWrapper>
       </body>
     </html>
   )

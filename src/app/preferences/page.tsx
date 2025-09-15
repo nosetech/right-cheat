@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 
-import { FileEditButton, FileOpenButton } from '@/components/atoms'
+import { FileEditButton, FileOpenButton, ThemeToggle } from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
+import { useTheme } from '@/contexts/ThemeContext'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { useThemeStore } from '@/hooks/useThemeStore'
 import { grey } from '@/theme/color'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
@@ -19,6 +21,12 @@ export default function Page() {
   const [settedInputFilePath, setSettedInputFilePath] = useState<string>()
 
   const { getCheatSheetFilePath, setCheatSheetFilePath } = usePreferencesStore()
+  const {
+    themeMode,
+    setThemeMode: setStoredThemeMode,
+    isLoading,
+  } = useThemeStore()
+  const { setThemeMode } = useTheme()
 
   const [toggleVisibleShortcut, setToggleVisibleShortcut] =
     useState<ShortcutDef>()
@@ -124,6 +132,12 @@ export default function Page() {
     })()
   }
 
+  const handleThemeChange = async (newThemeMode: string) => {
+    const mode = newThemeMode as 'light' | 'dark' | 'system'
+    setThemeMode(mode)
+    await setStoredThemeMode(mode)
+  }
+
   return (
     <Stack padding={1} spacing={1}>
       <Typography variant='body1'>CheetSheet Json File</Typography>
@@ -167,6 +181,14 @@ export default function Page() {
             callback={shortcutEditCallback}
           />
         )}
+      </Stack>
+      <Divider />
+      <Stack padding={1}>
+        <ThemeToggle
+          themeMode={themeMode}
+          onChange={handleThemeChange}
+          disabled={isLoading}
+        />
       </Stack>
     </Stack>
   )
