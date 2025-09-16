@@ -9,7 +9,11 @@
       "Bash(gh pr create:*)",
       "mcp__inkdrop__list-notebooks",
       "mcp__inkdrop__create-note",
-      "Bash(cargo fmt:*)"
+      "Bash(cargo fmt:*)",
+      "Bash(yarn lint)",
+      "Bash(yarn fix)",
+      "Bash(gh pr view:*)",
+      "Bash(yarn build)"
     ],
     "deny": [],
     "ask": []
