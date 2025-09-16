@@ -1,5 +1,5 @@
-import { ThemeMode } from '@/contexts/ThemeContext'
 import { load, StoreOptions } from '@tauri-apps/plugin-store'
+import { type ThemeMode } from './useThemeStore'
 
 const PREFERENCES_FILENAME = 'rightcheat-settings.json'
 

@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react'
 
 import { FileEditButton, FileOpenButton, ThemeToggle } from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
-import { useTheme } from '@/contexts/ThemeContext'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
 import { grey } from '@/theme/color'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
+import { WindowAPI } from '@/types/api/Window'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import { Box, Divider, Stack, Tooltip, Typography } from '@mui/material'
 import { invoke } from '@tauri-apps/api/core'
@@ -26,7 +26,6 @@ export default function Page() {
     setThemeMode: setStoredThemeMode,
     isLoading,
   } = useThemeStore()
-  const { setThemeMode } = useTheme()
 
   const [toggleVisibleShortcut, setToggleVisibleShortcut] =
     useState<ShortcutDef>()
@@ -134,8 +133,16 @@ export default function Page() {
 
   const handleThemeChange = async (newThemeMode: string) => {
     const mode = newThemeMode as 'light' | 'dark' | 'system'
-    setThemeMode(mode)
     await setStoredThemeMode(mode)
+
+    // Notify all windows about theme change
+    await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
+      .then((response) => {
+        debug(`invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`)
+      })
+      .catch((err) => {
+        error(`Error notifying theme change: ${err}`)
+      })
   }
 
   return (

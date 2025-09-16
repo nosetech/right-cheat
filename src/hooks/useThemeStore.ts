@@ -1,6 +1,6 @@
 'use client'
 
-import { ThemeMode } from '@/contexts/ThemeContext'
+export type ThemeMode = 'light' | 'dark' | 'system'
 import { useEffect, useState } from 'react'
 import { usePreferencesStore } from './usePreferencesStore'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { ThemeMode } from '@/contexts/ThemeContext'
+import { type ThemeMode } from '@/hooks/useThemeStore'
 import {
   Box,
   FormControl,
