@@ -4,10 +4,9 @@ import { type ThemeMode } from '@/hooks/useThemeStore'
 import {
   Box,
   FormControl,
-  FormControlLabel,
   FormLabel,
-  Radio,
-  RadioGroup,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material'
 
 interface ThemeToggleProps {
@@ -21,37 +20,37 @@ export function ThemeToggle({
   onChange,
   disabled = false,
 }: ThemeToggleProps) {
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(event.target.value as ThemeMode)
+  const handleChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newThemeMode: string | null,
+  ) => {
+    if (newThemeMode !== null) {
+      onChange(newThemeMode as ThemeMode)
+    }
   }
 
   return (
     <Box>
       <FormControl component='fieldset' disabled={disabled}>
-        <FormLabel component='legend'>テーマ</FormLabel>
-        <RadioGroup
-          aria-label='theme'
-          name='theme'
+        <FormLabel component='legend'>Theme</FormLabel>
+        <ToggleButtonGroup
           value={themeMode}
+          exclusive
           onChange={handleChange}
-          row
+          aria-label='theme selection'
+          size='small'
+          sx={{ mt: 1 }}
         >
-          <FormControlLabel
-            value='light'
-            control={<Radio size='small' />}
-            label='ライト'
-          />
-          <FormControlLabel
-            value='dark'
-            control={<Radio size='small' />}
-            label='ダーク'
-          />
-          <FormControlLabel
-            value='system'
-            control={<Radio size='small' />}
-            label='システム設定に従う'
-          />
-        </RadioGroup>
+          <ToggleButton value='light' aria-label='light theme'>
+            Light
+          </ToggleButton>
+          <ToggleButton value='dark' aria-label='dark theme'>
+            Dark
+          </ToggleButton>
+          <ToggleButton value='system' aria-label='system theme'>
+            System
+          </ToggleButton>
+        </ToggleButtonGroup>
       </FormControl>
     </Box>
   )
