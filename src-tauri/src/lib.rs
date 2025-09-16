@@ -37,6 +37,7 @@ pub fn run() {
             api::cheatsheet::reload_cheat_sheet,
             api::global_shortcut::get_toggle_visible_shortcut_settings,
             api::global_shortcut::set_toggle_visible_shortcut_settings,
+            api::window::notify_theme_changed,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
