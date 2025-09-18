@@ -71,6 +71,7 @@ RightCheat は Tauri 2 + Next.js + React + Material-UI で構築されたデス�
 - TypeScript strict モードを有効
 - コンポーネントライブラリに Material-UI v6 を使用
 - tauriではuseContextを使ってウィンドウ間でデータを共有することはできません。ウィンドウ間でデータを受け渡す必要がある場合は、バックエンドに必要なAPIを作成してそのAPIからフロントエンドに通知（emit）し、フロントエンドではイベントをlistenして処理をする方式にする必要があります。
+- feature/* の名前のブランチについてプルリクエストを作成する場合は、developブランチにマージするプルリクエストにしてください。
 
 ## Journaling workflow
 
