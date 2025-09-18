@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 
-import { FileEditButton, FileOpenButton } from '@/components/atoms'
+import { FileEditButton, FileOpenButton, ThemeToggle } from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { useThemeStore } from '@/hooks/useThemeStore'
 import { grey } from '@/theme/color'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
+import { WindowAPI } from '@/types/api/Window'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import { Box, Divider, Stack, Tooltip, Typography } from '@mui/material'
 import { invoke } from '@tauri-apps/api/core'
@@ -19,6 +21,11 @@ export default function Page() {
   const [settedInputFilePath, setSettedInputFilePath] = useState<string>()
 
   const { getCheatSheetFilePath, setCheatSheetFilePath } = usePreferencesStore()
+  const {
+    themeMode,
+    setThemeMode: setStoredThemeMode,
+    isLoading,
+  } = useThemeStore()
 
   const [toggleVisibleShortcut, setToggleVisibleShortcut] =
     useState<ShortcutDef>()
@@ -124,6 +131,20 @@ export default function Page() {
     })()
   }
 
+  const handleThemeChange = async (newThemeMode: string) => {
+    const mode = newThemeMode as 'light' | 'dark' | 'system'
+    await setStoredThemeMode(mode)
+
+    // Notify all windows about theme change
+    await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
+      .then((response) => {
+        debug(`invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`)
+      })
+      .catch((err) => {
+        error(`Error notifying theme change: ${err}`)
+      })
+  }
+
   return (
     <Stack padding={1} spacing={1}>
       <Typography variant='body1'>CheetSheet Json File</Typography>
@@ -167,6 +188,15 @@ export default function Page() {
             callback={shortcutEditCallback}
           />
         )}
+      </Stack>
+      <Divider />
+      <Typography variant='body1'>Theme</Typography>
+      <Stack padding={1}>
+        <ThemeToggle
+          themeMode={themeMode}
+          onChange={handleThemeChange}
+          disabled={isLoading}
+        />
       </Stack>
     </Stack>
   )

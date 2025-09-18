@@ -75,6 +75,7 @@ export const CommandField = (props: CommandFieldProps) => {
       <Typography
         variant='h3'
         noWrap={true}
+        color='text.secondary'
         sx={{
           overflow: 'hidden',
           textOverflow: 'ellipsis',
