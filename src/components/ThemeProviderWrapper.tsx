@@ -61,5 +61,7 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  return <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>
+  return (
+    !isLoading && <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>
+  )
 }
