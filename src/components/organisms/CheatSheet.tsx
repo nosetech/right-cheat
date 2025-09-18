@@ -9,6 +9,7 @@ import {
   SelectChangeEvent,
   Typography,
 } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
@@ -36,6 +37,7 @@ export const CheatSheet = () => {
 
   const [reloading, setReloading] = useState<boolean>(false)
 
+  const theme = useTheme()
   const { getCheatSheetFilePath } = usePreferencesStore()
 
   useEffect(() => {
@@ -108,7 +110,16 @@ export const CheatSheet = () => {
       ) : (
         <>
           <FormControl fullWidth>
-            <InputLabel id='demo-simple-select-label'>CheatSheet</InputLabel>
+            <InputLabel
+              id='demo-simple-select-label'
+              sx={{
+                '&.Mui-focused': {
+                  color: theme.palette.base.main,
+                },
+              }}
+            >
+              CheatSheet
+            </InputLabel>
             <Select
               labelId='demo-simple-select-label'
               id='demo-simple-select'
@@ -116,6 +127,11 @@ export const CheatSheet = () => {
               label='CheatSheet'
               onChange={handleChange}
               size='small'
+              sx={{
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: theme.palette.base.main,
+                },
+              }}
             >
               {cheatSheetTitles?.title.map((item, index) => (
                 <MenuItem key={index} value={item}>

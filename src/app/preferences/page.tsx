@@ -190,6 +190,7 @@ export default function Page() {
         )}
       </Stack>
       <Divider />
+      <Typography variant='body1'>Theme</Typography>
       <Stack padding={1}>
         <ThemeToggle
           themeMode={themeMode}
