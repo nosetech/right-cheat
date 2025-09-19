@@ -1,5 +1,6 @@
 'use client'
 
+import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore, type ThemeMode } from '@/hooks/useThemeStore'
 import { darkTheme, lightTheme } from '@/theme/default'
 import { ThemeProvider } from '@mui/material/styles'
@@ -8,6 +9,7 @@ import { ReactNode, useCallback, useEffect, useState } from 'react'
 
 export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
   const { themeMode: storedThemeMode, isLoading } = useThemeStore()
+  const { getThemeMode } = usePreferencesStore()
   const [currentTheme, setCurrentTheme] = useState(lightTheme)
 
   const getSystemTheme = (): 'light' | 'dark' => {
@@ -52,14 +54,19 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
   // Listen for theme change events from other windows
   useEffect(() => {
     const unlisten = listen('theme_changed', async () => {
-      // Reload the page to pick up the new theme from store
-      window.location.reload()
+      // Update theme without page reload by fetching latest theme from store
+      try {
+        const latestMode = await getThemeMode()
+        updateTheme(latestMode)
+      } catch (error) {
+        console.error('Failed to update theme from event:', error)
+      }
     })
 
     return () => {
       unlisten.then((fn) => fn())
     }
-  }, [])
+  }, [getThemeMode, updateTheme])
 
   return (
     !isLoading && <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>
