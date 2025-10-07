@@ -59,6 +59,7 @@ impl SettingsStore for TauriSettingsStore {
         let filename = SETTINGS_FILENAME.lock().unwrap();
         let store = app.store(&*filename)?;
         store.set(key, value);
+        store.save()?;
         Ok(())
     }
 }

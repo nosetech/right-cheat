@@ -48,4 +48,4 @@ jobs:
         run: cd src-tauri && cargo build --verbose
 
       - name: Run cargo test
-        run: cd src-tauri && cargo test --verbose
+        run: cd src-tauri && cargo test --verbose -- --test-threads=1
