@@ -2,10 +2,11 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { useEffect, useState } from 'react'
 
-export interface FontSizeSettings {
-  level: number
-  scale: number
-}
+import {
+  FontSizeAPI,
+  FontSizeEvent,
+  type FontSizeSettings,
+} from '@/types/api/FontSize'
 
 const DEFAULT_FONT_SIZE_SETTINGS: FontSizeSettings = {
   level: 2,
@@ -22,7 +23,7 @@ export const useFontSize = () => {
     const loadFontSizeSettings = async () => {
       try {
         const settings = await invoke<FontSizeSettings>(
-          'get_font_size_settings',
+          FontSizeAPI.GET_FONT_SIZE_SETTINGS,
         )
         setFontSizeSettings(settings)
       } catch (error) {
@@ -33,9 +34,12 @@ export const useFontSize = () => {
     loadFontSizeSettings()
 
     // Listen for font size changes
-    const unlisten = listen<FontSizeSettings>('font_size_changed', (event) => {
-      setFontSizeSettings(event.payload)
-    })
+    const unlisten = listen<FontSizeSettings>(
+      FontSizeEvent.FONT_SIZE_CHANGED,
+      (event) => {
+        setFontSizeSettings(event.payload)
+      },
+    )
 
     return () => {
       unlisten.then((fn) => fn())
@@ -44,7 +48,9 @@ export const useFontSize = () => {
 
   const increaseFontSize = async () => {
     try {
-      const newSettings = await invoke<FontSizeSettings>('increase_font_size')
+      const newSettings = await invoke<FontSizeSettings>(
+        FontSizeAPI.INCREASE_FONT_SIZE,
+      )
       setFontSizeSettings(newSettings)
     } catch (error) {
       console.error('Failed to increase font size:', error)
@@ -53,7 +59,9 @@ export const useFontSize = () => {
 
   const decreaseFontSize = async () => {
     try {
-      const newSettings = await invoke<FontSizeSettings>('decrease_font_size')
+      const newSettings = await invoke<FontSizeSettings>(
+        FontSizeAPI.DECREASE_FONT_SIZE,
+      )
       setFontSizeSettings(newSettings)
     } catch (error) {
       console.error('Failed to decrease font size:', error)
@@ -62,7 +70,9 @@ export const useFontSize = () => {
 
   const resetFontSize = async () => {
     try {
-      const newSettings = await invoke<FontSizeSettings>('reset_font_size')
+      const newSettings = await invoke<FontSizeSettings>(
+        FontSizeAPI.RESET_FONT_SIZE,
+      )
       setFontSizeSettings(newSettings)
     } catch (error) {
       console.error('Failed to reset font size:', error)
