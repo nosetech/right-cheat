@@ -38,6 +38,11 @@ pub fn run() {
             api::global_shortcut::get_toggle_visible_shortcut_settings,
             api::global_shortcut::set_toggle_visible_shortcut_settings,
             api::window::notify_theme_changed,
+            api::font_size::get_font_size_settings,
+            api::font_size::set_font_size_settings,
+            api::font_size::increase_font_size,
+            api::font_size::decrease_font_size,
+            api::font_size::reset_font_size,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -102,6 +107,28 @@ fn menu_configuration<R: tauri::Runtime>(
                         true,
                         Some("Cmd+r"),
                     )?,
+                    &PredefinedMenuItem::separator(handle)?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_increase_font_size",
+                        "文字を大きく",
+                        true,
+                        Some("Cmd+Plus"),
+                    )?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_decrease_font_size",
+                        "文字を小さく",
+                        true,
+                        Some("Cmd+Minus"),
+                    )?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_reset_font_size",
+                        "文字サイズをリセット",
+                        true,
+                        Some("Cmd+0"),
+                    )?,
                 ],
             )?,
             &Submenu::with_items(
@@ -145,6 +172,15 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             handle
                 .emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
                 .unwrap();
+        }
+        "id_increase_font_size" => {
+            let _ = api::font_size::increase_font_size(handle.clone());
+        }
+        "id_decrease_font_size" => {
+            let _ = api::font_size::decrease_font_size(handle.clone());
+        }
+        "id_reset_font_size" => {
+            let _ = api::font_size::reset_font_size(handle.clone());
         }
         _ => {
             log::warn!("Unexpected event occurs. Event id={:?}", event.id());

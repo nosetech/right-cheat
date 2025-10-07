@@ -1,8 +1,13 @@
 'use client'
 
+import { useFontSize } from '@/hooks/useFontSize'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore, type ThemeMode } from '@/hooks/useThemeStore'
-import { darkTheme, lightTheme } from '@/theme/default'
+import {
+  createScaledDarkTheme,
+  createScaledLightTheme,
+  lightTheme,
+} from '@/theme/default'
 import { ThemeProvider } from '@mui/material/styles'
 import { listen } from '@tauri-apps/api/event'
 import { ReactNode, useCallback, useEffect, useState } from 'react'
@@ -10,6 +15,7 @@ import { ReactNode, useCallback, useEffect, useState } from 'react'
 export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
   const { themeMode: storedThemeMode, isLoading } = useThemeStore()
   const { getThemeMode } = usePreferencesStore()
+  const { fontSizeSettings } = useFontSize()
   const [currentTheme, setCurrentTheme] = useState(lightTheme)
 
   const getSystemTheme = (): 'light' | 'dark' => {
@@ -21,35 +27,42 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
     return 'light'
   }
 
-  const updateTheme = useCallback((mode: ThemeMode) => {
-    let resolvedMode: 'light' | 'dark'
+  const updateTheme = useCallback(
+    (mode: ThemeMode, fontScale: number = 1.0) => {
+      let resolvedMode: 'light' | 'dark'
 
-    if (mode === 'system') {
-      resolvedMode = getSystemTheme()
-    } else {
-      resolvedMode = mode
-    }
+      if (mode === 'system') {
+        resolvedMode = getSystemTheme()
+      } else {
+        resolvedMode = mode
+      }
 
-    setCurrentTheme(resolvedMode === 'dark' ? darkTheme : lightTheme)
-  }, [])
+      const theme =
+        resolvedMode === 'dark'
+          ? createScaledDarkTheme(fontScale)
+          : createScaledLightTheme(fontScale)
+      setCurrentTheme(theme)
+    },
+    [],
+  )
 
-  // Update theme when stored theme mode changes
+  // Update theme when stored theme mode or font size changes
   useEffect(() => {
     if (!isLoading) {
-      updateTheme(storedThemeMode)
+      updateTheme(storedThemeMode, fontSizeSettings.scale)
     }
-  }, [storedThemeMode, isLoading, updateTheme])
+  }, [storedThemeMode, isLoading, fontSizeSettings.scale, updateTheme])
 
   // Listen for system theme changes when mode is 'system'
   useEffect(() => {
     if (storedThemeMode === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      const handleChange = () => updateTheme('system')
+      const handleChange = () => updateTheme('system', fontSizeSettings.scale)
 
       mediaQuery.addEventListener('change', handleChange)
       return () => mediaQuery.removeEventListener('change', handleChange)
     }
-  }, [storedThemeMode, updateTheme])
+  }, [storedThemeMode, fontSizeSettings.scale, updateTheme])
 
   // Listen for theme change events from other windows
   useEffect(() => {
@@ -57,7 +70,7 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
       // Update theme without page reload by fetching latest theme from store
       try {
         const latestMode = await getThemeMode()
-        updateTheme(latestMode)
+        updateTheme(latestMode, fontSizeSettings.scale)
       } catch (error) {
         console.error('Failed to update theme from event:', error)
       }
@@ -66,7 +79,7 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
     return () => {
       unlisten.then((fn) => fn())
     }
-  }, [getThemeMode, updateTheme])
+  }, [getThemeMode, fontSizeSettings.scale, updateTheme])
 
   return (
     !isLoading && <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>
