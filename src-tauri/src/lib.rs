@@ -113,14 +113,14 @@ fn menu_configuration<R: tauri::Runtime>(
                         "id_increase_font_size",
                         "文字を大きく",
                         true,
-                        Some("Cmd+Plus"),
+                        Some("Cmd+="),
                     )?,
                     &MenuItem::with_id(
                         handle,
                         "id_decrease_font_size",
                         "文字を小さく",
                         true,
-                        Some("Cmd+Minus"),
+                        Some("Cmd+-"),
                     )?,
                     &MenuItem::with_id(
                         handle,
