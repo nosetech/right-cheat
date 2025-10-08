@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   FormControl,
@@ -17,6 +17,7 @@ import { debug } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { CommandField } from '@/components/molecules/CommandField'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import {
   CheatSheetAPI,
@@ -39,6 +40,10 @@ export const CheatSheet = () => {
 
   const theme = useTheme()
   const { getCheatSheetFilePath } = usePreferencesStore()
+
+  // Refs for keyboard shortcuts
+  const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
+  const selectRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -93,6 +98,39 @@ export const CheatSheet = () => {
     setCheatSheet(event.target.value as string)
   }
 
+  // Keyboard shortcuts handler
+  useKeyboardShortcuts({
+    onNumberKey: (index) => {
+      // Trigger click on the corresponding command field (1-9)
+      if (
+        cheatSheetData?.commandlist &&
+        index < cheatSheetData.commandlist.length
+      ) {
+        const targetElement = commandFieldRefs.current[index]
+        if (targetElement) {
+          // Trigger the Enter key event to copy the command
+          const enterEvent = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            bubbles: true,
+            cancelable: true,
+          })
+          targetElement.dispatchEvent(enterEvent)
+        }
+      }
+    },
+    onZeroKey: () => {
+      // Open the select dropdown
+      if (selectRef.current) {
+        const selectElement = selectRef.current.querySelector(
+          'div[role="combobox"]',
+        )
+        if (selectElement) {
+          ;(selectElement as HTMLElement).click()
+        }
+      }
+    },
+  })
+
   return (
     <Stack padding={1}>
       {jsonInputPath == undefined ? (
@@ -109,7 +147,7 @@ export const CheatSheet = () => {
         </Typography>
       ) : (
         <>
-          <FormControl fullWidth>
+          <FormControl fullWidth ref={selectRef}>
             <InputLabel
               id='demo-simple-select-label'
               sx={{
@@ -144,8 +182,12 @@ export const CheatSheet = () => {
             {cheatSheetData?.commandlist.map((item: CommandData, index) => (
               <CommandField
                 key={index}
+                ref={(el) => {
+                  commandFieldRefs.current[index] = el
+                }}
                 description={item.description}
                 command={item.command}
+                numberHint={index < 9 ? (index + 1).toString() : undefined}
               />
             ))}
           </Stack>
