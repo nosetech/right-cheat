@@ -53,11 +53,9 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         {numberHint && (
           <Typography
             variant='caption'
-            color='text.secondary'
+            color='text.disabled'
             sx={{
-              minWidth: '16px',
               textAlign: 'center',
-              fontWeight: 'bold',
             }}
           >
             {numberHint}

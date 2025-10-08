@@ -71,6 +71,7 @@ const getBaseThemeOptions = (fontScale: number = 1.0) => ({
       fontSize: 13 * fontScale,
       color: '#ffffff',
     },
+    caption: { fontSize: 12 * fontScale },
     h1: {
       fontSize: 20 * fontScale,
       fontWeight: 700,
