@@ -119,14 +119,33 @@ export const CheatSheet = () => {
       }
     },
     onZeroKey: () => {
-      // Open the select dropdown
+      // Open the select dropdown by focusing and pressing Enter
       if (selectRef.current) {
-        const selectElement = selectRef.current.querySelector(
+        // Find the focusable element (the display div with role="combobox")
+        const selectButton = selectRef.current.querySelector(
           'div[role="combobox"]',
-        )
-        if (selectElement) {
-          ;(selectElement as HTMLElement).click()
+        ) as HTMLElement
+
+        if (selectButton) {
+          // Focus the element
+          selectButton.focus()
+
+          // Dispatch Enter key event
+          const enterEvent = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true,
+            cancelable: true,
+          })
+          selectButton.dispatchEvent(enterEvent)
+          debug('0 key: Focused and dispatched Enter event to select button')
+        } else {
+          debug('0 key: Could not find div[role="combobox"]')
         }
+      } else {
+        debug('0 key: selectRef.current is null')
       }
     },
   })
@@ -149,7 +168,6 @@ export const CheatSheet = () => {
         <>
           <FormControl fullWidth ref={selectRef}>
             <InputLabel
-              id='demo-simple-select-label'
               sx={{
                 '&.Mui-focused': {
                   color: theme.palette.base.main,
@@ -159,8 +177,6 @@ export const CheatSheet = () => {
               CheatSheet
             </InputLabel>
             <Select
-              labelId='demo-simple-select-label'
-              id='demo-simple-select'
               value={selectCheatSheet}
               label='CheatSheet'
               onChange={handleChange}
