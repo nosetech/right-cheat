@@ -50,17 +50,27 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
 
     return (
       <Stack direction='row' spacing={1} alignItems='baseline' {...remainProps}>
-        {numberHint && (
-          <Typography
-            variant='caption'
-            color='text.disabled'
-            sx={{
-              textAlign: 'center',
-            }}
-          >
-            {numberHint}
-          </Typography>
-        )}
+        <Box
+          sx={{
+            width: '20px',
+            minWidth: '20px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {numberHint && (
+            <Typography
+              variant='caption'
+              color='text.disabled'
+              sx={{
+                textAlign: 'center',
+              }}
+            >
+              {numberHint}
+            </Typography>
+          )}
+        </Box>
         <Box
           ref={ref}
           maxWidth='100%'
