@@ -52,8 +52,8 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       <Stack direction='row' spacing={1} alignItems='baseline' {...remainProps}>
         <Box
           sx={{
-            width: '20px',
-            minWidth: '20px',
+            width: '10px',
+            minWidth: '10px',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',

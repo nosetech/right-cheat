@@ -194,7 +194,7 @@ export const CheatSheet = () => {
               ))}
             </Select>
           </FormControl>
-          <Stack padding={1} spacing={1} width='100%'>
+          <Stack paddingY={1} spacing={1} width='100%'>
             {cheatSheetData?.commandlist.map((item: CommandData, index) => (
               <CommandField
                 key={index}
