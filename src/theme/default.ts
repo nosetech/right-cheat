@@ -53,10 +53,10 @@ const getBaseThemeOptions = (fontScale: number = 1.0) => ({
   breakpoints: {
     values: {
       xs: 0,
-      sm: 0,
-      md: 640,
-      lg: 1024,
-      xl: 1200,
+      sm: 640,
+      md: 1280,
+      lg: 1600,
+      xl: 1920,
     },
   },
   typography: {

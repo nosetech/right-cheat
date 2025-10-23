@@ -202,34 +202,13 @@ export const CheatSheet = () => {
             </Select>
           </FormControl>
           {cheatSheetData?.type === 'shortcut' ? (
-            <Grid
-              container
-              spacing={1}
-              paddingY={1}
-              sx={{
-                width: '100%',
-              }}
-            >
+            <Grid container spacing={1} p={1} width='100%'>
               {cheatSheetData?.commandlist.map((item: CommandData, index) => (
-                <Grid
-                  key={index}
-                  xs={12}
-                  sm={6}
-                  md={4}
-                  lg={3}
-                  sx={{
-                    display: 'flex',
-                  }}
-                >
+                <Grid key={index} xs={6} sm={4} md={3} lg={2}>
                   <ShortcutField
-                    ref={(el) => {
-                      commandFieldRefs.current[index] = el
-                    }}
+                    m={0.5}
                     description={item.description}
                     command={item.command}
-                    sx={{
-                      width: '100%',
-                    }}
                   />
                 </Grid>
               ))}
