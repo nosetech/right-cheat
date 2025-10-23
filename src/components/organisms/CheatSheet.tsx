@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import {
   FormControl,
+  Grid,
   InputLabel,
   MenuItem,
   Select,
@@ -17,6 +18,7 @@ import { debug } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { CommandField } from '@/components/molecules/CommandField'
+import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import {
@@ -99,10 +101,15 @@ export const CheatSheet = () => {
   }
 
   // Keyboard shortcuts handler
+  // Only enable number key shortcuts for command type (not for shortcut type)
+  const isCommandType = cheatSheetData?.type !== 'shortcut'
+
   useKeyboardShortcuts({
     onNumberKey: (index) => {
       // Trigger click on the corresponding command field (1-9)
+      // Only for command type sheets
       if (
+        isCommandType &&
         cheatSheetData?.commandlist &&
         index < cheatSheetData.commandlist.length
       ) {
@@ -194,19 +201,54 @@ export const CheatSheet = () => {
               ))}
             </Select>
           </FormControl>
-          <Stack paddingY={1} spacing={1} width='100%'>
-            {cheatSheetData?.commandlist.map((item: CommandData, index) => (
-              <CommandField
-                key={index}
-                ref={(el) => {
-                  commandFieldRefs.current[index] = el
-                }}
-                description={item.description}
-                command={item.command}
-                numberHint={index < 9 ? (index + 1).toString() : undefined}
-              />
-            ))}
-          </Stack>
+          {cheatSheetData?.type === 'shortcut' ? (
+            <Grid
+              container
+              spacing={1}
+              paddingY={1}
+              sx={{
+                width: '100%',
+              }}
+            >
+              {cheatSheetData?.commandlist.map((item: CommandData, index) => (
+                <Grid
+                  key={index}
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  lg={3}
+                  sx={{
+                    display: 'flex',
+                  }}
+                >
+                  <ShortcutField
+                    ref={(el) => {
+                      commandFieldRefs.current[index] = el
+                    }}
+                    description={item.description}
+                    command={item.command}
+                    sx={{
+                      width: '100%',
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Stack paddingY={1} spacing={1} width='100%'>
+              {cheatSheetData?.commandlist.map((item: CommandData, index) => (
+                <CommandField
+                  key={index}
+                  ref={(el) => {
+                    commandFieldRefs.current[index] = el
+                  }}
+                  description={item.description}
+                  command={item.command}
+                  numberHint={index < 9 ? (index + 1).toString() : undefined}
+                />
+              ))}
+            </Stack>
+          )}
         </>
       )}
     </Stack>
