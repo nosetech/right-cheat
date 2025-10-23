@@ -1,0 +1,34 @@
+[
+  {
+    "type": "command",
+    "title": "Terraform",
+    "commandlist": [
+      {
+        "description": "planの実行",
+        "command": "terraform plan"
+      },
+      {
+        "description": "planの適用",
+        "command": "terraform apply"
+      }
+    ]
+  },
+  {
+    "type": "shortcut",
+    "title": "vi",
+    "commandlist": [
+      {
+        "description": "診断エラーの修正",
+        "command": "ca"
+      },
+      {
+        "description": "診断エラーへ前移動",
+        "command": "c["
+      },
+      {
+        "description": "診断エラーへ後移動",
+        "command": "c]"
+      }
+    ]
+  }
+]

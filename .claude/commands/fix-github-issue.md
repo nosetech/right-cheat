@@ -7,6 +7,6 @@ GitHub issueを分析して実行してください: issue番号 $ARGUMENTS
 3. 関連ファイルの検索
 4. 修正の実装
 5. src/のファイルを修正した場合は、yarn lintを実行する。エラーがあれば修正する。
-6. src-tauri/のファイルを修正した場合、cargo fmt -- --check,cargo test --verboseを実行する。エラーがあれば修正する。
-7. gitコミット
-8. developブランチにマージするgitプルリクエスト作成
+6. src-tauri/のファイルを修正した場合、修正した内容についてのテストコードを実装する。また、cargo fmt -- --check,cargo test --verbose -- --test-threads=1を実行する。エラーがあれば修正する。
+7. コミット(developブランチに直接コミットしないこと。feature/\*ブランチにコミットすること。)
+8. developブランチへのプルリクエスト作成

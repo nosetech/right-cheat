@@ -98,4 +98,38 @@ mod get_cheat_sheet {
             "{\"title\":\"Test\",\"commandlist\":[{\"description\":\"Test Command\",\"command\":\"command\"}]}"
         );
     }
+
+    #[test]
+    fn json_with_command_type() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        assert_eq!(
+            get_cheat_sheet("./tests/api/test-data-with-types.json", "Terraform"),
+            "{\"type\":\"command\",\"title\":\"Terraform\",\"commandlist\":[{\"description\":\"planの実行\",\"command\":\"terraform plan\"},{\"description\":\"planの適用\",\"command\":\"terraform apply\"}]}"
+        );
+    }
+
+    #[test]
+    fn json_with_shortcut_type() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        assert_eq!(
+            get_cheat_sheet("./tests/api/test-data-with-types.json", "vi"),
+            "{\"type\":\"shortcut\",\"title\":\"vi\",\"commandlist\":[{\"description\":\"診断エラーの修正\",\"command\":\"ca\"},{\"description\":\"診断エラーへ前移動\",\"command\":\"c[\"},{\"description\":\"診断エラーへ後移動\",\"command\":\"c]\"}]}"
+        );
+    }
+
+    #[test]
+    fn json_without_type_field() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // type フィールドが無い場合、JSON には type が含まれないことを確認
+        assert_eq!(
+            get_cheat_sheet("./tests/api/test-data.json", "Test1"),
+            "{\"title\":\"Test1\",\"commandlist\":[{\"description\":\"Test Command1\",\"command\":\"command1\"},{\"description\":\"Test Command2\",\"command\":\"command2\"}]}"
+        );
+    }
 }
