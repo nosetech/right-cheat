@@ -48,9 +48,9 @@ export const CheatSheet = () => {
   const selectRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
-        ;(async () => {
+        ; (async () => {
           const inputpath = await getCheatSheetFilePath()
           if (inputpath) {
             setReloading(true)
@@ -204,7 +204,7 @@ export const CheatSheet = () => {
           {cheatSheetData?.type === 'shortcut' ? (
             <Grid container spacing={1} p={1} width='100%'>
               {cheatSheetData?.commandlist.map((item: CommandData, index) => (
-                <Grid key={index} xs={6} sm={4} md={3} lg={2}>
+                <Grid key={index} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
                   <ShortcutField
                     m={0.5}
                     description={item.description}
