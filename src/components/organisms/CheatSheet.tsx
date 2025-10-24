@@ -48,9 +48,9 @@ export const CheatSheet = () => {
   const selectRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    ; (async () => {
+    ;(async () => {
       await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
-        ; (async () => {
+        ;(async () => {
           const inputpath = await getCheatSheetFilePath()
           if (inputpath) {
             setReloading(true)
