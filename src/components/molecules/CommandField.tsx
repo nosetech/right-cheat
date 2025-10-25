@@ -1,8 +1,8 @@
 'use client'
 import { useClipboard } from '@/hooks/useClipboard'
-import { Box, Stack, StackProps, Typography } from '@mui/material'
+import { Box, Stack, StackProps, Tooltip, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { forwardRef } from 'react'
+import { forwardRef, useRef, useState } from 'react'
 
 export type CommandFieldProps = StackProps & {
   description: string
@@ -15,8 +15,19 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
     const { description, command, numberHint, tabIndex, ...remainProps } = props
 
     const theme = useTheme()
+    const descriptionRef = useRef<HTMLParagraphElement>(null)
+    const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false)
 
     const { copy, hasCopied, error } = useClipboard(command)
+
+    const checkIfTruncated = () => {
+      if (descriptionRef.current) {
+        setIsDescriptionTruncated(
+          descriptionRef.current.scrollWidth >
+            descriptionRef.current.clientWidth,
+        )
+      }
+    }
 
     const colorScheme = () => {
       const defaultScheme = {
@@ -97,18 +108,22 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
             {command}
           </Typography>
         </Box>
-        <Typography
-          variant='h3'
-          noWrap={true}
-          color='text.secondary'
-          sx={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {description}
-        </Typography>
+        <Tooltip title={isDescriptionTruncated ? description : ''} arrow>
+          <Typography
+            ref={descriptionRef}
+            variant='h3'
+            noWrap={true}
+            color='text.secondary'
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={checkIfTruncated}
+          >
+            {description}
+          </Typography>
+        </Tooltip>
       </Stack>
     )
   },
