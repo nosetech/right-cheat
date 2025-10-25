@@ -1,7 +1,8 @@
 'use client'
+import { TruncatedText } from '@/components/atoms/TruncatedText'
+import { CommandDisplay } from '@/components/molecules/CommandDisplay'
 import { useClipboard } from '@/hooks/useClipboard'
-import { useTruncatedTooltip } from '@/hooks/useTruncatedTooltip'
-import { Box, Stack, StackProps, Tooltip, Typography } from '@mui/material'
+import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { forwardRef } from 'react'
 
@@ -16,12 +17,6 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
     const { description, command, numberHint, tabIndex, ...remainProps } = props
 
     const theme = useTheme()
-    const {
-      ref: descriptionRef,
-      isTruncated,
-      checkIfTruncated,
-    } = useTruncatedTooltip()
-
     const { copy, hasCopied, error } = useClipboard(command)
 
     const colorScheme = () => {
@@ -77,48 +72,24 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
             </Typography>
           )}
         </Box>
-        <Box
-          ref={ref}
-          maxWidth='100%'
-          width='fit-content'
-          tabIndex={tabIndex ?? 0}
-          padding={0.5}
-          sx={colorScheme()}
-          onClick={copy}
-          onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-            if (event.key === 'Enter') {
-              copy()
-            }
+        <CommandDisplay
+          command={command}
+          boxProps={{
+            ref,
+            maxWidth: '100%',
+            width: 'fit-content',
+            tabIndex: tabIndex ?? 0,
+            padding: 0.5,
+            sx: colorScheme(),
+            onClick: copy,
+            onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+              if (event.key === 'Enter') {
+                copy()
+              }
+            },
           }}
-        >
-          <Typography
-            variant='body1'
-            noWrap={true}
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {command}
-          </Typography>
-        </Box>
-        <Tooltip title={isTruncated ? description : ''} arrow>
-          <Typography
-            ref={descriptionRef}
-            variant='h3'
-            noWrap={true}
-            color='text.secondary'
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={checkIfTruncated}
-          >
-            {description}
-          </Typography>
-        </Tooltip>
+        />
+        <TruncatedText text={description} color='text.secondary' />
       </Stack>
     )
   },
