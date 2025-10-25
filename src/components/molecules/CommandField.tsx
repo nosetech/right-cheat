@@ -1,8 +1,9 @@
 'use client'
 import { useClipboard } from '@/hooks/useClipboard'
+import { useTruncatedTooltip } from '@/hooks/useTruncatedTooltip'
 import { Box, Stack, StackProps, Tooltip, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { forwardRef, useRef, useState } from 'react'
+import { forwardRef } from 'react'
 
 export type CommandFieldProps = StackProps & {
   description: string
@@ -15,19 +16,13 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
     const { description, command, numberHint, tabIndex, ...remainProps } = props
 
     const theme = useTheme()
-    const descriptionRef = useRef<HTMLParagraphElement>(null)
-    const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false)
+    const {
+      ref: descriptionRef,
+      isTruncated,
+      checkIfTruncated,
+    } = useTruncatedTooltip()
 
     const { copy, hasCopied, error } = useClipboard(command)
-
-    const checkIfTruncated = () => {
-      if (descriptionRef.current) {
-        setIsDescriptionTruncated(
-          descriptionRef.current.scrollWidth >
-            descriptionRef.current.clientWidth,
-        )
-      }
-    }
 
     const colorScheme = () => {
       const defaultScheme = {
@@ -108,7 +103,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
             {command}
           </Typography>
         </Box>
-        <Tooltip title={isDescriptionTruncated ? description : ''} arrow>
+        <Tooltip title={isTruncated ? description : ''} arrow>
           <Typography
             ref={descriptionRef}
             variant='h3'

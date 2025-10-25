@@ -1,7 +1,7 @@
 'use client'
+import { useTruncatedTooltip } from '@/hooks/useTruncatedTooltip'
 import { Box, Stack, StackProps, Tooltip, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { useRef, useState } from 'react'
 
 export type ShortcutFieldProps = StackProps & {
   description: string
@@ -12,16 +12,11 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
   const { description, command, ...remainProps } = props
 
   const theme = useTheme()
-  const descriptionRef = useRef<HTMLParagraphElement>(null)
-  const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false)
-
-  const checkIfTruncated = () => {
-    if (descriptionRef.current) {
-      setIsDescriptionTruncated(
-        descriptionRef.current.scrollWidth > descriptionRef.current.clientWidth,
-      )
-    }
-  }
+  const {
+    ref: descriptionRef,
+    isTruncated,
+    checkIfTruncated,
+  } = useTruncatedTooltip()
 
   return (
     <Stack direction='row' spacing={1} alignItems='baseline' {...remainProps}>
@@ -49,7 +44,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
           {command}
         </Typography>
       </Box>
-      <Tooltip title={isDescriptionTruncated ? description : ''} arrow>
+      <Tooltip title={isTruncated ? description : ''} arrow>
         <Typography
           ref={descriptionRef}
           variant='h3'
