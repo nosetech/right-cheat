@@ -94,8 +94,8 @@ RightCheatを完全に削除するには、以下の手順を行います：
     ]
   },
   {
-    "type": "shortcut",
     "title": "tmux(プレフィックスキー入力後)",
+    "type": "shortcut",
     "commandlist": [
       {
         "description": "セッションの一覧選択",
@@ -178,5 +178,17 @@ Preferences画面で、アプリケーションのテーマを切り替えるこ
 
 ### 文字サイズ調整
 
-- メニュー: [View] → [Increase Font Size]文字を大きく, [Decrease Font Size]文字を小さく, [Reset Font Size]初期状態に戻す
-- ショートカット: ⌘ +(プラスキー。使用されているキーボードによって異なります。), ⌘ -, ⌘ 0
+- 文字を大きく
+
+  - メニュー: [View] → [Increase Font Size]
+  - ショートカット: ⌘ + (プラスキー。使用されているキーボードによって異なります。)
+
+- 文字を小さく
+
+  - メニュー: [View] → [Decrease Font Size]
+  - ショートカット: ⌘ -
+
+- 初期状態に戻す
+
+  - メニュー: [View] → [Reset Font Size]
+  - ショートカット: ⌘ 0
