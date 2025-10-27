@@ -128,6 +128,7 @@ export const ShortcutEditField = (props: ShortcutEditFieldProps) => {
                     <Checkbox
                       checked={ctrlKey}
                       onChange={handleCtrlKeyChange}
+                      sx={{ '&.Mui-checked': { color: 'info.main' } }}
                     />
                   }
                   label='^'
@@ -137,6 +138,7 @@ export const ShortcutEditField = (props: ShortcutEditFieldProps) => {
                     <Checkbox
                       checked={optionKey}
                       onChange={handleOptionKeyChange}
+                      sx={{ '&.Mui-checked': { color: 'info.main' } }}
                     />
                   }
                   label='⌥'
@@ -146,6 +148,7 @@ export const ShortcutEditField = (props: ShortcutEditFieldProps) => {
                     <Checkbox
                       checked={commandKey}
                       onChange={handleCommandKeyChange}
+                      sx={{ '&.Mui-checked': { color: 'info.main' } }}
                     />
                   }
                   label='⌘'
@@ -154,6 +157,7 @@ export const ShortcutEditField = (props: ShortcutEditFieldProps) => {
               <Box width='60px'>
                 <TextField
                   size='small'
+                  color='info'
                   variant='outlined'
                   label='hotkey'
                   value={hotKey}
