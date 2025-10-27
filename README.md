@@ -54,11 +54,21 @@ RightCheatを完全に削除するには、以下の手順を行います：
 [
   {
     "title": "チートシートのタイトル",
-    "type": "command" or "shortcut",
+    "type": "command",
     "commandlist": [
       {
-        "description": "コマンド（ショートカット）の説明",
+        "description": "コマンドの説明",
         "command": "コマンド"
+      }
+    ]
+  },
+  {
+    "title": "チートシートのタイトル",
+    "type": "shortcut",
+    "commandlist": [
+      {
+        "description": "ショートカットの説明",
+        "command": "ショートカット"
       }
     ]
   }
@@ -71,7 +81,7 @@ RightCheatを完全に削除するには、以下の手順を行います：
 [
   {
     "title": "Tauri開発",
-    "type": "command"",
+    "type": "command",
     "commandlist": [
       {
         "description": "devモード",
