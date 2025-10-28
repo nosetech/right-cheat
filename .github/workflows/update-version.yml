@@ -114,7 +114,7 @@ jobs:
           EOF
           )" \
             --base develop \
-            --head "feature/bump-version-${{ env.VERSION }}" \
+            --head "feature/bump-version-${{ env.VERSION }}"
           echo "=== Pull Request created successfully ==="
 
       - name: Display results
