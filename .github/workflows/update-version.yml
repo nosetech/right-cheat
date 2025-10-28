@@ -84,7 +84,13 @@ jobs:
 
       - name: Push branch
         run: |
-          git push origin "feature/bump-version-${{ env.VERSION }}"
+          echo "=== Git Log (last 2 commits) ==="
+          git log --oneline -2
+          echo ""
+          echo "=== Pushing branch ==="
+          git push origin "feature/bump-version-${{ env.VERSION }}" -v
+          echo ""
+          echo "=== Push completed ==="
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
