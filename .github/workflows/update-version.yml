@@ -67,7 +67,19 @@ jobs:
 
       - name: Commit changes
         run: |
+          echo "=== Git Status Before Add ==="
+          git status
+          echo ""
+          echo "=== Adding files ==="
           git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json README.md
+          echo ""
+          echo "=== Git Status After Add ==="
+          git status
+          echo ""
+          echo "=== Git Diff Cached ==="
+          git diff --cached --stat
+          echo ""
+          echo "=== Committing ==="
           git commit -m "chore: Update version to ${{ env.VERSION }}"
 
       - name: Push branch
