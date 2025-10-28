@@ -97,16 +97,19 @@ jobs:
           echo "=== Creating Pull Request ==="
           gh pr create \
             --title "chore: Update version to ${{ env.VERSION }}" \
-            --body "## Summary
-バージョン番号を \${{ env.VERSION }} に更新します。
+            --body "$(cat <<'EOF'
+          ## Summary
+          バージョン番号を ${{ env.VERSION }} に更新します。
 
-## Updated Files
-- package.json
-- src-tauri/Cargo.toml
-- src-tauri/tauri.conf.json
-- README.md
+          ## Updated Files
+          - package.json
+          - src-tauri/Cargo.toml
+          - src-tauri/tauri.conf.json
+          - README.md
 
-このPRは自動生成されました。" \
+          このPRは自動生成されました。
+          EOF
+          )" \
             --base develop \
             --head "feature/bump-version-${{ env.VERSION }}" \
             --label chore \
