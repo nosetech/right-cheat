@@ -13,7 +13,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
 import { useEffect, useState } from 'react'
 
 export type ShortcutEditFieldProps = {
@@ -25,18 +24,22 @@ export type ShortcutEditFieldProps = {
     commandKey: boolean,
     hotKey: string,
   ) => void
+  onValidationChange: (isValid: boolean) => void
 }
 
 export const ShortcutEditField = (props: ShortcutEditFieldProps) => {
-  const { shortcutName, shortcut, callback, ...remainProps } = props
-
-  const theme = useTheme()
+  const {
+    shortcutName,
+    shortcut,
+    callback,
+    onValidationChange,
+    ...remainProps
+  } = props
 
   const [ctrlKey, setCtrlKey] = useState<boolean>(shortcut.ctrl)
   const [optionKey, setOptionKey] = useState<boolean>(shortcut.option)
   const [commandKey, setCommandKey] = useState<boolean>(shortcut.command)
   const [hotKey, setHotKey] = useState<string>(shortcut.hotkey)
-  const [valid, setValid] = useState<boolean>(true)
 
   const [editMode, setEditMode] = useState<boolean>(false)
 
@@ -53,11 +56,11 @@ export const ShortcutEditField = (props: ShortcutEditFieldProps) => {
 
   const onEditClick = () => {
     if (ctrlKey || optionKey || commandKey) {
-      setValid(true)
+      onValidationChange(false)
       callback(ctrlKey, optionKey, commandKey, hotKey)
       setEditMode(false)
     } else {
-      setValid(false)
+      onValidationChange(true)
     }
   }
 
@@ -96,84 +99,77 @@ export const ShortcutEditField = (props: ShortcutEditFieldProps) => {
   }
 
   return (
-    <Stack>
-      <Stack direction='row' alignItems='center' {...remainProps}>
-        <Typography variant='h3'>{shortcutName} : </Typography>
-        <Stack
-          direction='row'
-          height='40px'
-          padding={1}
-          spacing={1}
-          alignItems='center'
-        >
-          {editMode === false ? (
-            <>
-              <Box
-                p={1}
-                sx={{
-                  border: '1px solid',
-                  borderRadius: '8px',
-                  borderColor: grey[300],
-                }}
-              >
-                <Typography variant='body1'>{getShortcutStr()}</Typography>
-              </Box>
-              <SettingsButton onClick={onSettingsClick} size='small' />
-            </>
-          ) : (
-            <>
-              <FormGroup row={true}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={ctrlKey}
-                      onChange={handleCtrlKeyChange}
-                      sx={{ '&.Mui-checked': { color: 'info.main' } }}
-                    />
-                  }
-                  label='^'
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={optionKey}
-                      onChange={handleOptionKeyChange}
-                      sx={{ '&.Mui-checked': { color: 'info.main' } }}
-                    />
-                  }
-                  label='⌥'
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={commandKey}
-                      onChange={handleCommandKeyChange}
-                      sx={{ '&.Mui-checked': { color: 'info.main' } }}
-                    />
-                  }
-                  label='⌘'
-                />
-              </FormGroup>
-              <Box width='60px'>
-                <TextField
-                  size='small'
-                  color='info'
-                  variant='outlined'
-                  label='hotkey'
-                  value={hotKey}
-                  onKeyDown={handleHotKeyDown}
-                />
-              </Box>
-              <EditButton onClick={onEditClick} size='small' />
-            </>
-          )}
-        </Stack>
+    <Stack direction='row' alignItems='center' {...remainProps}>
+      <Typography variant='h3'>{shortcutName} : </Typography>
+      <Stack
+        direction='row'
+        height='40px'
+        padding={1}
+        spacing={1}
+        alignItems='center'
+      >
+        {editMode === false ? (
+          <>
+            <Box
+              p={1}
+              sx={{
+                border: '1px solid',
+                borderRadius: '8px',
+                borderColor: grey[300],
+              }}
+            >
+              <Typography variant='body1'>{getShortcutStr()}</Typography>
+            </Box>
+            <SettingsButton onClick={onSettingsClick} size='small' />
+          </>
+        ) : (
+          <>
+            <FormGroup row={true}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={ctrlKey}
+                    onChange={handleCtrlKeyChange}
+                    sx={{ '&.Mui-checked': { color: 'info.main' } }}
+                  />
+                }
+                label='^'
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={optionKey}
+                    onChange={handleOptionKeyChange}
+                    sx={{ '&.Mui-checked': { color: 'info.main' } }}
+                  />
+                }
+                label='⌥'
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={commandKey}
+                    onChange={handleCommandKeyChange}
+                    sx={{ '&.Mui-checked': { color: 'info.main' } }}
+                  />
+                }
+                label='⌘'
+              />
+            </FormGroup>
+            <Box width='60px'>
+              <TextField
+                size='small'
+                color='info'
+                variant='outlined'
+                label='hotkey'
+                value={hotKey}
+                onKeyDown={handleHotKeyDown}
+              />
+            </Box>
+            <EditButton onClick={onEditClick} size='small' />
+          </>
+        )}
       </Stack>
-      {editMode == true && valid == false && (
-        <Typography variant='body1' color={theme.palette.alert.main}>
-          ^ ⌥ ⌘ のいずれか1つはチェックしてください。
-        </Typography>
-      )}
     </Stack>
   )
 }
