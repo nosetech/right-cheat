@@ -1,0 +1,102 @@
+name: Update Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid version format: $VERSION"
+            echo "Expected format: X.Y.Z or X.Y.Z-alpha/beta/rc1"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Update package.json
+        run: |
+          npm version ${{ env.VERSION }} --no-git-tag-v
+
+      - name: Update Cargo.toml
+        run: |
+          sed -i "s/^version = .*/version = \"${{ env.VERSION }}\"/" src-tauri/Cargo.toml
+
+      - name: Update tauri.conf.json
+        run: |
+          python3 << 'EOF'
+          import json
+          with open('src-tauri/tauri.conf.json', 'r') as f:
+              config = json.load(f)
+          config['version'] = '${{ env.VERSION }}'
+          with open('src-tauri/tauri.conf.json', 'w') as f:
+              json.dump(config, f, indent=2)
+              f.write('\n')
+          EOF
+
+      - name: Update README.md
+        run: |
+          VERSION="${{ env.VERSION }}"
+          # Update download links in README.md
+          sed -i "s/prototype-[0-9]*\.[0-9]*\.[0-9]*/prototype-$VERSION/g" README.md
+          sed -i "s/RightCheat_[0-9]*\.[0-9]*\.[0-9]*/RightCheat_$VERSION/g" README.md
+
+      - name: Create feature branch
+        run: |
+          git checkout -b "feature/bump-version-${{ env.VERSION }}"
+
+      - name: Commit changes
+        run: |
+          git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json README.md
+          git commit -m "chore: Update version to ${{ env.VERSION }}"
+
+      - name: Push branch
+        run: |
+          git push origin "feature/bump-version-${{ env.VERSION }}"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: Update version to ${{ env.VERSION }}"
+          title: "chore: Update version to ${{ env.VERSION }}"
+          body: |
+            ## Summary
+            バージョン番号を ${{ env.VERSION }} に更新します。
+
+            ## Updated Files
+            - package.json
+            - src-tauri/Cargo.toml
+            - src-tauri/tauri.conf.json
+            - README.md
+
+            このPRは自動生成されました。
+          branch: "feature/bump-version-${{ env.VERSION }}"
+          base: develop
+          labels: |
+            chore
+            release
+
+      - name: Display results
+        run: |
+          echo "Version update workflow completed successfully"
+          echo "Branch: feature/bump-version-${{ env.VERSION }}"
+          echo "Version: ${{ env.VERSION }}"
