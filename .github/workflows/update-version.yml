@@ -93,27 +93,25 @@ jobs:
           echo "=== Push completed ==="
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: Update version to ${{ env.VERSION }}'
-          title: 'chore: Update version to ${{ env.VERSION }}'
-          body: |
-            ## Summary
-            バージョン番号を ${{ env.VERSION }} に更新します。
+        run: |
+          echo "=== Creating Pull Request ==="
+          gh pr create \
+            --title "chore: Update version to ${{ env.VERSION }}" \
+            --body "## Summary
+バージョン番号を \${{ env.VERSION }} に更新します。
 
-            ## Updated Files
-            - package.json
-            - src-tauri/Cargo.toml
-            - src-tauri/tauri.conf.json
-            - README.md
+## Updated Files
+- package.json
+- src-tauri/Cargo.toml
+- src-tauri/tauri.conf.json
+- README.md
 
-            このPRは自動生成されました。
-          branch: 'feature/bump-version-${{ env.VERSION }}'
-          base: develop
-          labels: |
-            chore
-            release
+このPRは自動生成されました。" \
+            --base develop \
+            --head "feature/bump-version-${{ env.VERSION }}" \
+            --label chore \
+            --label release
+          echo "=== Pull Request created successfully ==="
 
       - name: Display results
         run: |
