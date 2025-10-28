@@ -76,8 +76,8 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: Update version to ${{ env.VERSION }}"
-          title: "chore: Update version to ${{ env.VERSION }}"
+          commit-message: 'chore: Update version to ${{ env.VERSION }}'
+          title: 'chore: Update version to ${{ env.VERSION }}'
           body: |
             ## Summary
             バージョン番号を ${{ env.VERSION }} に更新します。
@@ -89,7 +89,7 @@ jobs:
             - README.md
 
             このPRは自動生成されました。
-          branch: "feature/bump-version-${{ env.VERSION }}"
+          branch: 'feature/bump-version-${{ env.VERSION }}'
           base: develop
           labels: |
             chore
