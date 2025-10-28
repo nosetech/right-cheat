@@ -38,30 +38,20 @@ jobs:
 
       - name: Update package.json
         run: |
-          npm version ${{ env.VERSION }} --no-git-tag-v
+          sed -i '' "s/\"version\": \".*\"/\"version\": \"${{ env.VERSION }}\"/" package.json
 
       - name: Update Cargo.toml
         run: |
-          sed -i "s/^version = .*/version = \"${{ env.VERSION }}\"/" src-tauri/Cargo.toml
+          sed -i '' "s/^version = .*/version = \"${{ env.VERSION }}\"/" src-tauri/Cargo.toml
 
       - name: Update tauri.conf.json
         run: |
-          python3 << 'EOF'
-          import json
-          with open('src-tauri/tauri.conf.json', 'r') as f:
-              config = json.load(f)
-          config['version'] = '${{ env.VERSION }}'
-          with open('src-tauri/tauri.conf.json', 'w') as f:
-              json.dump(config, f, indent=2)
-              f.write('\n')
-          EOF
+          sed -i '' "s/\"version\": \".*\"/\"version\": \"${{ env.VERSION }}\"/" src-tauri/tauri.conf.json
 
       - name: Update README.md
         run: |
-          VERSION="${{ env.VERSION }}"
-          # Update download links in README.md
-          sed -i "s/prototype-[0-9]*\.[0-9]*\.[0-9]*/prototype-$VERSION/g" README.md
-          sed -i "s/RightCheat_[0-9]*\.[0-9]*\.[0-9]*/RightCheat_$VERSION/g" README.md
+          sed -i '' -E 's/prototype-[0-9]+\.[0-9]+\.[0-9]+/prototype-${{ env.VERSION }}/g' README.md
+          sed -i '' -E 's/RightCheat_[0-9]+\.[0-9]+\.[0-9]+/RightCheat_${{ env.VERSION }}/g' README.md
 
       - name: Create feature branch
         run: |
