@@ -12,6 +12,9 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
   update-version:
     runs-on: ubuntu-latest
@@ -56,10 +59,10 @@ jobs:
 
       - name: Update README.md
         run: |
-          echo "Before: $(grep -E 'prototype-[0-9]+\.[0-9]+\.[0-9]+|RightCheat_[0-9]+\.[0-9]+\.[0-9]+' README.md || true)"
-          sed -i -E 's|prototype-[0-9]+\.[0-9]+\.[0-9]+|prototype-${{ env.VERSION }}|g' README.md
+          echo "Before: $(grep -E '/[0-9]+\.[0-9]+\.[0-9]+/|RightCheat_[0-9]+\.[0-9]+\.[0-9]+' README.md || true)"
+          sed -i -E 's|/[0-9]+\.[0-9]+\.[0-9]+/|/${{ env.VERSION }}/|g' README.md
           sed -i -E 's|RightCheat_[0-9]+\.[0-9]+\.[0-9]+|RightCheat_${{ env.VERSION }}|g' README.md
-          echo "After: $(grep -E 'prototype-[0-9]+\.[0-9]+\.[0-9]+|RightCheat_[0-9]+\.[0-9]+\.[0-9]+' README.md || echo 'No matches found')"
+          echo "After: $(grep -E '/[0-9]+\.[0-9]+\.[0-9]+/|RightCheat_[0-9]+\.[0-9]+\.[0-9]+' README.md || echo 'No matches found')"
 
       - name: Create feature branch
         run: |

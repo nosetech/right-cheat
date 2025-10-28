@@ -21,7 +21,7 @@ Mac Tahoe 26.0.1 (ARM)
 
 ## インストール手順
 
-1. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/prototype-0.1.2/RightCheat_0.1.2_aarch64.dmg)します
+1. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/0.1.2/RightCheat_0.1.2_aarch64.dmg)します
 2. ダウンロードしたファイルを実行し、インストールします
 
 ### 初回起動時の注意
