@@ -99,7 +99,7 @@ jobs:
         run: |
           echo "=== Creating Pull Request ==="
           gh pr create \
-            --title "chore: Update version to ${{ env.VERSION }}" \
+            --title "Update version to ${{ env.VERSION }}" \
             --body "$(cat <<'EOF'
           ## Summary
           バージョン番号を ${{ env.VERSION }} に更新します。
@@ -115,8 +115,6 @@ jobs:
           )" \
             --base develop \
             --head "feature/bump-version-${{ env.VERSION }}" \
-            --label chore \
-            --label release
           echo "=== Pull Request created successfully ==="
 
       - name: Display results
