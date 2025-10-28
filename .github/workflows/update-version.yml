@@ -38,20 +38,28 @@ jobs:
 
       - name: Update package.json
         run: |
-          sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.VERSION }}\"/" package.json
+          echo "Before: $(grep '"version"' package.json)"
+          sed -i 's|"version": ".*"|"version": "${{ env.VERSION }}"|' package.json
+          echo "After: $(grep '"version"' package.json)"
 
       - name: Update Cargo.toml
         run: |
-          sed -i "s/^version = .*/version = \"${{ env.VERSION }}\"/" src-tauri/Cargo.toml
+          echo "Before: $(grep '^version' src-tauri/Cargo.toml)"
+          sed -i 's|^version = .*|version = "${{ env.VERSION }}"|' src-tauri/Cargo.toml
+          echo "After: $(grep '^version' src-tauri/Cargo.toml)"
 
       - name: Update tauri.conf.json
         run: |
-          sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.VERSION }}\"/" src-tauri/tauri.conf.json
+          echo "Before: $(grep 'version' src-tauri/tauri.conf.json)"
+          sed -i 's|"version": ".*"|"version": "${{ env.VERSION }}"|' src-tauri/tauri.conf.json
+          echo "After: $(grep 'version' src-tauri/tauri.conf.json)"
 
       - name: Update README.md
         run: |
-          sed -i -E 's/prototype-[0-9]+\.[0-9]+\.[0-9]+/prototype-${{ env.VERSION }}/g' README.md
-          sed -i -E 's/RightCheat_[0-9]+\.[0-9]+\.[0-9]+/RightCheat_${{ env.VERSION }}/g' README.md
+          echo "Before: $(grep -E 'prototype-[0-9]+\.[0-9]+\.[0-9]+|RightCheat_[0-9]+\.[0-9]+\.[0-9]+' README.md || true)"
+          sed -i -E 's|prototype-[0-9]+\.[0-9]+\.[0-9]+|prototype-${{ env.VERSION }}|g' README.md
+          sed -i -E 's|RightCheat_[0-9]+\.[0-9]+\.[0-9]+|RightCheat_${{ env.VERSION }}|g' README.md
+          echo "After: $(grep -E 'prototype-[0-9]+\.[0-9]+\.[0-9]+|RightCheat_[0-9]+\.[0-9]+\.[0-9]+' README.md || echo 'No matches found')"
 
       - name: Create feature branch
         run: |
