@@ -12,13 +12,18 @@ import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { WindowAPI } from '@/types/api/Window'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import { Box, Divider, Stack, Tooltip, Typography } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { Command } from '@tauri-apps/plugin-shell'
 
 export default function Page() {
+  const theme = useTheme()
+
   const [settedInputFilePath, setSettedInputFilePath] = useState<string>()
+  const [shortcutValidationError, setShortcutValidationError] =
+    useState<boolean>(false)
 
   const { getCheatSheetFilePath, setCheatSheetFilePath } = usePreferencesStore()
   const {
@@ -171,14 +176,21 @@ export default function Page() {
         <FileEditButton onClick={openFileByEditor} size='small' />
       </Stack>
       <Divider />
-      <Stack direction='row' spacing={1}>
-        <Typography variant='body1'>Global Shortcut</Typography>
-        <Tooltip
-          title='Restart the application to reflect the settings.'
-          placement='right'
-        >
-          <ErrorOutlineIcon fontSize='small' sx={{ color: grey[300] }} />
-        </Tooltip>
+      <Stack direction='row' spacing={1} alignItems='center'>
+        <Stack direction='row' spacing={1}>
+          <Typography variant='body1'>Global Shortcut</Typography>
+          <Tooltip
+            title='Restart the application to reflect the settings.'
+            placement='right'
+          >
+            <ErrorOutlineIcon fontSize='small' sx={{ color: grey[300] }} />
+          </Tooltip>
+        </Stack>
+        {shortcutValidationError && (
+          <Typography variant='caption' color={theme.palette.alert.main}>
+            ^ ⌥ ⌘ のいずれか1つはチェックしてください。
+          </Typography>
+        )}
       </Stack>
       <Stack padding={1}>
         {toggleVisibleShortcut && (
@@ -186,6 +198,7 @@ export default function Page() {
             shortcutName='Toggle Visible'
             shortcut={toggleVisibleShortcut}
             callback={shortcutEditCallback}
+            onValidationChange={setShortcutValidationError}
           />
         )}
       </Stack>
