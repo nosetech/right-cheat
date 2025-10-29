@@ -97,9 +97,6 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Build frontend
-        run: yarn build
-
       - name: Build Tauri application
         run: yarn tauri build
 
@@ -172,7 +169,9 @@ jobs:
           ## Updated Files
           - package.json
           - src-tauri/Cargo.toml
+          - src-tauri/Cargo.lock
           - src-tauri/tauri.conf.json
+          - dist/RightCheat_*.dmg
           - README.md
 
           このPRは自動生成されました。
