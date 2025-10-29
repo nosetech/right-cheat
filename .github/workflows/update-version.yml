@@ -95,7 +95,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
 
       - name: Build Tauri application
         run: yarn tauri build
@@ -136,8 +136,8 @@ jobs:
 
       - name: Commit dmg build artifact
         run: |
-          # Add Cargo.lock and dist directory changes
-          git add src-tauri/Cargo.lock dist/
+          # Add all changes
+          git add .
 
           # Check if there are changes to commit
           if ! git diff --cached --quiet; then
