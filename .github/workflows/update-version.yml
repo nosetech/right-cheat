@@ -17,7 +17,7 @@ env:
 
 jobs:
   update-version:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -85,6 +85,68 @@ jobs:
           echo "=== Committing ==="
           git commit -m "chore: Update version to ${{ env.VERSION }}"
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+          cache: 'yarn'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build Tauri application
+        run: yarn tauri build
+
+      - name: Manage dist directory
+        run: |
+          # Extract version from VERSION env variable
+          VERSION="${{ env.VERSION }}"
+
+          # Create dist directory if it doesn't exist
+          mkdir -p dist
+
+          # Find and copy the generated dmg file
+          DMG_SOURCE=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" -type f)
+
+          if [ -z "$DMG_SOURCE" ]; then
+            echo "Error: No dmg file found in src-tauri/target/release/bundle/dmg/"
+            exit 1
+          fi
+
+          # Determine the arch from the dmg filename
+          DMG_FILENAME=$(basename "$DMG_SOURCE")
+          ARCH=$(echo "$DMG_FILENAME" | grep -oE '(aarch64|x86_64)' || echo "aarch64")
+
+          # New filename format: RightCheat_<version>_<arch>.dmg
+          DMG_DEST="dist/RightCheat_${VERSION}_${ARCH}.dmg"
+
+          echo "Copying $DMG_SOURCE to $DMG_DEST"
+          cp "$DMG_SOURCE" "$DMG_DEST"
+
+          # Remove old version dmg files (keep only current version)
+          echo "Removing old version dmg files..."
+          find dist -name "RightCheat_*.dmg" -type f ! -name "RightCheat_${VERSION}_*.dmg" -delete
+
+          # List remaining files in dist
+          echo "Files in dist directory:"
+          ls -lh dist/
+
+      - name: Commit dmg build artifact
+        run: |
+          # Add Cargo.lock and dist directory changes
+          git add src-tauri/Cargo.lock dist/
+
+          # Check if there are changes to commit
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: Add macOS dmg build artifact for version ${{ env.VERSION }}"
+            echo "Build artifact committed successfully"
+          else
+            echo "No changes to commit for build artifact"
+          fi
+
       - name: Push branch
         run: |
           echo "=== Git Log (last 2 commits) ==="
@@ -107,7 +169,9 @@ jobs:
           ## Updated Files
           - package.json
           - src-tauri/Cargo.toml
+          - src-tauri/Cargo.lock
           - src-tauri/tauri.conf.json
+          - dist/RightCheat_*.dmg
           - README.md
 
           このPRは自動生成されました。
