@@ -35,6 +35,9 @@ export default function Page() {
   const [toggleVisibleShortcut, setToggleVisibleShortcut] =
     useState<ShortcutDef>()
 
+  const [toggleVisibleShortcut, setToggleVisibleShortcut] =
+    useState<ShortcutDef>()
+
   useEffect(() => {
     ;(async () => {
       const inputpath = await getCheatSheetFilePath()
