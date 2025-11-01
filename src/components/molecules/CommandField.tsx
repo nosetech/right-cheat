@@ -1,78 +1,98 @@
 'use client'
-import { OverflowEllipsis } from '@/components/atoms'
+import { TruncatedText } from '@/components/atoms/TruncatedText'
+import { CommandDisplay } from '@/components/molecules/CommandDisplay'
 import { useClipboard } from '@/hooks/useClipboard'
 import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
+import { forwardRef } from 'react'
 
 export type CommandFieldProps = StackProps & {
   description: string
   command: string
+  numberHint?: string
 }
 
-export const CommandField = (props: CommandFieldProps) => {
-  const { description, command, tabIndex, ...remainProps } = props
+export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
+  (props, ref) => {
+    const { description, command, numberHint, tabIndex, ...remainProps } = props
 
-  const theme = useTheme()
+    const theme = useTheme()
+    const { copy, hasCopied, error } = useClipboard(command)
 
-  const { copy, hasCopied, error } = useClipboard(command)
-
-  const colorScheme = () => {
-    const defaultScheme = {
-      color: theme.palette.text.primary,
-      backgroundColor: theme.palette.primary.main,
-      border: 2,
-      borderColor: 'base.main',
-      borderRadius: 1,
-      '&:hover': {
-        borderColor: 'alert.main',
-      },
-      '&:focus-visible': {
-        outlineStyle: 'outset',
-        outlineColor: 'alert.main',
-        outlineWidth: 3,
-      },
-    }
-    if (error) {
-      return {
-        ...defaultScheme,
-        backgroundColor: theme.palette.alert.main,
+    const colorScheme = () => {
+      const defaultScheme = {
+        color: theme.palette.text.primary,
+        backgroundColor: theme.palette.primary.main,
+        border: 2,
+        borderColor: 'base.pale',
+        '&:hover': {
+          borderColor: 'alert.main',
+        },
+        '&:focus-visible': {
+          outlineStyle: 'outset',
+          outlineColor: 'alert.main',
+          outlineWidth: 2,
+        },
       }
-    } else if (hasCopied) {
-      return {
-        ...defaultScheme,
-        backgroundColor: theme.palette.background.default,
+      if (error) {
+        return {
+          ...defaultScheme,
+          backgroundColor: theme.palette.alert.main,
+        }
+      } else if (hasCopied) {
+        return {
+          ...defaultScheme,
+          backgroundColor: theme.palette.background.default,
+        }
+      } else {
+        return defaultScheme
       }
-    } else {
-      return defaultScheme
     }
-  }
 
-  return (
-    <Stack {...remainProps}>
-      <OverflowEllipsis>
-        <Typography variant='h3' noWrap={true}>
-          ・{description}
-        </Typography>
-      </OverflowEllipsis>
-      <Stack paddingLeft={1}>
+    return (
+      <Stack direction='row' spacing={1} alignItems='baseline' {...remainProps}>
         <Box
-          tabIndex={tabIndex ?? 0}
-          padding={1}
-          sx={colorScheme()}
-          onClick={copy}
-          onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-            if (event.key === 'Enter') {
-              copy()
-            }
+          sx={{
+            width: '10px',
+            minWidth: '10px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          <OverflowEllipsis>
-            <Typography variant='body1' noWrap={true}>
-              {command}
+          {numberHint && (
+            <Typography
+              variant='caption'
+              color='text.disabled'
+              sx={{
+                textAlign: 'center',
+              }}
+            >
+              {numberHint}
             </Typography>
-          </OverflowEllipsis>
+          )}
         </Box>
+        <CommandDisplay
+          command={command}
+          boxProps={{
+            ref,
+            maxWidth: '100%',
+            width: 'fit-content',
+            tabIndex: tabIndex ?? 0,
+            padding: 0.5,
+            sx: colorScheme(),
+            onClick: copy,
+            onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+              if (event.key === 'Enter') {
+                copy()
+              }
+            },
+          }}
+        />
+        <TruncatedText text={description} color='text.secondary' />
       </Stack>
-    </Stack>
-  )
-}
+    )
+  },
+)
+
+CommandField.displayName = 'CommandField'

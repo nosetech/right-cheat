@@ -1,0 +1,188 @@
+name: Update Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  update-version:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid version format: $VERSION"
+            echo "Expected format: X.Y.Z or X.Y.Z-alpha/beta/rc1"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Update package.json
+        run: |
+          echo "Before: $(grep '"version"' package.json)"
+          sed -i '' 's|"version": ".*"|"version": "${{ env.VERSION }}"|' package.json
+          echo "After: $(grep '"version"' package.json)"
+
+      - name: Update Cargo.toml
+        run: |
+          echo "Before: $(grep '^version' src-tauri/Cargo.toml)"
+          sed -i '' 's|^version = .*|version = "${{ env.VERSION }}"|' src-tauri/Cargo.toml
+          echo "After: $(grep '^version' src-tauri/Cargo.toml)"
+
+      - name: Update tauri.conf.json
+        run: |
+          echo "Before: $(grep 'version' src-tauri/tauri.conf.json)"
+          sed -i '' 's|"version": ".*"|"version": "${{ env.VERSION }}"|' src-tauri/tauri.conf.json
+          echo "After: $(grep 'version' src-tauri/tauri.conf.json)"
+
+      - name: Update README.md
+        run: |
+          echo "Before: $(grep -E '/[0-9]+\.[0-9]+\.[0-9]+/|RightCheat_[0-9]+\.[0-9]+\.[0-9]+' README.md || true)"
+          sed -i '' -E 's|/[0-9]+\.[0-9]+\.[0-9]+/|/${{ env.VERSION }}/|g' README.md
+          sed -i '' -E 's|RightCheat_[0-9]+\.[0-9]+\.[0-9]+|RightCheat_${{ env.VERSION }}|g' README.md
+          echo "After: $(grep -E '/[0-9]+\.[0-9]+\.[0-9]+/|RightCheat_[0-9]+\.[0-9]+\.[0-9]+' README.md || echo 'No matches found')"
+
+      - name: Create feature branch
+        run: |
+          git checkout -b "feature/bump-version-${{ env.VERSION }}"
+
+      - name: Commit changes
+        run: |
+          echo "=== Git Status Before Add ==="
+          git status
+          echo ""
+          echo "=== Adding files ==="
+          git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json README.md
+          echo ""
+          echo "=== Git Status After Add ==="
+          git status
+          echo ""
+          echo "=== Git Diff Cached ==="
+          git diff --cached --stat
+          echo ""
+          echo "=== Committing ==="
+          git commit -m "chore: Update version to ${{ env.VERSION }}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+          cache: 'yarn'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build Tauri application
+        run: yarn tauri build
+
+      - name: Manage dist directory
+        run: |
+          # Extract version from VERSION env variable
+          VERSION="${{ env.VERSION }}"
+
+          # Create dist directory if it doesn't exist
+          mkdir -p dist
+
+          # Find and copy the generated dmg file
+          DMG_SOURCE=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" -type f)
+
+          if [ -z "$DMG_SOURCE" ]; then
+            echo "Error: No dmg file found in src-tauri/target/release/bundle/dmg/"
+            exit 1
+          fi
+
+          # Determine the arch from the dmg filename
+          DMG_FILENAME=$(basename "$DMG_SOURCE")
+          ARCH=$(echo "$DMG_FILENAME" | grep -oE '(aarch64|x86_64)' || echo "aarch64")
+
+          # New filename format: RightCheat_<version>_<arch>.dmg
+          DMG_DEST="dist/RightCheat_${VERSION}_${ARCH}.dmg"
+
+          echo "Copying $DMG_SOURCE to $DMG_DEST"
+          cp "$DMG_SOURCE" "$DMG_DEST"
+
+          # Remove old version dmg files (keep only current version)
+          echo "Removing old version dmg files..."
+          find dist -name "RightCheat_*.dmg" -type f ! -name "RightCheat_${VERSION}_*.dmg" -delete
+
+          # List remaining files in dist
+          echo "Files in dist directory:"
+          ls -lh dist/
+
+      - name: Commit dmg build artifact
+        run: |
+          # Add all changes
+          git add .
+
+          # Check if there are changes to commit
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: Add macOS dmg build artifact for version ${{ env.VERSION }}"
+            echo "Build artifact committed successfully"
+          else
+            echo "No changes to commit for build artifact"
+          fi
+
+      - name: Push branch
+        run: |
+          echo "=== Git Log (last 2 commits) ==="
+          git log --oneline -2
+          echo ""
+          echo "=== Pushing branch ==="
+          git push origin "feature/bump-version-${{ env.VERSION }}" -v
+          echo ""
+          echo "=== Push completed ==="
+
+      - name: Create Pull Request
+        run: |
+          echo "=== Creating Pull Request ==="
+          gh pr create \
+            --title "Update version to ${{ env.VERSION }}" \
+            --body "$(cat <<'EOF'
+          ## Summary
+          バージョン番号を ${{ env.VERSION }} に更新します。
+
+          ## Updated Files
+          - package.json
+          - src-tauri/Cargo.toml
+          - src-tauri/Cargo.lock
+          - src-tauri/tauri.conf.json
+          - dist/RightCheat_*.dmg
+          - README.md
+
+          このPRは自動生成されました。
+          EOF
+          )" \
+            --base develop \
+            --head "feature/bump-version-${{ env.VERSION }}"
+          echo "=== Pull Request created successfully ==="
+
+      - name: Display results
+        run: |
+          echo "Version update workflow completed successfully"
+          echo "Branch: feature/bump-version-${{ env.VERSION }}"
+          echo "Version: ${{ env.VERSION }}"

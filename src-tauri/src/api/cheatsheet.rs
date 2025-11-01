@@ -16,6 +16,9 @@ lazy_static! {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CheatSheet {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type")]
+    sheet_type: Option<String>,
     title: String,
     commandlist: Vec<Command>,
 }

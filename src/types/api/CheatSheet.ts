@@ -9,6 +9,7 @@ export type CheatSheetTitleData = {
 }
 
 export type CheatSheetData = {
+  type?: 'command' | 'shortcut'
   title: string
   commandlist: CommandData[]
 }

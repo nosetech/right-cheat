@@ -3,6 +3,7 @@ pub mod common;
 pub mod settings_store;
 
 use serde_json;
+use settings_store::{SettingsStore, TauriSettingsStore};
 use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
@@ -36,6 +37,12 @@ pub fn run() {
             api::cheatsheet::reload_cheat_sheet,
             api::global_shortcut::get_toggle_visible_shortcut_settings,
             api::global_shortcut::set_toggle_visible_shortcut_settings,
+            api::window::notify_theme_changed,
+            api::font_size::get_font_size_settings,
+            api::font_size::set_font_size_settings,
+            api::font_size::increase_font_size,
+            api::font_size::decrease_font_size,
+            api::font_size::reset_font_size,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -57,9 +64,10 @@ fn menu_configuration<R: tauri::Runtime>(
                         handle,
                         Some("About RightCheat"),
                         Some({
+                            let app_version = handle.package_info().version.to_string();
                             let mut metadata = AboutMetadataBuilder::new()
-                                .version(Some("prototype 1.2"))
-                                .short_version(Some("0.1.2"))
+                                .version(Some(format!("バージョン {}", app_version)))
+                                .short_version(Some(app_version))
                                 .copyright(Some("©︎ 2025 nosetech"));
                             if cfg!(dev) {
                                 metadata = metadata
@@ -99,6 +107,28 @@ fn menu_configuration<R: tauri::Runtime>(
                         true,
                         Some("Cmd+r"),
                     )?,
+                    &PredefinedMenuItem::separator(handle)?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_increase_font_size",
+                        "Increase Font Size",
+                        true,
+                        Some("Cmd+="),
+                    )?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_decrease_font_size",
+                        "Decrease Font Size",
+                        true,
+                        Some("Cmd+-"),
+                    )?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_reset_font_size",
+                        "Reset Font Size",
+                        true,
+                        Some("Cmd+0"),
+                    )?,
                 ],
             )?,
             &Submenu::with_items(
@@ -130,9 +160,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(520.0, 240.0)
-            .max_inner_size(800.0, 240.0)
-            .min_inner_size(520.0, 240.0)
+            .inner_size(520.0, 340.0)
+            .max_inner_size(800.0, 340.0)
+            .min_inner_size(520.0, 340.0)
             .build();
         }
         "id_reload" => {
@@ -142,6 +172,15 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             handle
                 .emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
                 .unwrap();
+        }
+        "id_increase_font_size" => {
+            let _ = api::font_size::increase_font_size(handle.clone());
+        }
+        "id_decrease_font_size" => {
+            let _ = api::font_size::decrease_font_size(handle.clone());
+        }
+        "id_reset_font_size" => {
+            let _ = api::font_size::reset_font_size(handle.clone());
         }
         _ => {
             log::warn!("Unexpected event occurs. Event id={:?}", event.id());
@@ -154,9 +193,10 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(desktop)]
     {
+        let settings_store = TauriSettingsStore;
         api::global_shortcut::init_toggle_visible_shortcut_settings(app.handle())?;
         let shortcut_settings =
-            settings_store::get_setting(app.handle(), common::config::TOGGLE_VISIBLE_SHORTCUT)?;
+            settings_store.get_setting(app.handle(), common::config::TOGGLE_VISIBLE_SHORTCUT)?;
         if let Some(ref json) = shortcut_settings {
             let settings: api::global_shortcut::ShortcutDef = serde_json::from_value(json.clone())?;
             let window_visible_shortcut = settings.to_shortcut()?;
