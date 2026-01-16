@@ -13,7 +13,8 @@
       "Bash(yarn lint)",
       "Bash(yarn fix)",
       "Bash(gh pr view:*)",
-      "Bash(yarn build)"
+      "Bash(yarn build)",
+      "Bash(gh pr comment:*)"
     ],
     "deny": [],
     "ask": []
