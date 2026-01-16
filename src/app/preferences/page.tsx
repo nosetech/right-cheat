@@ -12,7 +12,7 @@ import { WindowAPI } from '@/types/api/Window'
 import { Box, Divider, Stack, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
-import { ask } from '@tauri-apps/plugin-dialog'
+import { ask, message } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { Command } from '@tauri-apps/plugin-shell'
@@ -130,10 +130,12 @@ export default function Page() {
       if (process.env.NODE_ENV === 'production') {
         // 再起動確認ダイアログを表示
         const shouldRestart = await ask(
-          '設定を反映するためにアプリケーションを再起動します。\nよろしいですか?',
+          '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
           {
-            title: 'RightCheat',
+            title: 'RightCheat - 再起動の確認',
             kind: 'info',
+            okLabel: 'はい',
+            cancelLabel: 'いいえ',
           },
         )
 
@@ -141,6 +143,14 @@ export default function Page() {
           await relaunch()
         } else {
           debug('User cancelled the restart.')
+          // キャンセル時にユーザーに設定が保存されたことを通知
+          await message(
+            '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
+            {
+              title: 'RightCheat',
+              kind: 'info',
+            },
+          )
         }
       } else {
         debug('Relaunch is not execute in development mode.')
