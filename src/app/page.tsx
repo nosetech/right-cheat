@@ -9,14 +9,13 @@ import {
   LogicalPosition,
   monitorFromPoint,
   primaryMonitor,
+  type WebviewWindow,
 } from '@tauri-apps/api/window'
 
 import { Event } from '@/common'
 import { CheatSheet } from '@/components/organisms/CheatSheet'
 
-const fallbackToPrimaryMonitor = async (
-  window: ReturnType<typeof getCurrentWindow>,
-) => {
+const fallbackToPrimaryMonitor = async (window: WebviewWindow) => {
   try {
     const primaryMon = await primaryMonitor()
     if (primaryMon) {
@@ -49,7 +48,7 @@ const fallbackToPrimaryMonitor = async (
 const changeWindowVisible = async () => {
   const window = getCurrentWindow()
   if (await window.isVisible()) {
-    window.hide()
+    await window.hide()
   } else {
     try {
       // カーソル位置を取得
@@ -97,11 +96,23 @@ const changeWindowVisible = async () => {
 
 export default function Home() {
   useEffect(() => {
-    listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
-      ;(async () => {
-        changeWindowVisible()
-      })()
-    })
+    let unlisten: (() => void) | null = null
+
+    const setupListener = async () => {
+      unlisten = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
+        ;(async () => {
+          await changeWindowVisible()
+        })()
+      })
+    }
+
+    setupListener()
+
+    return () => {
+      if (unlisten) {
+        unlisten()
+      }
+    }
   }, [])
 
   return <CheatSheet />
