@@ -99,6 +99,14 @@ export default function Home() {
     let unlisten: (() => void) | null = null
 
     const setupListener = async () => {
+      // アプリケーション初期化時に一度だけ全スペース表示を設定
+      try {
+        const window = getCurrentWindow()
+        await window.setVisibleOnAllWorkspaces(true)
+      } catch (error) {
+        console.error('Failed to set visible on all workspaces:', error)
+      }
+
       unlisten = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
         ;(async () => {
           await changeWindowVisible()
