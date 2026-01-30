@@ -1,0 +1,23 @@
+[
+  {
+    "title": "MultilineCommands",
+    "commandlist": [
+      {
+        "description": "複数行コマンド（改行あり）",
+        "command": "git add .\\\ngit commit -m 'message'\\\ngit push"
+      },
+      {
+        "description": "エスケープされたバックスラッシュ",
+        "command": "echo C:\\\\Users\\\\name"
+      },
+      {
+        "description": "バックスラッシュと改行の混在",
+        "command": "line1\\\n\\\\escaped\\\nline3"
+      },
+      {
+        "description": "連続するバックスラッシュ",
+        "command": "path\\\\\\\\to\\\\\\\\file"
+      }
+    ]
+  }
+]
