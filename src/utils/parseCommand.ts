@@ -7,9 +7,14 @@
  * @returns 改行とエスケープされたバックスラッシュが処理された文字列
  *
  * @example
- * parseCommand('line1\\line2') // 'line1\nline2' を返す
- * parseCommand('echo\\\\test') // 'echo\test' を返す
- * parseCommand('mixed\\line\\\\and\\escape') // 'mixed\nline\and\nescape' を返す
+ * // JSON内: "line1\\line2"（JSON では \ を \\ でエスケープ）
+ * parseCommand(String.raw`line1\line2`) // 'line1\nline2' を返す
+ *
+ * // JSON内: "echo\\\\test"（JSON では \\\\ で 1つの \ を表現）
+ * parseCommand(String.raw`echo\\test`) // 'echo\test' を返す
+ *
+ * // 複合パターン: JSON内では複数のバックスラッシュと改行が混在
+ * parseCommand(String.raw`mixed\line\\and\escape`) // 'mixed\nline\and\nescape' を返す
  */
 export const parseCommand = (command: string): string => {
   // \\ を一時プレースホルダーに置換してエスケープされたバックスラッシュを保護
