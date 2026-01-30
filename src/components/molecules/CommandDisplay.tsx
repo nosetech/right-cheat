@@ -19,9 +19,11 @@ export const CommandDisplay = ({
     <Box maxWidth='100%' width='fit-content' {...boxProps}>
       <Typography
         variant='body1'
-        noWrap={false}
+        noWrap={true}
         sx={{
-          whiteSpace: 'pre-line',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'pre',
         }}
         {...typographyProps}
       >
