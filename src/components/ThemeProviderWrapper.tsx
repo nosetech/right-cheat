@@ -10,6 +10,7 @@ import {
 } from '@/theme/default'
 import { ThemeProvider } from '@mui/material/styles'
 import { listen } from '@tauri-apps/api/event'
+import { error } from '@tauri-apps/plugin-log'
 import { ReactNode, useCallback, useEffect, useState } from 'react'
 
 export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
@@ -71,8 +72,8 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
       try {
         const latestMode = await getThemeMode()
         updateTheme(latestMode, fontSizeSettings.scale)
-      } catch (error) {
-        console.error('Failed to update theme from event:', error)
+      } catch (err) {
+        error(`Failed to update theme from event: ${err}`)
       }
     })
 

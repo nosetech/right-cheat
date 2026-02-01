@@ -1,6 +1,7 @@
 'use client'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
+import { error } from '@tauri-apps/plugin-log'
 import { useEffect, useState } from 'react'
 import { usePreferencesStore } from './usePreferencesStore'
 
@@ -14,8 +15,8 @@ export const useThemeStore = () => {
       try {
         const savedMode = await getThemeMode()
         setThemeModeState(savedMode)
-      } catch (error) {
-        console.error('Failed to load theme mode:', error)
+      } catch (err) {
+        error(`Failed to load theme mode: ${err}`)
       } finally {
         setIsLoading(false)
       }
@@ -28,8 +29,8 @@ export const useThemeStore = () => {
     try {
       setThemeModeState(mode)
       await persistThemeMode(mode)
-    } catch (error) {
-      console.error('Failed to save theme mode:', error)
+    } catch (err) {
+      error(`Failed to save theme mode: ${err}`)
     }
   }
 
