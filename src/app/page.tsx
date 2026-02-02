@@ -29,7 +29,8 @@ export default function Home() {
         const window = getCurrentWindow()
         await window.setVisibleOnAllWorkspaces(true)
       } catch (err) {
-        error(`Failed to set visible on all workspaces: ${err}`)
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        error(`[page] Failed to set visible on all workspaces: ${errorMessage}`)
       }
 
       unlisten = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {

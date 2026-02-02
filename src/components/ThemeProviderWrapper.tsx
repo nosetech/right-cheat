@@ -73,7 +73,10 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
         const latestMode = await getThemeMode()
         updateTheme(latestMode, fontSizeSettings.scale)
       } catch (err) {
-        error(`Failed to update theme from event: ${err}`)
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        error(
+          `[ThemeProviderWrapper] Failed to update theme from event: ${errorMessage}`,
+        )
       }
     })
 

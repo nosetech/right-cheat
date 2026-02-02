@@ -28,7 +28,10 @@ export const useFontSize = () => {
         )
         setFontSizeSettings(settings)
       } catch (err) {
-        error(`Failed to load font size settings: ${err}`)
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        error(
+          `[useFontSize] Failed to load font size settings: ${errorMessage}`,
+        )
       }
     }
 
@@ -54,7 +57,8 @@ export const useFontSize = () => {
       )
       setFontSizeSettings(newSettings)
     } catch (err) {
-      error(`Failed to increase font size: ${err}`)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      error(`[useFontSize] Failed to increase font size: ${errorMessage}`)
     }
   }
 
@@ -65,7 +69,8 @@ export const useFontSize = () => {
       )
       setFontSizeSettings(newSettings)
     } catch (err) {
-      error(`Failed to decrease font size: ${err}`)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      error(`[useFontSize] Failed to decrease font size: ${errorMessage}`)
     }
   }
 
@@ -76,7 +81,8 @@ export const useFontSize = () => {
       )
       setFontSizeSettings(newSettings)
     } catch (err) {
-      error(`Failed to reset font size: ${err}`)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      error(`[useFontSize] Failed to reset font size: ${errorMessage}`)
     }
   }
 

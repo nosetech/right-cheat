@@ -16,7 +16,8 @@ export const useThemeStore = () => {
         const savedMode = await getThemeMode()
         setThemeModeState(savedMode)
       } catch (err) {
-        error(`Failed to load theme mode: ${err}`)
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        error(`[useThemeStore] Failed to load theme mode: ${errorMessage}`)
       } finally {
         setIsLoading(false)
       }
@@ -30,7 +31,8 @@ export const useThemeStore = () => {
       setThemeModeState(mode)
       await persistThemeMode(mode)
     } catch (err) {
-      error(`Failed to save theme mode: ${err}`)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      error(`[useThemeStore] Failed to save theme mode: ${errorMessage}`)
     }
   }
 
