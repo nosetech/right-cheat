@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 
 import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { error } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { CheatSheet } from '@/components/organisms/CheatSheet'
@@ -27,8 +28,9 @@ export default function Home() {
       try {
         const window = getCurrentWindow()
         await window.setVisibleOnAllWorkspaces(true)
-      } catch (error) {
-        console.error('Failed to set visible on all workspaces:', error)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        error(`[page] Failed to set visible on all workspaces: ${errorMessage}`)
       }
 
       unlisten = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
