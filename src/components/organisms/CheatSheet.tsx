@@ -1,15 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 
-import {
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography,
-} from '@mui/material'
+import { Autocomplete, Grid, TextField, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
@@ -96,8 +88,8 @@ export const CheatSheet = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectCheatSheet])
 
-  const handleChange = (event: SelectChangeEvent) => {
-    setCheatSheet(event.target.value as string)
+  const handleChange = (_event: unknown, value: string | null) => {
+    setCheatSheet(value ?? '')
   }
 
   // Keyboard shortcuts handler
@@ -126,30 +118,26 @@ export const CheatSheet = () => {
       }
     },
     onZeroKey: () => {
-      // Open the select dropdown by focusing and pressing Enter
+      // Open the Autocomplete dropdown by focusing the input
       if (selectRef.current) {
-        // Find the focusable element (the display div with role="combobox")
-        const selectButton = selectRef.current.querySelector(
-          'div[role="combobox"]',
-        ) as HTMLElement
+        // Find the input element within Autocomplete
+        const input = selectRef.current.querySelector(
+          'input[type="text"]',
+        ) as HTMLInputElement
 
-        if (selectButton) {
-          // Focus the element
-          selectButton.focus()
-
-          // Dispatch Enter key event
-          const enterEvent = new KeyboardEvent('keydown', {
-            key: 'Enter',
-            code: 'Enter',
-            keyCode: 13,
-            which: 13,
+        if (input) {
+          input.focus()
+          // ドロップダウンを開くために ArrowDown イベントをディスパッチ
+          const arrowDownEvent = new KeyboardEvent('keydown', {
+            key: 'ArrowDown',
+            code: 'ArrowDown',
             bubbles: true,
             cancelable: true,
           })
-          selectButton.dispatchEvent(enterEvent)
-          debug('0 key: Focused and dispatched Enter event to select button')
+          input.dispatchEvent(arrowDownEvent)
+          debug('0 key: Focused Autocomplete input and opened dropdown')
         } else {
-          debug('0 key: Could not find div[role="combobox"]')
+          debug('0 key: Could not find input element in Autocomplete')
         }
       } else {
         debug('0 key: selectRef.current is null')
@@ -165,7 +153,7 @@ export const CheatSheet = () => {
           <br />
           [メニュー] - [Preference]で入力ファイルパスを設定してください。
         </Typography>
-      ) : reloading == false && selectCheatSheet == '' ? (
+      ) : reloading == false && cheatSheetTitles == undefined ? (
         <Typography variant='body1' color='error'>
           正しい内容の入力ファイルが指定されていないようです。
           <br /> [メニュー] -
@@ -173,34 +161,39 @@ export const CheatSheet = () => {
         </Typography>
       ) : (
         <>
-          <FormControl fullWidth ref={selectRef}>
-            <InputLabel
-              sx={{
-                '&.Mui-focused': {
-                  color: theme.palette.base.main,
-                },
-              }}
-            >
-              CheatSheet
-            </InputLabel>
-            <Select
-              value={selectCheatSheet}
-              label='CheatSheet'
-              onChange={handleChange}
-              size='small'
-              sx={{
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: theme.palette.base.main,
-                },
-              }}
-            >
-              {cheatSheetTitles?.title.map((item, index) => (
-                <MenuItem key={index} value={item}>
-                  {item}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            ref={selectRef}
+            options={cheatSheetTitles?.title || []}
+            value={selectCheatSheet || null}
+            onChange={handleChange}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label='CheatSheet'
+                size='small'
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: theme.palette.base.main,
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    opacity: 1,
+                  },
+                  '& .MuiInputLabel-root': {
+                    '&.Mui-focused': {
+                      color: theme.palette.base.main,
+                    },
+                  },
+                }}
+              />
+            )}
+            freeSolo={false}
+            disableClearable
+            noOptionsText='チートシートが見つかりません'
+            loadingText='読み込み中...'
+            size='small'
+          />
           {cheatSheetData?.type === 'shortcut' ? (
             <Grid container spacing={1} p={1} width='100%'>
               {cheatSheetData?.commandlist.map((item: CommandData, index) => (
