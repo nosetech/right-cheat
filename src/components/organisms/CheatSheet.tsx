@@ -189,7 +189,7 @@ export const CheatSheet = () => {
               />
             )}
             freeSolo={false}
-            clearOnEscape
+            disableClearable
             noOptionsText='チートシートが見つかりません'
             loadingText='読み込み中...'
             size='small'
