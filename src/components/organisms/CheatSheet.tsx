@@ -89,7 +89,7 @@ export const CheatSheet = () => {
   }, [selectCheatSheet])
 
   const handleChange = (_event: unknown, value: string | null) => {
-    setCheatSheet(value || '')
+    setCheatSheet(value ?? '')
   }
 
   // Keyboard shortcuts handler
@@ -127,7 +127,15 @@ export const CheatSheet = () => {
 
         if (input) {
           input.focus()
-          debug('0 key: Focused Autocomplete input')
+          // ドロップダウンを開くために ArrowDown イベントをディスパッチ
+          const arrowDownEvent = new KeyboardEvent('keydown', {
+            key: 'ArrowDown',
+            code: 'ArrowDown',
+            bubbles: true,
+            cancelable: true,
+          })
+          input.dispatchEvent(arrowDownEvent)
+          debug('0 key: Focused Autocomplete input and opened dropdown')
         } else {
           debug('0 key: Could not find input element in Autocomplete')
         }
@@ -145,7 +153,7 @@ export const CheatSheet = () => {
           <br />
           [メニュー] - [Preference]で入力ファイルパスを設定してください。
         </Typography>
-      ) : reloading == false && selectCheatSheet == '' ? (
+      ) : reloading == false && cheatSheetTitles == undefined ? (
         <Typography variant='body1' color='error'>
           正しい内容の入力ファイルが指定されていないようです。
           <br /> [メニュー] -
