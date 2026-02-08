@@ -164,7 +164,7 @@ export const CheatSheet = () => {
           <Autocomplete
             ref={selectRef}
             options={cheatSheetTitles?.title || []}
-            value={selectCheatSheet || null}
+            value={selectCheatSheet || undefined}
             onChange={handleChange}
             renderInput={(params) => (
               <TextField
