@@ -31,6 +31,7 @@ export const CheatSheet = () => {
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData>()
 
   const [reloading, setReloading] = useState<boolean>(false)
+  const [autocompleteOpen, setAutocompleteOpen] = useState<boolean>(false)
 
   const theme = useTheme()
   const { getCheatSheetFilePath } = usePreferencesStore()
@@ -90,6 +91,36 @@ export const CheatSheet = () => {
 
   const handleChange = (_event: unknown, value: string | null) => {
     setCheatSheet(value ?? '')
+  }
+
+  const handleAutocompleteKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
+    if (event.key === 'Enter' && autocompleteOpen) {
+      // Material-UIのAutocompleteはリストボックスをポップアップで描画するため、
+      // document全体から探索する
+      const listboxElement = document.querySelector('[role="listbox"]')
+
+      // リストボックスが存在し、その中にフォーカスがない場合、最初の項目を選択
+      if (listboxElement) {
+        const activeElement = document.activeElement
+        const isInListbox = listboxElement.contains(activeElement as Node)
+
+        if (!isInListbox) {
+          // 表示されている最初のリスト項目を取得してクリック
+          const firstOption = listboxElement.querySelector(
+            'li',
+          ) as HTMLLIElement
+          if (firstOption) {
+            event.preventDefault()
+            // リスト項目をクリックして選択
+            firstOption.click()
+            setAutocompleteOpen(false)
+          }
+        }
+      }
+    }
   }
 
   // Keyboard shortcuts handler
@@ -166,11 +197,15 @@ export const CheatSheet = () => {
             options={cheatSheetTitles?.title || []}
             value={selectCheatSheet || undefined}
             onChange={handleChange}
+            open={autocompleteOpen}
+            onOpen={() => setAutocompleteOpen(true)}
+            onClose={() => setAutocompleteOpen(false)}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label='CheatSheet'
                 size='small'
+                onKeyDown={handleAutocompleteKeyDown}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
