@@ -12,7 +12,6 @@ export const CommandDisplay = ({
   boxProps,
   typographyProps,
 }: CommandDisplayProps) => {
-
   return (
     <Box maxWidth='100%' width='fit-content' {...boxProps}>
       <Typography
