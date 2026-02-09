@@ -126,6 +126,10 @@ jobs:
           echo "Copying $DMG_SOURCE to $DMG_DEST"
           cp "$DMG_SOURCE" "$DMG_DEST"
 
+          # Remove extended attributes from dmg file
+          echo "Removing extended attributes from dmg file..."
+          xattr -cr "$DMG_DEST"
+
           # Remove old version dmg files (keep only current version)
           echo "Removing old version dmg files..."
           find dist -name "RightCheat_*.dmg" -type f ! -name "RightCheat_${VERSION}_*.dmg" -delete
