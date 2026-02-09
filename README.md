@@ -168,10 +168,12 @@ RightCheatを完全に削除するには、以下の手順を行います：
 
 #### 複数行コマンドの例
 
+\\を記載することで改行します。
+
 ```json
 {
   "description": "複数行コマンドの例",
-  "command": "command1 && \\\ncommand2 && \\\ncommand3"
+  "command": "command1 && \\command2 && \\command3"
 }
 ```
 
