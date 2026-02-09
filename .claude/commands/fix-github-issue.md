@@ -1,6 +1,3 @@
-7. コミット(developブランチに直接コミットしないこと。feature/\*ブランチにコミットすること。)
-8. developブランチへのプルリクエスト作成
-
 GitHub issueを分析して実行してください: issue番号 $ARGUMENTS
 
 以下の手順で進めてください。
