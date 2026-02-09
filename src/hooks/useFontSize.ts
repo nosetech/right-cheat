@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { error } from '@tauri-apps/plugin-log'
 import { useEffect, useState } from 'react'
 
 import {
@@ -26,8 +27,11 @@ export const useFontSize = () => {
           FontSizeAPI.GET_FONT_SIZE_SETTINGS,
         )
         setFontSizeSettings(settings)
-      } catch (error) {
-        console.error('Failed to load font size settings:', error)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        error(
+          `[useFontSize] Failed to load font size settings: ${errorMessage}`,
+        )
       }
     }
 
@@ -52,8 +56,9 @@ export const useFontSize = () => {
         FontSizeAPI.INCREASE_FONT_SIZE,
       )
       setFontSizeSettings(newSettings)
-    } catch (error) {
-      console.error('Failed to increase font size:', error)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      error(`[useFontSize] Failed to increase font size: ${errorMessage}`)
     }
   }
 
@@ -63,8 +68,9 @@ export const useFontSize = () => {
         FontSizeAPI.DECREASE_FONT_SIZE,
       )
       setFontSizeSettings(newSettings)
-    } catch (error) {
-      console.error('Failed to decrease font size:', error)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      error(`[useFontSize] Failed to decrease font size: ${errorMessage}`)
     }
   }
 
@@ -74,8 +80,9 @@ export const useFontSize = () => {
         FontSizeAPI.RESET_FONT_SIZE,
       )
       setFontSizeSettings(newSettings)
-    } catch (error) {
-      console.error('Failed to reset font size:', error)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      error(`[useFontSize] Failed to reset font size: ${errorMessage}`)
     }
   }
 

@@ -45,6 +45,17 @@ mod get_cheat_titles {
             "{\"title\": [\"Test\"]}"
         );
     }
+
+    #[test]
+    fn json_with_backslash_commands() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        assert_eq!(
+            get_cheat_titles("./tests/api/test-data-with-backslash.json"),
+            "{\"title\": [\"MultilineCommands\"]}"
+        );
+    }
 }
 
 #[cfg(test)]
@@ -131,5 +142,48 @@ mod get_cheat_sheet {
             get_cheat_sheet("./tests/api/test-data.json", "Test1"),
             "{\"title\":\"Test1\",\"commandlist\":[{\"description\":\"Test Command1\",\"command\":\"command1\"},{\"description\":\"Test Command2\",\"command\":\"command2\"}]}"
         );
+    }
+
+    #[test]
+    fn json_with_backslash_multiline() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        let result = get_cheat_sheet(
+            "./tests/api/test-data-with-backslash.json",
+            "MultilineCommands",
+        );
+
+        // タイトルが正しいことを確認
+        assert!(result.contains("\"title\":\"MultilineCommands\""));
+
+        // 各コマンドの説明が含まれていることを確認
+        assert!(result.contains("\"description\":\"複数行コマンド（改行あり）\""));
+        assert!(result.contains("\"description\":\"エスケープされたバックスラッシュ\""));
+        assert!(result.contains("\"description\":\"バックスラッシュと改行の混在\""));
+        assert!(result.contains("\"description\":\"連続するバックスラッシュ\""));
+
+        // 複数行コマンド (バックスラッシュ+改行がJSONでは\\nとしてエスケープされる)
+        assert!(result.contains("git add .\\\\\\ngit commit -m 'message'\\\\\\ngit push"));
+    }
+
+    #[test]
+    fn json_with_escaped_backslash() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        let result = get_cheat_sheet(
+            "./tests/api/test-data-with-backslash.json",
+            "MultilineCommands",
+        );
+
+        // エスケープされたバックスラッシュ (JSONでは \\\\ が \\\\\\\\ になる)
+        assert!(result.contains("echo C:\\\\\\\\Users\\\\\\\\name"));
+
+        // バックスラッシュと改行の混在
+        assert!(result.contains("line1\\\\\\n\\\\\\\\escaped\\\\\\nline3"));
+
+        // 連続するバックスラッシュ (4つのバックスラッシュは8つにエスケープされる)
+        assert!(result.contains("path\\\\\\\\\\\\\\\\to\\\\\\\\\\\\\\\\file"));
     }
 }

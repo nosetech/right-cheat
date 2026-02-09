@@ -5,6 +5,7 @@ export const useClipboard = (value: string) => {
   const [error, setError] = useState<Error>()
 
   const copy = async () => {
+    // コマンド文字列をクリップボードにコピー
     navigator.clipboard
       .writeText(value)
       .then(() => {

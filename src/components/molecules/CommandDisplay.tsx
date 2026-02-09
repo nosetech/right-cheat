@@ -20,7 +20,7 @@ export const CommandDisplay = ({
         sx={{
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          whiteSpace: 'pre',
         }}
         {...typographyProps}
       >

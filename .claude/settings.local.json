@@ -13,7 +13,12 @@
       "Bash(yarn lint)",
       "Bash(yarn fix)",
       "Bash(gh pr view:*)",
-      "Bash(yarn build)"
+      "Bash(yarn build)",
+      "Bash(gh pr comment:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.rs)",
+      "mcp__inkdrop__search-notes",
+      "mcp__inkdrop__read-note"
     ],
     "deny": [],
     "ask": []

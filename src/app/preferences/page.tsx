@@ -6,14 +6,13 @@ import { FileEditButton, FileOpenButton, ThemeToggle } from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
-import { grey } from '@/theme/color'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { WindowAPI } from '@/types/api/Window'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
-import { Box, Divider, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, Divider, Stack, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
+import { ask, message } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { Command } from '@tauri-apps/plugin-shell'
@@ -31,9 +30,6 @@ export default function Page() {
     setThemeMode: setStoredThemeMode,
     isLoading,
   } = useThemeStore()
-
-  const [toggleVisibleShortcut, setToggleVisibleShortcut] =
-    useState<ShortcutDef>()
 
   const [toggleVisibleShortcut, setToggleVisibleShortcut] =
     useState<ShortcutDef>()
@@ -130,9 +126,32 @@ export default function Page() {
         })
         .catch((err) => error(`Error setting shortcut: ${err}`))
 
-      // devモードでは正常にアプリの再起動が実行できいないため、ログ出力だけにする。
+      // devモードでは正常にアプリの再起動が実行できないため、ログ出力だけにする。
       if (process.env.NODE_ENV === 'production') {
-        await relaunch()
+        // 再起動確認ダイアログを表示
+        const shouldRestart = await ask(
+          '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
+          {
+            title: 'RightCheat - 再起動の確認',
+            kind: 'info',
+            okLabel: 'はい',
+            cancelLabel: 'いいえ',
+          },
+        )
+
+        if (shouldRestart) {
+          await relaunch()
+        } else {
+          debug('User cancelled the restart.')
+          // キャンセル時にユーザーに設定が保存されたことを通知
+          await message(
+            '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
+            {
+              title: 'RightCheat',
+              kind: 'info',
+            },
+          )
+        }
       } else {
         debug('Relaunch is not execute in development mode.')
       }
@@ -180,15 +199,7 @@ export default function Page() {
       </Stack>
       <Divider />
       <Stack direction='row' spacing={1} alignItems='center'>
-        <Stack direction='row' spacing={1}>
-          <Typography variant='body1'>Global Shortcut</Typography>
-          <Tooltip
-            title='Restart the application to reflect the settings.'
-            placement='right'
-          >
-            <ErrorOutlineIcon fontSize='small' sx={{ color: grey[300] }} />
-          </Tooltip>
-        </Stack>
+        <Typography variant='body1'>Global Shortcut</Typography>
         {shortcutValidationError && (
           <Typography variant='caption' color={theme.palette.alert.main}>
             ^ ⌥ ⌘ のいずれか1つはチェックしてください。
