@@ -35,21 +35,24 @@ RightCheat は Tauri 2 + Next.js + React + Material-UI で構築されたデス�
 ## アーキテクチャ概要
 
 ### フロントエンド (Next.js/React)
-- **App Router**: Next.js 14 app ディレクトリ構造を使用
+- **App Router**: Next.js 16 app ディレクトリ構造を使用
 - **主要コンポーネント**:
   - `CheatSheet.tsx`: 状態管理と API 呼び出しを管理するメイン UI コンポーネント
-  - `CommandField.tsx`: クリップボード機能付きの個別コマンド表示
+  - `CommandField.tsx`: クリップボード機能付きの個別コマンド表示（複数行コマンド対応）
   - atoms/molecules/organisms 構造でのアトミックデザインパターン
 - **状態管理**: カスタムフック（usePreferencesStore, useClipboard）
 - **Tauri 統合**: バックエンド通信に @tauri-apps/api を使用
+- **ロギング**: @tauri-apps/plugin-log を使用した統一されたログ出力
 
 ### バックエンド (Rust/Tauri)
 - **API レイヤー**: src-tauri/src/api/ のモジュラー API 構造
   - `cheatsheet.rs`: JSON ファイル読み込み、キャッシュ、コマンド管理
-  - `global_shortcut.rs`: キーボードショートカットの設定と処理
+  - `global_shortcut.rs`: キーボードショートカットの設定と処理（再起動確認ダイアログ対応）
 - **データフロー**: JSON ファイル → キャッシュ → Tauri コマンド経由でフロントエンド
 - **設定**: tauri-plugin-store を使用した永続化ストレージ
 - **メニューシステム**: 設定とヘルプオプション付きのネイティブ macOS メニュー
+- **マルチディスプレイ対応**: ウィンドウの表示位置がマルチディスプレイ環境に対応
+- **ロギング**: @tauri-apps/plugin-log を使用した構造化ログ
 
 ### 主要な設計パターン
 - **遅延読み込み**: CheatSheet データは初回読み込み時にメモリにキャッシュ

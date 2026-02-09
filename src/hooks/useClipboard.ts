@@ -1,4 +1,3 @@
-import { getCopyCommand } from '@/utils/parseCommand'
 import { useState } from 'react'
 
 export const useClipboard = (value: string) => {
@@ -6,10 +5,9 @@ export const useClipboard = (value: string) => {
   const [error, setError] = useState<Error>()
 
   const copy = async () => {
-    // パース処理後の文字列をクリップボードにコピー
-    const copyValue = getCopyCommand(value)
+    // コマンド文字列をクリップボードにコピー
     navigator.clipboard
-      .writeText(copyValue)
+      .writeText(value)
       .then(() => {
         setHasCopied(true)
         setTimeout(() => {
