@@ -1,5 +1,4 @@
 'use client'
-import { getDisplayCommand } from '@/utils/parseCommand'
 import { Box, BoxProps, Typography, TypographyProps } from '@mui/material'
 
 export type CommandDisplayProps = {
@@ -13,7 +12,6 @@ export const CommandDisplay = ({
   boxProps,
   typographyProps,
 }: CommandDisplayProps) => {
-  const displayCommand = getDisplayCommand(command)
 
   return (
     <Box maxWidth='100%' width='fit-content' {...boxProps}>
@@ -27,7 +25,7 @@ export const CommandDisplay = ({
         }}
         {...typographyProps}
       >
-        {displayCommand}
+        {command}
       </Typography>
     </Box>
   )
