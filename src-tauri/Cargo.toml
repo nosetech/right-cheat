@@ -2,7 +2,7 @@
 name = "right-cheat"
 version = "1.1.1"
 description = "A desktop cheatsheet application built with Tauri 2, displaying frequently used commands and shortcuts"
-authors = ["Nose Hiroyuki <nose.hiroyuki@nosetech.biz>"]
+authors = ["Hiroyuki Nose <nose.hiroyuki@nosetech.biz>"]
 license = "MIT"
 repository = "https://github.com/nosetech/right-cheat"
 edition = "2021"
