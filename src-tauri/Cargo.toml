@@ -1,10 +1,10 @@
 [package]
-name = "app"
+name = "right-cheat"
 version = "1.1.1"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+description = "A desktop cheatsheet application built with Tauri 2, displaying frequently used commands and shortcuts"
+authors = ["Hiroyuki Nose <nose.hiroyuki@nosetech.biz>"]
+license = "MIT"
+repository = "https://github.com/nosetech/right-cheat"
 edition = "2021"
 rust-version = "1.77.2"
 
