@@ -29,6 +29,7 @@ export const CheatSheet = () => {
   const [selectCheatSheet, setCheatSheet] = useState<string>('')
 
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData>()
+  const [errorMessage, setErrorMessage] = useState<string>()
 
   const [reloading, setReloading] = useState<boolean>(false)
   const [autocompleteOpen, setAutocompleteOpen] = useState<boolean>(false)
@@ -48,15 +49,25 @@ export const CheatSheet = () => {
           if (inputpath) {
             setReloading(true)
             setCheatSheet('')
+            setErrorMessage(undefined)
             await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES, {
               inputPath: inputpath,
             }).then((response) => {
               debug(
                 `invoke '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`,
               )
-              const titles: CheatSheetTitleData = JSON.parse(response)
-              setCheatSheetTitles(titles)
-              setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+              const parsedResponse = JSON.parse(response)
+              // エラーレスポンスの場合
+              if (parsedResponse.success === false && parsedResponse.error) {
+                setErrorMessage(parsedResponse.error)
+                setCheatSheetTitles(undefined)
+              } else {
+                // 成功レスポンスの場合
+                const titles: CheatSheetTitleData = parsedResponse
+                setCheatSheetTitles(titles)
+                setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+                setErrorMessage(undefined)
+              }
             })
             setJsonInputPath(inputpath)
             setReloading(false)
@@ -71,6 +82,31 @@ export const CheatSheet = () => {
           )
         },
       )
+
+      // 初期化時に CheatSheet タイトルを読み込む
+      const inputpath = await getCheatSheetFilePath()
+      if (inputpath) {
+        setJsonInputPath(inputpath)
+        await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES, {
+          inputPath: inputpath,
+        }).then((response) => {
+          debug(
+            `invoke '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`,
+          )
+          const parsedResponse = JSON.parse(response)
+          // エラーレスポンスの場合
+          if (parsedResponse.success === false && parsedResponse.error) {
+            setErrorMessage(parsedResponse.error)
+            setCheatSheetTitles(undefined)
+          } else {
+            // 成功レスポンスの場合
+            const titles: CheatSheetTitleData = parsedResponse
+            setCheatSheetTitles(titles)
+            setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+            setErrorMessage(undefined)
+          }
+        })
+      }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -82,8 +118,17 @@ export const CheatSheet = () => {
         title: selectCheatSheet,
       }).then((response) => {
         debug(`invoke '${CheatSheetAPI.GET_CHEAT_SHEET}' response=${response}`)
-        const data: CheatSheetData = JSON.parse(response)
-        setCheatSheetData(data)
+        const parsedResponse = JSON.parse(response)
+        // エラーレスポンスの場合
+        if (parsedResponse.success === false && parsedResponse.error) {
+          setErrorMessage(parsedResponse.error)
+          setCheatSheetData(undefined)
+        } else {
+          // 成功レスポンスの場合
+          const data: CheatSheetData = parsedResponse
+          setCheatSheetData(data)
+          setErrorMessage(undefined)
+        }
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -183,6 +228,18 @@ export const CheatSheet = () => {
           入力ファイルのパスが指定されていません。
           <br />
           [メニュー] - [Preference]で入力ファイルパスを設定してください。
+        </Typography>
+      ) : errorMessage ? (
+        <Typography
+          variant='body1'
+          color='error'
+          style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+        >
+          {errorMessage}
+          <br />
+          <br />
+          [メニュー] -
+          [Preference]で指定されている入力ファイルの内容を見直してください。
         </Typography>
       ) : reloading == false && cheatSheetTitles == undefined ? (
         <Typography variant='body1' color='error'>
