@@ -9,7 +9,13 @@ mod get_cheat_titles {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
-        assert_eq!(get_cheat_titles("notfound.json"), "{\"title\": []}");
+        let result = get_cheat_titles("notfound.json");
+
+        // エラーレスポンスであることを確認
+        assert!(result.contains("\"success\":false"));
+        assert!(result.contains("\"error\""));
+        // ファイルが見つからないエラーメッセージを確認
+        assert!(result.contains("見つかりません") || result.contains("No such file"));
     }
 
     #[test]
@@ -17,10 +23,16 @@ mod get_cheat_titles {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
-        assert_eq!(
-            get_cheat_titles("./tests/api/invalid.json"),
-            "{\"title\": []}"
-        );
+        let result = get_cheat_titles("./tests/api/invalid.json");
+
+        // エラーレスポンスであることを確認
+        assert!(result.contains("\"success\":false"));
+        assert!(result.contains("\"error\""));
+        // JSONパースエラーメッセージを確認
+        assert!(result.contains("パースに失敗"));
+        // 行番号とカラム情報が含まれることを確認
+        assert!(result.contains("line"));
+        assert!(result.contains("column"));
     }
 
     #[test]
@@ -69,7 +81,13 @@ mod get_cheat_sheet {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
-        assert_eq!(get_cheat_sheet("notfound.json", "dummy"), "{}");
+        let result = get_cheat_sheet("notfound.json", "dummy");
+
+        // エラーレスポンスであることを確認
+        assert!(result.contains("\"success\":false"));
+        assert!(result.contains("\"error\""));
+        // ファイルが見つからないエラーメッセージを確認
+        assert!(result.contains("見つかりません") || result.contains("No such file"));
     }
 
     #[test]
@@ -77,7 +95,16 @@ mod get_cheat_sheet {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
-        assert_eq!(get_cheat_sheet("./tests/api/invalid.json", "invalid"), "{}");
+        let result = get_cheat_sheet("./tests/api/invalid.json", "invalid");
+
+        // エラーレスポンスであることを確認
+        assert!(result.contains("\"success\":false"));
+        assert!(result.contains("\"error\""));
+        // JSONパースエラーメッセージを確認
+        assert!(result.contains("パースに失敗"));
+        // 行番号とカラム情報が含まれることを確認
+        assert!(result.contains("line"));
+        assert!(result.contains("column"));
     }
 
     #[test]
