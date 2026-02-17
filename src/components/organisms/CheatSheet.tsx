@@ -130,6 +130,8 @@ export const CheatSheet = () => {
           setErrorMessage(undefined)
         }
       })
+    } else {
+      setCheatSheetData(undefined)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectCheatSheet])
@@ -141,30 +143,12 @@ export const CheatSheet = () => {
   const handleTextFieldKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
-    // Escapeキーが押された場合、入力テキストまたは選択をクリア
+    // Escapeキーが押された場合、選択をクリア
     if (event.key === 'Escape') {
       event.preventDefault()
-
-      const input = event.currentTarget
-      // 入力テキストがある場合は、まずテキストをクリア
-      if (input && input.value) {
-        debug('Escapeキー: 入力テキストをクリアしました')
-        // Autocomplete のクリアボタンを探索してクリック
-        const clearButton = input
-          .closest('.MuiAutocomplete-root')
-          ?.querySelector('[aria-label="Clear"]') as HTMLButtonElement
-        if (clearButton) {
-          clearButton.click()
-        }
-        return
-      }
-
-      // 選択値がある場合は、選択をクリア
-      if (selectCheatSheet) {
-        debug('Escapeキー: チートシート選択をクリアしました')
-        setCheatSheet('')
-        setAutocompleteOpen(false)
-      }
+      debug('Escapeキー: チートシート選択をクリアしました')
+      setCheatSheet('')
+      setAutocompleteOpen(false)
       return
     }
 
@@ -187,12 +171,6 @@ export const CheatSheet = () => {
         }
       }
     }
-  }
-
-  const handleTextFieldBlur = () => {
-    // フォーカスが外れるときに、入力テキストがある場合でも
-    // 選択値が存在すれば、Autocomplete の表示は正常に行われます
-    // 特に処理は不要（Material-UIがハンドル）
   }
 
   const handleListboxKeyDown = (
@@ -364,7 +342,6 @@ export const CheatSheet = () => {
                 label='CheatSheet'
                 size='small'
                 onKeyDown={handleTextFieldKeyDown}
-                onBlur={handleTextFieldBlur}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
