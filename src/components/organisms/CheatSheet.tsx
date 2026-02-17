@@ -27,7 +27,6 @@ export const CheatSheet = () => {
     CheatSheetTitleData | undefined
   >()
   const [selectCheatSheet, setCheatSheet] = useState<string>('')
-  const [inputValue, setInputValue] = useState<string>('')
 
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData>()
   const [errorMessage, setErrorMessage] = useState<string>()
@@ -137,29 +136,26 @@ export const CheatSheet = () => {
 
   const handleChange = (_event: unknown, value: string | null) => {
     setCheatSheet(value ?? '')
-    setInputValue('')
   }
 
-  const handleInputChange = (
-    _event: unknown,
-    value: string,
-    reason: string,
+  const handleTextFieldKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
-    setInputValue(value)
-  }
-
-  const handleAutocompleteKeyDown = (
-    event: React.KeyboardEvent<HTMLDivElement>,
-  ) => {
-    // Escapeキーが押された場合、入力値または選択をクリア
+    // Escapeキーが押された場合、入力テキストまたは選択をクリア
     if (event.key === 'Escape') {
       event.preventDefault()
-      event.stopPropagation()
 
-      // 入力値がある場合は、まず入力値をクリア
-      if (inputValue) {
+      const input = event.currentTarget
+      // 入力テキストがある場合は、まずテキストをクリア
+      if (input && input.value) {
         debug('Escapeキー: 入力テキストをクリアしました')
-        setInputValue('')
+        // Autocomplete のクリアボタンを探索してクリック
+        const clearButton = input
+          .closest('.MuiAutocomplete-root')
+          ?.querySelector('[aria-label="Clear"]') as HTMLButtonElement
+        if (clearButton) {
+          clearButton.click()
+        }
         return
       }
 
@@ -171,21 +167,63 @@ export const CheatSheet = () => {
       }
       return
     }
+
+    // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
+    if (event.key === 'Enter' && autocompleteOpen) {
+      // Material-UIのAutocompleteはリストボックスをポップアップで描画するため、
+      // document全体から探索する
+      const listboxElement = document.querySelector('[role="listbox"]')
+
+      // リストボックスが存在する場合、最初の項目を選択
+      if (listboxElement) {
+        // 表示されている最初のリスト項目を取得してクリック
+        const firstOption = listboxElement.querySelector('li') as HTMLLIElement
+        if (firstOption) {
+          event.preventDefault()
+          debug('Enterキー: 最初の候補を選択しました')
+          // リスト項目をクリックして選択
+          firstOption.click()
+          setAutocompleteOpen(false)
+        }
+      }
+    }
+  }
+
+  const handleTextFieldBlur = () => {
+    // フォーカスが外れるときに、入力テキストがある場合でも
+    // 選択値が存在すれば、Autocomplete の表示は正常に行われます
+    // 特に処理は不要（Material-UIがハンドル）
   }
 
   const handleListboxKeyDown = (
     event: React.KeyboardEvent<HTMLUListElement>,
   ) => {
-    // Escapeキーが押された場合、入力値または選択をクリア（リストボックス内でのキー押下時）
+    // Escapeキーが押された場合、入力テキストまたは選択をクリア（リストボックス内でのキー押下時）
     if (event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()
 
-      // 入力値がある場合は、まず入力値をクリア
-      if (inputValue) {
-        debug('Escapeキー: 入力テキストをクリアしました（リストボックス内）')
-        setInputValue('')
-        return
+      // Autocomplete コンテナを探索
+      const autocompleteContainer = event.currentTarget.closest(
+        '.MuiAutocomplete-root',
+      ) as HTMLElement
+
+      if (autocompleteContainer) {
+        const input = autocompleteContainer.querySelector(
+          'input[type="text"]',
+        ) as HTMLInputElement
+
+        // 入力テキストがある場合は、まずテキストをクリア
+        if (input && input.value) {
+          debug('Escapeキー: 入力テキストをクリアしました（リストボックス内）')
+          const clearButton = autocompleteContainer.querySelector(
+            '[aria-label="Clear"]',
+          ) as HTMLButtonElement
+          if (clearButton) {
+            clearButton.click()
+          }
+          return
+        }
       }
 
       // 選択値がある場合は、選択をクリア
@@ -311,13 +349,10 @@ export const CheatSheet = () => {
             ref={selectRef}
             options={cheatSheetTitles?.title || []}
             value={selectCheatSheet}
-            inputValue={inputValue}
             onChange={handleChange}
-            onInputChange={handleInputChange}
             open={autocompleteOpen}
             onOpen={() => setAutocompleteOpen(true)}
             onClose={() => setAutocompleteOpen(false)}
-            onKeyDown={handleAutocompleteKeyDown}
             slotProps={{
               listbox: {
                 onKeyDown: handleListboxKeyDown,
@@ -328,6 +363,8 @@ export const CheatSheet = () => {
                 {...params}
                 label='CheatSheet'
                 size='small'
+                onKeyDown={handleTextFieldKeyDown}
+                onBlur={handleTextFieldBlur}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
