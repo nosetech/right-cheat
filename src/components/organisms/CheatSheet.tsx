@@ -38,7 +38,7 @@ export const CheatSheet = () => {
   const theme = useTheme()
   const { getCheatSheetFilePath } = usePreferencesStore()
 
-  // Refs for keyboard shortcuts
+  // キーボードショートカット用の参照
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
   const selectRef = useRef<HTMLDivElement>(null)
 
@@ -67,7 +67,7 @@ export const CheatSheet = () => {
       await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
         (response) => {
           debug(
-            `invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
+            `チートシートをリロード: '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' レスポンス=${response}`,
           )
         },
       )
@@ -134,14 +134,14 @@ export const CheatSheet = () => {
     }
   }
 
-  // Keyboard shortcuts handler
-  // Only enable number key shortcuts for command type (not for shortcut type)
+  // キーボードショートカットハンドラー
+  // コマンドタイプのみ数字キーショートカットを有効化（ショートカットタイプではない）
   const isCommandType = cheatSheetData?.type !== 'shortcut'
 
   useKeyboardShortcuts({
     onNumberKey: (index) => {
-      // Trigger click on the corresponding command field (1-9)
-      // Only for command type sheets
+      // 対応するコマンドフィールドをクリック (1-9)
+      // コマンドタイプのチートシートのみ
       if (
         isCommandType &&
         cheatSheetData?.commandlist &&
@@ -149,7 +149,7 @@ export const CheatSheet = () => {
       ) {
         const targetElement = commandFieldRefs.current[index]
         if (targetElement) {
-          // Trigger the Enter key event to copy the command
+          // Enterキーイベントをトリガーしてコマンドをコピー
           const enterEvent = new KeyboardEvent('keydown', {
             key: 'Enter',
             bubbles: true,
@@ -160,9 +160,9 @@ export const CheatSheet = () => {
       }
     },
     onZeroKey: () => {
-      // Open the Autocomplete dropdown by focusing the input
+      // 入力にフォーカスしてオートコンプリートドロップダウンを開く
       if (selectRef.current) {
-        // Find the input element within Autocomplete
+        // オートコンプリート内の入力要素を検索
         const input = selectRef.current.querySelector(
           'input[type="text"]',
         ) as HTMLInputElement
@@ -177,12 +177,14 @@ export const CheatSheet = () => {
             cancelable: true,
           })
           input.dispatchEvent(arrowDownEvent)
-          debug('0 key: Focused Autocomplete input and opened dropdown')
+          debug(
+            '0キー: オートコンプリート入力にフォーカスしてドロップダウンを開きました',
+          )
         } else {
-          debug('0 key: Could not find input element in Autocomplete')
+          debug('0キー: オートコンプリート内の入力要素が見つかりません')
         }
       } else {
-        debug('0 key: selectRef.current is null')
+        debug('0キー: selectRef.current が null です')
       }
     },
   })

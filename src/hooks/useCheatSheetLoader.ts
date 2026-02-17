@@ -28,7 +28,9 @@ export const useCheatSheetLoader = ({
         const response = await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES, {
           inputPath: inputpath,
         })
-        debug(`invoke '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`)
+        debug(
+          `チートシートタイトルを取得: '${CheatSheetAPI.GET_CHEAT_TITLES}' レスポンス=${response}`,
+        )
 
         const parsedResponse = JSON.parse(response)
 
@@ -47,7 +49,7 @@ export const useCheatSheetLoader = ({
           error instanceof Error
             ? error.message
             : 'チートシートの読み込みに失敗しました'
-        debug(`loadCheatSheetTitles error: ${errorMessage}`)
+        debug(`チートシートタイトル読み込みエラー: ${errorMessage}`)
         setErrorMessage(errorMessage)
         setCheatSheetTitles(undefined)
       }
@@ -63,7 +65,9 @@ export const useCheatSheetLoader = ({
           inputPath: inputpath,
           title: title,
         })
-        debug(`invoke '${CheatSheetAPI.GET_CHEAT_SHEET}' response=${response}`)
+        debug(
+          `チートシートデータを取得: '${CheatSheetAPI.GET_CHEAT_SHEET}' レスポンス=${response}`,
+        )
 
         const parsedResponse = JSON.parse(response)
 
@@ -80,7 +84,7 @@ export const useCheatSheetLoader = ({
           error instanceof Error
             ? error.message
             : 'チートシートデータの読み込みに失敗しました'
-        debug(`loadCheatSheetData error: ${errorMessage}`)
+        debug(`チートシートデータ読み込みエラー: ${errorMessage}`)
         setErrorMessage(errorMessage)
         return undefined
       }
