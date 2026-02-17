@@ -141,6 +141,22 @@ export const CheatSheet = () => {
   const handleAutocompleteKeyDown = (
     event: React.KeyboardEvent<HTMLDivElement>,
   ) => {
+    // Escapeキーが押された場合、選択をクリア
+    if (event.key === 'Escape') {
+      const input = event.currentTarget.querySelector(
+        'input[type="text"]',
+      ) as HTMLInputElement
+
+      // 入力値がある場合のみクリア
+      if (input && input.value) {
+        event.preventDefault()
+        debug('Escape key: Cleared CheatSheet selection')
+        setCheatSheet('')
+        setAutocompleteOpen(false)
+        return
+      }
+    }
+
     // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
     if (event.key === 'Enter' && autocompleteOpen) {
       // Material-UIのAutocompleteはリストボックスをポップアップで描画するため、
@@ -281,7 +297,6 @@ export const CheatSheet = () => {
               />
             )}
             freeSolo={false}
-            disableClearable
             noOptionsText='チートシートが見つかりません'
             loadingText='読み込み中...'
             size='small'
