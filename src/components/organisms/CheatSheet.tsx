@@ -27,6 +27,7 @@ export const CheatSheet = () => {
     CheatSheetTitleData | undefined
   >()
   const [selectCheatSheet, setCheatSheet] = useState<string>('')
+  const [inputValue, setInputValue] = useState<string>('')
 
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData>()
   const [errorMessage, setErrorMessage] = useState<string>()
@@ -136,25 +137,66 @@ export const CheatSheet = () => {
 
   const handleChange = (_event: unknown, value: string | null) => {
     setCheatSheet(value ?? '')
+    setInputValue('')
+  }
+
+  const handleInputChange = (
+    _event: unknown,
+    value: string,
+    reason: string,
+  ) => {
+    setInputValue(value)
   }
 
   const handleAutocompleteKeyDown = (
     event: React.KeyboardEvent<HTMLDivElement>,
   ) => {
-    // Escapeキーが押された場合、選択をクリア
+    // Escapeキーが押された場合、入力値または選択をクリア
     if (event.key === 'Escape') {
-      const input = event.currentTarget.querySelector(
-        'input[type="text"]',
-      ) as HTMLInputElement
+      event.preventDefault()
+      event.stopPropagation()
 
-      // 入力値がある場合のみクリア
-      if (input && input.value) {
-        event.preventDefault()
-        debug('Escape key: Cleared CheatSheet selection')
-        setCheatSheet('')
-        setAutocompleteOpen(false)
+      // 入力値がある場合は、まず入力値をクリア
+      if (inputValue) {
+        debug('Escapeキー: 入力テキストをクリアしました')
+        setInputValue('')
         return
       }
+
+      // 選択値がある場合は、選択をクリア
+      if (selectCheatSheet) {
+        debug('Escapeキー: チートシート選択をクリアしました')
+        setCheatSheet('')
+        setAutocompleteOpen(false)
+      }
+      return
+    }
+  }
+
+  const handleListboxKeyDown = (
+    event: React.KeyboardEvent<HTMLUListElement>,
+  ) => {
+    // Escapeキーが押された場合、入力値または選択をクリア（リストボックス内でのキー押下時）
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+
+      // 入力値がある場合は、まず入力値をクリア
+      if (inputValue) {
+        debug('Escapeキー: 入力テキストをクリアしました（リストボックス内）')
+        setInputValue('')
+        return
+      }
+
+      // 選択値がある場合は、選択をクリア
+      if (selectCheatSheet) {
+        debug(
+          'Escapeキー: チートシート選択をクリアしました（リストボックス内）',
+        )
+        setCheatSheet('')
+        setAutocompleteOpen(false)
+      }
+      return
     }
 
     // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
@@ -268,17 +310,24 @@ export const CheatSheet = () => {
           <Autocomplete
             ref={selectRef}
             options={cheatSheetTitles?.title || []}
-            value={selectCheatSheet || undefined}
+            value={selectCheatSheet}
+            inputValue={inputValue}
             onChange={handleChange}
+            onInputChange={handleInputChange}
             open={autocompleteOpen}
             onOpen={() => setAutocompleteOpen(true)}
             onClose={() => setAutocompleteOpen(false)}
+            onKeyDown={handleAutocompleteKeyDown}
+            slotProps={{
+              listbox: {
+                onKeyDown: handleListboxKeyDown,
+              },
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label='CheatSheet'
                 size='small'
-                onKeyDown={handleAutocompleteKeyDown}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
