@@ -11,6 +11,7 @@ import { debug } from '@tauri-apps/plugin-log'
 import { Event } from '@/common'
 import { CommandField } from '@/components/molecules/CommandField'
 import { ShortcutField } from '@/components/molecules/ShortcutField'
+import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import {
@@ -41,6 +42,14 @@ export const CheatSheet = () => {
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
   const selectRef = useRef<HTMLDivElement>(null)
 
+  // 初期化ロジック
+  const { loadCheatSheetTitles, loadCheatSheetData } = useCheatSheetLoader({
+    setCheatSheetTitles,
+    setCheatSheet,
+    setErrorMessage,
+    setJsonInputPath,
+  })
+
   useEffect(() => {
     ;(async () => {
       await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
@@ -49,27 +58,7 @@ export const CheatSheet = () => {
           if (inputpath) {
             setReloading(true)
             setCheatSheet('')
-            setErrorMessage(undefined)
-            await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES, {
-              inputPath: inputpath,
-            }).then((response) => {
-              debug(
-                `invoke '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`,
-              )
-              const parsedResponse = JSON.parse(response)
-              // エラーレスポンスの場合
-              if (parsedResponse.success === false && parsedResponse.error) {
-                setErrorMessage(parsedResponse.error)
-                setCheatSheetTitles(undefined)
-              } else {
-                // 成功レスポンスの場合
-                const titles: CheatSheetTitleData = parsedResponse
-                setCheatSheetTitles(titles)
-                setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
-                setErrorMessage(undefined)
-              }
-            })
-            setJsonInputPath(inputpath)
+            await loadCheatSheetTitles(inputpath)
             setReloading(false)
           }
         })()
@@ -86,159 +75,62 @@ export const CheatSheet = () => {
       // 初期化時に CheatSheet タイトルを読み込む
       const inputpath = await getCheatSheetFilePath()
       if (inputpath) {
-        setJsonInputPath(inputpath)
-        await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES, {
-          inputPath: inputpath,
-        }).then((response) => {
-          debug(
-            `invoke '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`,
-          )
-          const parsedResponse = JSON.parse(response)
-          // エラーレスポンスの場合
-          if (parsedResponse.success === false && parsedResponse.error) {
-            setErrorMessage(parsedResponse.error)
-            setCheatSheetTitles(undefined)
-          } else {
-            // 成功レスポンスの場合
-            const titles: CheatSheetTitleData = parsedResponse
-            setCheatSheetTitles(titles)
-            setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
-            setErrorMessage(undefined)
-          }
-        })
+        await loadCheatSheetTitles(inputpath)
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loadCheatSheetTitles])
 
   useEffect(() => {
-    if (selectCheatSheet != '') {
-      invoke<string>(CheatSheetAPI.GET_CHEAT_SHEET, {
-        inputPath: jsonInputPath,
-        title: selectCheatSheet,
-      }).then((response) => {
-        debug(`invoke '${CheatSheetAPI.GET_CHEAT_SHEET}' response=${response}`)
-        const parsedResponse = JSON.parse(response)
-        // エラーレスポンスの場合
-        if (parsedResponse.success === false && parsedResponse.error) {
-          setErrorMessage(parsedResponse.error)
-          setCheatSheetData(undefined)
-        } else {
-          // 成功レスポンスの場合
-          const data: CheatSheetData = parsedResponse
-          setCheatSheetData(data)
-          setErrorMessage(undefined)
-        }
-      })
-    } else {
-      setCheatSheetData(undefined)
-    }
+    ;(async () => {
+      if (selectCheatSheet !== '' && jsonInputPath) {
+        const data = await loadCheatSheetData(jsonInputPath, selectCheatSheet)
+        setCheatSheetData(data)
+      } else {
+        setCheatSheetData(undefined)
+      }
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectCheatSheet])
+  }, [selectCheatSheet, loadCheatSheetData])
 
   const handleChange = (_event: unknown, value: string | null) => {
     setCheatSheet(value ?? '')
   }
 
+  const handleSelectFirstOption = () => {
+    // リストが開いている状態で、最初の項目を選択
+    const listboxElement = document.querySelector('[role="listbox"]')
+
+    if (listboxElement) {
+      const firstOption = listboxElement.querySelector('li') as HTMLLIElement
+      if (firstOption) {
+        debug('Enterキー: 最初の候補を選択しました')
+        firstOption.click()
+        setAutocompleteOpen(false)
+      }
+    }
+  }
+
   const handleTextFieldKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
-    // Escapeキーが押された場合、選択をクリア
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      debug('Escapeキー: チートシート選択をクリアしました')
-      setCheatSheet('')
-      setAutocompleteOpen(false)
-      return
-    }
-
     // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
+    // EscapeキーはclearOnEscapeで自動処理される
     if (event.key === 'Enter' && autocompleteOpen) {
-      // Material-UIのAutocompleteはリストボックスをポップアップで描画するため、
-      // document全体から探索する
-      const listboxElement = document.querySelector('[role="listbox"]')
-
-      // リストボックスが存在する場合、最初の項目を選択
-      if (listboxElement) {
-        // 表示されている最初のリスト項目を取得してクリック
-        const firstOption = listboxElement.querySelector('li') as HTMLLIElement
-        if (firstOption) {
-          event.preventDefault()
-          debug('Enterキー: 最初の候補を選択しました')
-          // リスト項目をクリックして選択
-          firstOption.click()
-          setAutocompleteOpen(false)
-        }
-      }
+      event.preventDefault()
+      handleSelectFirstOption()
     }
   }
 
   const handleListboxKeyDown = (
     event: React.KeyboardEvent<HTMLUListElement>,
   ) => {
-    // Escapeキーが押された場合、入力テキストまたは選択をクリア（リストボックス内でのキー押下時）
-    if (event.key === 'Escape') {
+    // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
+    // EscapeキーはclearOnEscapeで自動処理される
+    if (event.key === 'Enter' && autocompleteOpen) {
       event.preventDefault()
       event.stopPropagation()
-
-      // Autocomplete コンテナを探索
-      const autocompleteContainer = event.currentTarget.closest(
-        '.MuiAutocomplete-root',
-      ) as HTMLElement
-
-      if (autocompleteContainer) {
-        const input = autocompleteContainer.querySelector(
-          'input[type="text"]',
-        ) as HTMLInputElement
-
-        // 入力テキストがある場合は、まずテキストをクリア
-        if (input && input.value) {
-          debug('Escapeキー: 入力テキストをクリアしました（リストボックス内）')
-          const clearButton = autocompleteContainer.querySelector(
-            '[aria-label="Clear"]',
-          ) as HTMLButtonElement
-          if (clearButton) {
-            clearButton.click()
-          }
-          return
-        }
-      }
-
-      // 選択値がある場合は、選択をクリア
-      if (selectCheatSheet) {
-        debug(
-          'Escapeキー: チートシート選択をクリアしました（リストボックス内）',
-        )
-        setCheatSheet('')
-        setAutocompleteOpen(false)
-      }
-      return
-    }
-
-    // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
-    if (event.key === 'Enter' && autocompleteOpen) {
-      // Material-UIのAutocompleteはリストボックスをポップアップで描画するため、
-      // document全体から探索する
-      const listboxElement = document.querySelector('[role="listbox"]')
-
-      // リストボックスが存在し、その中にフォーカスがない場合、最初の項目を選択
-      if (listboxElement) {
-        const activeElement = document.activeElement
-        const isInListbox = listboxElement.contains(activeElement as Node)
-
-        if (!isInListbox) {
-          // 表示されている最初のリスト項目を取得してクリック
-          const firstOption = listboxElement.querySelector(
-            'li',
-          ) as HTMLLIElement
-          if (firstOption) {
-            event.preventDefault()
-            // リスト項目をクリックして選択
-            firstOption.click()
-            setAutocompleteOpen(false)
-          }
-        }
-      }
+      handleSelectFirstOption()
     }
   }
 
@@ -360,6 +252,7 @@ export const CheatSheet = () => {
               />
             )}
             freeSolo={false}
+            clearOnEscape
             noOptionsText='チートシートが見つかりません'
             loadingText='読み込み中...'
             size='small'
