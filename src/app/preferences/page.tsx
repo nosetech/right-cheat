@@ -36,7 +36,6 @@ export default function Page() {
     getCheatSheetFilePath,
     setCheatSheetFilePath,
     getVisibleOnAllWorkspacesSettings,
-    setVisibleOnAllWorkspacesSettings,
   } = usePreferencesStore()
   const {
     themeMode,

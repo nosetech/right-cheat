@@ -38,17 +38,11 @@ export const usePreferencesStore = (options?: StoreOptions) => {
     return settings?.enabled ?? true
   }
 
-  const setVisibleOnAllWorkspacesSettings = async (enabled: boolean) => {
-    const store = await loadPreferencesFile()
-    await store.set('visible_on_all_workspaces_settings', { enabled })
-  }
-
   return {
     getCheatSheetFilePath,
     setCheatSheetFilePath,
     getThemeMode,
     setThemeMode,
     getVisibleOnAllWorkspacesSettings,
-    setVisibleOnAllWorkspacesSettings,
   }
 }
