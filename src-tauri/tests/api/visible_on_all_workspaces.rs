@@ -9,7 +9,7 @@ mod get_visible_on_all_workspaces_setting {
 
     /// ストレージに設定が存在しない場合のデフォルト設定取得テスト
     /// 同値クラス: 設定が存在しない
-    /// 期待値: デフォルト値（enabled = true）を返す
+    /// 期待値: デフォルト値（enabled = false）を返す
     #[test]
     fn get_default() {
         let app = mock_app();
@@ -23,7 +23,7 @@ mod get_visible_on_all_workspaces_setting {
             .unwrap();
 
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
-        assert_eq!(result.enabled, true);
+        assert_eq!(result.enabled, false);
     }
 
     /// enabled = true の既存設定取得テスト
@@ -147,21 +147,21 @@ mod set_visible_on_all_workspaces_setting {
             .clear_settings(&app.handle().clone())
             .unwrap();
 
-        // デフォルト値（true）から開始
-        let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
-        assert_eq!(result.enabled, true);
-
-        // false に切り替え
-        let settings = VisibleOnAllWorkspacesSettings { enabled: false };
-        set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
+        // デフォルト値（false）から開始
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, false);
 
-        // true に戻す
+        // true に切り替え
         let settings = VisibleOnAllWorkspacesSettings { enabled: true };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, true);
+
+        // false に戻す
+        let settings = VisibleOnAllWorkspacesSettings { enabled: false };
+        set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
+        let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
+        assert_eq!(result.enabled, false);
     }
 }
 
@@ -176,7 +176,7 @@ mod init_visible_on_all_workspaces_settings {
 
     /// 設定が存在しない場合の初期化テスト
     /// 同値クラス: 設定が存在しない
-    /// 期待値: デフォルト設定（enabled = true）が作成される
+    /// 期待値: デフォルト設定（enabled = false）が作成される
     #[test]
     fn init_when_settings_do_not_exist() {
         let app = mock_app();
@@ -194,7 +194,7 @@ mod init_visible_on_all_workspaces_settings {
 
         // デフォルト設定が作成されたことを検証
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
-        assert_eq!(result.enabled, true);
+        assert_eq!(result.enabled, false);
     }
 
     /// enabled = true の既存設定がある場合の初期化テスト
@@ -268,20 +268,20 @@ mod init_visible_on_all_workspaces_settings {
         // 最初の初期化
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
-        assert_eq!(result.enabled, true);
+        assert_eq!(result.enabled, false);
 
         // 設定を変更
-        let settings = VisibleOnAllWorkspacesSettings { enabled: false };
+        let settings = VisibleOnAllWorkspacesSettings { enabled: true };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
 
         // 2回目の初期化（上書きされないはず）
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
-        assert_eq!(result.enabled, false);
+        assert_eq!(result.enabled, true);
 
         // 3回目の初期化（やはり上書きされないはず）
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
-        assert_eq!(result.enabled, false);
+        assert_eq!(result.enabled, true);
     }
 }

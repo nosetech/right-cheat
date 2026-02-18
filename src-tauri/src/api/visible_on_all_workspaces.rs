@@ -5,7 +5,7 @@ use tauri_plugin_store::JsonValue;
 use crate::settings_store::{SettingsStore, TauriSettingsStore};
 
 const VISIBLE_ON_ALL_WORKSPACES_SETTINGS_KEY: &str = "visible_on_all_workspaces_settings";
-const DEFAULT_VISIBLE_ON_ALL_WORKSPACES: bool = true;
+const DEFAULT_VISIBLE_ON_ALL_WORKSPACES: bool = false;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VisibleOnAllWorkspacesSettings {
