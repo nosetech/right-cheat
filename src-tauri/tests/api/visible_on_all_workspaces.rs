@@ -7,9 +7,9 @@ mod get_visible_on_all_workspaces_setting {
     use app_lib::settings_store::{SettingsStore, TauriSettingsStore};
     use tauri::test::mock_app;
 
-    /// Tests retrieving default settings when no settings exist in storage.
-    /// Equivalence class: Settings do not exist
-    /// Expected: Returns default value (enabled = true)
+    /// ストレージに設定が存在しない場合のデフォルト設定取得テスト
+    /// 同値クラス: 設定が存在しない
+    /// 期待値: デフォルト値（enabled = true）を返す
     #[test]
     fn get_default() {
         let app = mock_app();
@@ -26,9 +26,9 @@ mod get_visible_on_all_workspaces_setting {
         assert_eq!(result.enabled, true);
     }
 
-    /// Tests retrieving existing settings with enabled = true.
-    /// Equivalence class: Settings exist, enabled = true
-    /// Expected: Returns the stored value (enabled = true)
+    /// enabled = true の既存設定取得テスト
+    /// 同値クラス: 設定が存在、enabled = true
+    /// 期待値: 保存されている値（enabled = true）を返す
     #[test]
     fn get_existing_enabled_true() {
         let app = mock_app();
@@ -41,18 +41,18 @@ mod get_visible_on_all_workspaces_setting {
             .clear_settings(&app.handle().clone())
             .unwrap();
 
-        // Set enabled = true
+        // enabled = true を設定
         let settings = VisibleOnAllWorkspacesSettings { enabled: true };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
 
-        // Verify retrieval
+        // 取得を検証
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, true);
     }
 
-    /// Tests retrieving existing settings with enabled = false.
-    /// Equivalence class: Settings exist, enabled = false
-    /// Expected: Returns the stored value (enabled = false)
+    /// enabled = false の既存設定取得テスト
+    /// 同値クラス: 設定が存在、enabled = false
+    /// 期待値: 保存されている値（enabled = false）を返す
     #[test]
     fn get_existing_enabled_false() {
         let app = mock_app();
@@ -65,11 +65,11 @@ mod get_visible_on_all_workspaces_setting {
             .clear_settings(&app.handle().clone())
             .unwrap();
 
-        // Set enabled = false
+        // enabled = false を設定
         let settings = VisibleOnAllWorkspacesSettings { enabled: false };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
 
-        // Verify retrieval
+        // 取得を検証
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, false);
     }
@@ -84,9 +84,9 @@ mod set_visible_on_all_workspaces_setting {
     use app_lib::settings_store::{SettingsStore, TauriSettingsStore};
     use tauri::test::mock_app;
 
-    /// Tests setting enabled = true.
-    /// Equivalence class: enabled = true
-    /// Expected: Settings are persisted correctly
+    /// enabled = true の設定保存テスト
+    /// 同値クラス: enabled = true
+    /// 期待値: 設定が正しく永続化される
     #[test]
     fn set_enabled_true() {
         let app = mock_app();
@@ -103,14 +103,14 @@ mod set_visible_on_all_workspaces_setting {
 
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings.clone()).unwrap();
 
-        // Verify persistence
+        // 永続化を検証
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, true);
     }
 
-    /// Tests setting enabled = false.
-    /// Equivalence class: enabled = false
-    /// Expected: Settings are persisted correctly
+    /// enabled = false の設定保存テスト
+    /// 同値クラス: enabled = false
+    /// 期待値: 設定が正しく永続化される
     #[test]
     fn set_enabled_false() {
         let app = mock_app();
@@ -127,14 +127,14 @@ mod set_visible_on_all_workspaces_setting {
 
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings.clone()).unwrap();
 
-        // Verify persistence
+        // 永続化を検証
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, false);
     }
 
-    /// Tests toggling settings from true to false and back.
-    /// Equivalence class: Settings modification
-    /// Expected: Each modification is correctly persisted
+    /// 設定の切り替え（true ↔ false）テスト
+    /// 同値クラス: 設定の変更
+    /// 期待値: 各変更が正しく永続化される
     #[test]
     fn toggle_settings() {
         let app = mock_app();
@@ -147,17 +147,17 @@ mod set_visible_on_all_workspaces_setting {
             .clear_settings(&app.handle().clone())
             .unwrap();
 
-        // Start with default (true)
+        // デフォルト値（true）から開始
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, true);
 
-        // Toggle to false
+        // false に切り替え
         let settings = VisibleOnAllWorkspacesSettings { enabled: false };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, false);
 
-        // Toggle back to true
+        // true に戻す
         let settings = VisibleOnAllWorkspacesSettings { enabled: true };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
@@ -174,9 +174,9 @@ mod init_visible_on_all_workspaces_settings {
     use app_lib::settings_store::{SettingsStore, TauriSettingsStore};
     use tauri::test::mock_app;
 
-    /// Tests initialization when no settings exist.
-    /// Equivalence class: Settings do not exist
-    /// Expected: Default settings (enabled = true) are created
+    /// 設定が存在しない場合の初期化テスト
+    /// 同値クラス: 設定が存在しない
+    /// 期待値: デフォルト設定（enabled = true）が作成される
     #[test]
     fn init_when_settings_do_not_exist() {
         let app = mock_app();
@@ -189,17 +189,17 @@ mod init_visible_on_all_workspaces_settings {
             .clear_settings(&app.handle().clone())
             .unwrap();
 
-        // Initialize settings
+        // 設定を初期化
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
 
-        // Verify default settings were created
+        // デフォルト設定が作成されたことを検証
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, true);
     }
 
-    /// Tests initialization when settings already exist with enabled = true.
-    /// Equivalence class: Settings exist, enabled = true
-    /// Expected: Existing settings are preserved (not overwritten)
+    /// enabled = true の既存設定がある場合の初期化テスト
+    /// 同値クラス: 設定が存在、enabled = true
+    /// 期待値: 既存設定が保持される（上書きされない）
     #[test]
     fn init_when_settings_exist_with_true() {
         let app = mock_app();
@@ -212,21 +212,21 @@ mod init_visible_on_all_workspaces_settings {
             .clear_settings(&app.handle().clone())
             .unwrap();
 
-        // Pre-set settings with enabled = true
+        // enabled = true で事前に設定
         let settings = VisibleOnAllWorkspacesSettings { enabled: true };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
 
-        // Initialize (should not overwrite)
+        // 初期化（上書きされないはず）
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
 
-        // Verify settings are unchanged
+        // 設定が変わっていないことを検証
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, true);
     }
 
-    /// Tests initialization when settings already exist with enabled = false.
-    /// Equivalence class: Settings exist, enabled = false
-    /// Expected: Existing settings are preserved (not overwritten)
+    /// enabled = false の既存設定がある場合の初期化テスト
+    /// 同値クラス: 設定が存在、enabled = false
+    /// 期待値: 既存設定が保持される（上書きされない）
     #[test]
     fn init_when_settings_exist_with_false() {
         let app = mock_app();
@@ -239,20 +239,20 @@ mod init_visible_on_all_workspaces_settings {
             .clear_settings(&app.handle().clone())
             .unwrap();
 
-        // Pre-set settings with enabled = false
+        // enabled = false で事前に設定
         let settings = VisibleOnAllWorkspacesSettings { enabled: false };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
 
-        // Initialize (should not overwrite)
+        // 初期化（上書きされないはず）
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
 
-        // Verify settings are unchanged (still false, not overwritten to default true)
+        // 設定が変わっていないことを検証（false のまま、デフォルト true に上書きされない）
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, false);
     }
 
-    /// Tests initialization multiple times.
-    /// Expected: Idempotent behavior - multiple initializations don't corrupt settings
+    /// 複数回初期化テスト
+    /// 期待値: 冪等性 - 複数回の初期化が設定を破損しない
     #[test]
     fn init_multiple_times() {
         let app = mock_app();
@@ -265,21 +265,21 @@ mod init_visible_on_all_workspaces_settings {
             .clear_settings(&app.handle().clone())
             .unwrap();
 
-        // First initialization
+        // 最初の初期化
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, true);
 
-        // Change settings
+        // 設定を変更
         let settings = VisibleOnAllWorkspacesSettings { enabled: false };
         set_visible_on_all_workspaces_setting(app.handle().clone(), settings).unwrap();
 
-        // Second initialization (should not overwrite)
+        // 2回目の初期化（上書きされないはず）
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, false);
 
-        // Third initialization (should still not overwrite)
+        // 3回目の初期化（やはり上書きされないはず）
         init_visible_on_all_workspaces_settings(&app.handle()).unwrap();
         let result = get_visible_on_all_workspaces_setting(app.handle().clone()).unwrap();
         assert_eq!(result.enabled, false);
