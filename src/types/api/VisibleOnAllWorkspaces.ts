@@ -5,11 +5,6 @@ export class VisibleOnAllWorkspacesAPI {
     'set_visible_on_all_workspaces_setting'
 }
 
-export class VisibleOnAllWorkspacesEvent {
-  static readonly VISIBLE_ON_ALL_WORKSPACES_CHANGED =
-    'visible_on_all_workspaces_changed'
-}
-
 export type VisibleOnAllWorkspacesSettings = {
   enabled: boolean
 }

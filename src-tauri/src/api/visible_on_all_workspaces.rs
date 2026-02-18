@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Runtime};
 use tauri_plugin_store::JsonValue;
 
-use crate::common;
 use crate::settings_store::{SettingsStore, TauriSettingsStore};
 
 const VISIBLE_ON_ALL_WORKSPACES_SETTINGS_KEY: &str = "visible_on_all_workspaces_settings";
@@ -46,10 +45,6 @@ pub fn set_visible_on_all_workspaces_setting<R: Runtime>(
     let json: JsonValue = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
     settings_store
         .set_setting(&app, VISIBLE_ON_ALL_WORKSPACES_SETTINGS_KEY, json)
-        .map_err(|e| e.to_string())?;
-
-    // Emit event to notify frontend of visible on all workspaces change
-    app.emit(common::event::VISIBLE_ON_ALL_WORKSPACES_CHANGED, settings)
         .map_err(|e| e.to_string())?;
 
     Ok(())
