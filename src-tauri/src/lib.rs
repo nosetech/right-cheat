@@ -166,9 +166,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(520.0, 340.0)
-            .max_inner_size(800.0, 340.0)
-            .min_inner_size(520.0, 340.0)
+            .inner_size(520.0, 420.0)
+            .max_inner_size(800.0, 420.0)
+            .min_inner_size(520.0, 420.0)
             .build();
         }
         "id_reload" => {

@@ -295,7 +295,8 @@ export default function Page() {
         />
       </Stack>
       <Divider />
-      <Stack direction='row' padding={1} spacing={1} alignItems='center'>
+      <Typography variant='body1'>Other Settings</Typography>
+      <Stack direction='row' px={1} spacing={1} alignItems='center'>
         <Typography variant='body1'>Visible on all workspaces</Typography>
         <Switch
           checked={visibleOnAllWorkspaces}
