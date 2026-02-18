@@ -30,10 +30,25 @@ export const usePreferencesStore = (options?: StoreOptions) => {
     await store.set('theme', { mode })
   }
 
+  const getVisibleOnAllWorkspacesSettings = async (): Promise<boolean> => {
+    const store = await loadPreferencesFile()
+    const settings = await store.get<{ enabled: boolean }>(
+      'visible_on_all_workspaces_settings',
+    )
+    return settings?.enabled ?? true
+  }
+
+  const setVisibleOnAllWorkspacesSettings = async (enabled: boolean) => {
+    const store = await loadPreferencesFile()
+    await store.set('visible_on_all_workspaces_settings', { enabled })
+  }
+
   return {
     getCheatSheetFilePath,
     setCheatSheetFilePath,
     getThemeMode,
     setThemeMode,
+    getVisibleOnAllWorkspacesSettings,
+    setVisibleOnAllWorkspacesSettings,
   }
 }

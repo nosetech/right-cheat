@@ -8,6 +8,7 @@ import { error } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { CheatSheet } from '@/components/organisms/CheatSheet'
+import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 
 const changeWindowVisible = async () => {
   const window = getCurrentWindow()
@@ -20,14 +21,17 @@ const changeWindowVisible = async () => {
 }
 
 export default function Home() {
+  const { getVisibleOnAllWorkspacesSettings } = usePreferencesStore()
+
   useEffect(() => {
     let unlisten: (() => void) | null = null
 
     const setupListener = async () => {
-      // アプリケーション初期化時に一度だけ全スペース表示を設定
+      // アプリケーション初期化時に設定ファイルから取得した値を使用
       try {
         const window = getCurrentWindow()
-        await window.setVisibleOnAllWorkspaces(true)
+        const visibleOnAllWorkspaces = await getVisibleOnAllWorkspacesSettings()
+        await window.setVisibleOnAllWorkspaces(visibleOnAllWorkspaces)
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         error(`[page] Failed to set visible on all workspaces: ${errorMessage}`)
@@ -47,7 +51,7 @@ export default function Home() {
         unlisten()
       }
     }
-  }, [])
+  }, [getVisibleOnAllWorkspacesSettings])
 
   return <CheatSheet />
 }

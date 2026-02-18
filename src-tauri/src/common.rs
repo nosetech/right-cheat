@@ -8,4 +8,5 @@ pub mod event {
     pub const RELOAD_CHEAT_SHEET: &str = "reload_cheat_sheet";
     pub const THEME_CHANGED: &str = "theme_changed";
     pub const FONT_SIZE_CHANGED: &str = "font_size_changed";
+    pub const VISIBLE_ON_ALL_WORKSPACES_CHANGED: &str = "visible_on_all_workspaces_changed";
 }

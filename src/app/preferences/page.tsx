@@ -8,8 +8,9 @@ import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
+import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
-import { Box, Divider, Stack, Typography } from '@mui/material'
+import { Box, Divider, Stack, Switch, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { ask, message } from '@tauri-apps/plugin-dialog'
@@ -23,8 +24,15 @@ export default function Page() {
   const [settedInputFilePath, setSettedInputFilePath] = useState<string>()
   const [shortcutValidationError, setShortcutValidationError] =
     useState<boolean>(false)
+  const [visibleOnAllWorkspaces, setVisibleOnAllWorkspaces] =
+    useState<boolean>(true)
 
-  const { getCheatSheetFilePath, setCheatSheetFilePath } = usePreferencesStore()
+  const {
+    getCheatSheetFilePath,
+    setCheatSheetFilePath,
+    getVisibleOnAllWorkspacesSettings,
+    setVisibleOnAllWorkspacesSettings,
+  } = usePreferencesStore()
   const {
     themeMode,
     setThemeMode: setStoredThemeMode,
@@ -38,6 +46,11 @@ export default function Page() {
     ;(async () => {
       const inputpath = await getCheatSheetFilePath()
       setSettedInputFilePath(inputpath)
+
+      const visibleOnAllWorkspacesValue =
+        await getVisibleOnAllWorkspacesSettings()
+      setVisibleOnAllWorkspaces(visibleOnAllWorkspacesValue)
+
       await invoke<string>(
         GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
       )
@@ -172,6 +185,62 @@ export default function Page() {
       })
   }
 
+  const handleVisibleOnAllWorkspacesChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const newValue = event.target.checked
+    setVisibleOnAllWorkspaces(newValue)
+    ;(async () => {
+      await invoke(
+        VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING,
+        {
+          settings: {
+            enabled: newValue,
+          },
+        },
+      )
+        .then(() => {
+          debug(
+            `invoke '${VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING}' succeeded`,
+          )
+        })
+        .catch((err) => {
+          error(`Error setting visible on all workspaces: ${err}`)
+          return
+        })
+
+      // devモードでは正常にアプリの再起動が実行できないため、ログ出力だけにする。
+      if (process.env.NODE_ENV === 'production') {
+        // 再起動確認ダイアログを表示
+        const shouldRestart = await ask(
+          '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
+          {
+            title: 'RightCheat - 再起動の確認',
+            kind: 'info',
+            okLabel: 'はい',
+            cancelLabel: 'いいえ',
+          },
+        )
+
+        if (shouldRestart) {
+          await relaunch()
+        } else {
+          debug('User cancelled the restart.')
+          // キャンセル時にユーザーに設定が保存されたことを通知
+          await message(
+            '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
+            {
+              title: 'RightCheat',
+              kind: 'info',
+            },
+          )
+        }
+      } else {
+        debug('Relaunch is not execute in development mode.')
+      }
+    })()
+  }
+
   return (
     <Stack padding={1} spacing={1}>
       <Typography variant='body1'>CheetSheet Json File</Typography>
@@ -223,6 +292,14 @@ export default function Page() {
           themeMode={themeMode}
           onChange={handleThemeChange}
           disabled={isLoading}
+        />
+      </Stack>
+      <Divider />
+      <Stack direction='row' padding={1} spacing={1} alignItems='center'>
+        <Typography variant='body1'>Visible on all workspaces</Typography>
+        <Switch
+          checked={visibleOnAllWorkspaces}
+          onChange={handleVisibleOnAllWorkspacesChange}
         />
       </Stack>
     </Stack>
