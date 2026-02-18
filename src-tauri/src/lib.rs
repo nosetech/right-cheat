@@ -30,7 +30,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .on_menu_event(|handle, event| on_menu_event_configuration(handle, event))
-        .setup(|app| global_shortcut_configuration(app))
+        .setup(|app| {
+            global_shortcut_configuration(app)?;
+            api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             api::cheatsheet::get_cheat_titles,
             api::cheatsheet::get_cheat_sheet,
@@ -43,6 +47,8 @@ pub fn run() {
             api::font_size::increase_font_size,
             api::font_size::decrease_font_size,
             api::font_size::reset_font_size,
+            api::visible_on_all_workspaces::get_visible_on_all_workspaces_setting,
+            api::visible_on_all_workspaces::set_visible_on_all_workspaces_setting,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -160,9 +166,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(520.0, 340.0)
-            .max_inner_size(800.0, 340.0)
-            .min_inner_size(520.0, 340.0)
+            .inner_size(520.0, 420.0)
+            .max_inner_size(800.0, 420.0)
+            .min_inner_size(520.0, 420.0)
             .build();
         }
         "id_reload" => {
