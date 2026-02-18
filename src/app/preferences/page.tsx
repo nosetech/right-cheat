@@ -111,6 +111,38 @@ export default function Page() {
     }
   }
 
+  const showRestartConfirmationDialog = async () => {
+    // devモードでは正常にアプリの再起動が実行できないため、ログ出力だけにする。
+    if (process.env.NODE_ENV === 'production') {
+      // 再起動確認ダイアログを表示
+      const shouldRestart = await ask(
+        '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
+        {
+          title: 'RightCheat - 再起動の確認',
+          kind: 'info',
+          okLabel: 'はい',
+          cancelLabel: 'いいえ',
+        },
+      )
+
+      if (shouldRestart) {
+        await relaunch()
+      } else {
+        debug('User cancelled the restart.')
+        // キャンセル時にユーザーに設定が保存されたことを通知
+        await message(
+          '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
+          {
+            title: 'RightCheat',
+            kind: 'info',
+          },
+        )
+      }
+    } else {
+      debug('Relaunch is not execute in development mode.')
+    }
+  }
+
   const shortcutEditCallback = (
     ctrlKey: boolean,
     optionKey: boolean,
@@ -143,35 +175,7 @@ export default function Page() {
         })
         .catch((err) => error(`Error setting shortcut: ${err}`))
 
-      // devモードでは正常にアプリの再起動が実行できないため、ログ出力だけにする。
-      if (process.env.NODE_ENV === 'production') {
-        // 再起動確認ダイアログを表示
-        const shouldRestart = await ask(
-          '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
-          {
-            title: 'RightCheat - 再起動の確認',
-            kind: 'info',
-            okLabel: 'はい',
-            cancelLabel: 'いいえ',
-          },
-        )
-
-        if (shouldRestart) {
-          await relaunch()
-        } else {
-          debug('User cancelled the restart.')
-          // キャンセル時にユーザーに設定が保存されたことを通知
-          await message(
-            '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
-            {
-              title: 'RightCheat',
-              kind: 'info',
-            },
-          )
-        }
-      } else {
-        debug('Relaunch is not execute in development mode.')
-      }
+      await showRestartConfirmationDialog()
     })()
   }
 
@@ -213,35 +217,7 @@ export default function Page() {
           return
         })
 
-      // devモードでは正常にアプリの再起動が実行できないため、ログ出力だけにする。
-      if (process.env.NODE_ENV === 'production') {
-        // 再起動確認ダイアログを表示
-        const shouldRestart = await ask(
-          '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
-          {
-            title: 'RightCheat - 再起動の確認',
-            kind: 'info',
-            okLabel: 'はい',
-            cancelLabel: 'いいえ',
-          },
-        )
-
-        if (shouldRestart) {
-          await relaunch()
-        } else {
-          debug('User cancelled the restart.')
-          // キャンセル時にユーザーに設定が保存されたことを通知
-          await message(
-            '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
-            {
-              title: 'RightCheat',
-              kind: 'info',
-            },
-          )
-        }
-      } else {
-        debug('Relaunch is not execute in development mode.')
-      }
+      await showRestartConfirmationDialog()
     })()
   }
 
