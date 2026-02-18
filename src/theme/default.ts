@@ -191,11 +191,11 @@ const getDarkPalette = () => ({
     bright: '#252525',
   },
   switch: {
-    checked: blue[400],
+    checked: grey[0],
     unchecked: grey[600],
     track: grey[700],
     trackBackground: 'rgba(255, 255, 255, 0.2)',
-    checkedHover: 'rgba(66, 165, 245, 0.08)',
+    checkedHover: 'rgba(255, 255, 255, 0.08)',
     uncheckedHover: 'rgba(255, 255, 255, 0.08)',
   },
   background: {
