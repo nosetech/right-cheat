@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react'
 
-import { FileEditButton, FileOpenButton, ThemeToggle } from '@/components/atoms'
+import {
+  FileEditButton,
+  FileOpenButton,
+  ThemedSwitch,
+  ThemeToggle,
+} from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
@@ -10,7 +15,7 @@ import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
-import { Box, Divider, Stack, Switch, Typography } from '@mui/material'
+import { Box, Divider, Stack, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { ask, message } from '@tauri-apps/plugin-dialog'
@@ -298,7 +303,7 @@ export default function Page() {
       <Typography variant='body1'>Other Settings</Typography>
       <Stack direction='row' px={1} spacing={1} alignItems='center'>
         <Typography variant='body1'>Visible on all workspaces</Typography>
-        <Switch
+        <ThemedSwitch
           checked={visibleOnAllWorkspaces}
           onChange={handleVisibleOnAllWorkspacesChange}
         />

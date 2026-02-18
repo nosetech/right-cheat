@@ -33,6 +33,14 @@ declare module '@mui/material/styles' {
       pale: string
       bright: string
     }
+    switch: {
+      checked: string
+      unchecked: string
+      track: string
+      trackBackground: string
+      checkedHover: string
+      uncheckedHover: string
+    }
   }
   interface PaletteOptions {
     alert?: {
@@ -44,6 +52,14 @@ declare module '@mui/material/styles' {
       middle?: string
       pale?: string
       bright?: string
+    }
+    switch?: {
+      checked?: string
+      unchecked?: string
+      track?: string
+      trackBackground?: string
+      checkedHover?: string
+      uncheckedHover?: string
     }
   }
 }
@@ -125,6 +141,14 @@ const getLightPalette = () => ({
     pale: '#C0C0C0',
     bright: '#f5f5f5',
   },
+  switch: {
+    checked: blue[500],
+    unchecked: grey[400],
+    track: grey[300],
+    trackBackground: 'rgba(0, 0, 0, 0.2)',
+    checkedHover: 'rgba(33, 150, 243, 0.08)',
+    uncheckedHover: 'rgba(0, 0, 0, 0.08)',
+  },
   background: {
     default: grey[0],
     paper: grey[0],
@@ -165,6 +189,14 @@ const getDarkPalette = () => ({
     middle: '#CFCFCF',
     pale: '#5A5A5A',
     bright: '#252525',
+  },
+  switch: {
+    checked: blue[400],
+    unchecked: grey[600],
+    track: grey[700],
+    trackBackground: 'rgba(255, 255, 255, 0.2)',
+    checkedHover: 'rgba(66, 165, 245, 0.08)',
+    uncheckedHover: 'rgba(255, 255, 255, 0.08)',
   },
   background: {
     default: '#163050',
