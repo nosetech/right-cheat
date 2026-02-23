@@ -14,6 +14,7 @@ import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { useWindowSize } from '@/hooks/useWindowSize'
 import {
   CheatSheetAPI,
   CheatSheetData,
@@ -37,6 +38,9 @@ export const CheatSheet = () => {
 
   const theme = useTheme()
   const { getCheatSheetFilePath } = usePreferencesStore()
+
+  // ウィンドウサイズをチートシートごとに保存・復元
+  useWindowSize(selectCheatSheet)
 
   // キーボードショートカット用の参照
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])

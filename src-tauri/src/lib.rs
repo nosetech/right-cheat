@@ -49,6 +49,8 @@ pub fn run() {
             api::font_size::reset_font_size,
             api::visible_on_all_workspaces::get_visible_on_all_workspaces_setting,
             api::visible_on_all_workspaces::set_visible_on_all_workspaces_setting,
+            api::window_size::get_cheat_sheet_window_size,
+            api::window_size::save_cheat_sheet_window_size,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
