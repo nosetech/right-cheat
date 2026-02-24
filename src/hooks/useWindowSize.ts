@@ -8,16 +8,18 @@ import { WindowSizeAPI, WindowSizeSettings } from '@/types/api/WindowSize'
 
 const DEBOUNCE_DELAY_MS = 500
 
-export const useWindowSize = (selectedTitle: string) => {
+export const useWindowSize = (
+  selectedTitle: string,
+  inputPath: string | undefined,
+) => {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const unlistenRef = useRef<(() => void) | null>(null)
 
-  const applyWindowSize = useCallback(async (title: string) => {
-    if (!title) return
+  const applyWindowSize = useCallback(async (title: string, path: string) => {
     try {
       const settings = await invoke<WindowSizeSettings>(
         WindowSizeAPI.GET_CHEAT_SHEET_WINDOW_SIZE,
-        { title },
+        { inputPath: path, title },
       )
       const win = getCurrentWindow()
       await win.setSize({
@@ -30,12 +32,12 @@ export const useWindowSize = (selectedTitle: string) => {
     }
   }, [])
 
-  const saveWindowSize = useCallback(async (title: string) => {
-    if (!title) return
+  const saveWindowSize = useCallback(async (title: string, path: string) => {
     try {
       const win = getCurrentWindow()
       const size = await win.outerSize()
       await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
+        inputPath: path,
         title,
         width: size.width,
         height: size.height,
@@ -47,13 +49,13 @@ export const useWindowSize = (selectedTitle: string) => {
 
   // チートシート切り替え時にウィンドウサイズを復元
   useEffect(() => {
-    if (!selectedTitle) return
-    applyWindowSize(selectedTitle)
-  }, [selectedTitle, applyWindowSize])
+    if (!selectedTitle || !inputPath) return
+    applyWindowSize(selectedTitle, inputPath)
+  }, [selectedTitle, inputPath, applyWindowSize])
 
   // ウィンドウリサイズを監視してデバウンス付きで保存
   useEffect(() => {
-    if (!selectedTitle) return
+    if (!selectedTitle || !inputPath) return
 
     let active = true
 
@@ -65,7 +67,7 @@ export const useWindowSize = (selectedTitle: string) => {
           clearTimeout(debounceTimerRef.current)
         }
         debounceTimerRef.current = setTimeout(() => {
-          saveWindowSize(selectedTitle)
+          saveWindowSize(selectedTitle, inputPath)
         }, DEBOUNCE_DELAY_MS)
       })
       unlistenRef.current = unlisten
@@ -83,5 +85,5 @@ export const useWindowSize = (selectedTitle: string) => {
         unlistenRef.current = null
       }
     }
-  }, [selectedTitle, saveWindowSize])
+  }, [selectedTitle, inputPath, saveWindowSize])
 }

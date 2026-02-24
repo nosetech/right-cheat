@@ -1,0 +1,15 @@
+[
+  {
+    "title": "SheetWithWindowSize",
+    "window_size": { "width": 600, "height": 900 },
+    "commandlist": [
+      { "description": "Test Command", "command": "echo test" }
+    ]
+  },
+  {
+    "title": "SheetWithoutWindowSize",
+    "commandlist": [
+      { "description": "Another Command", "command": "echo another" }
+    ]
+  }
+]

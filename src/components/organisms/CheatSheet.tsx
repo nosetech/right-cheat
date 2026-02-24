@@ -40,7 +40,7 @@ export const CheatSheet = () => {
   const { getCheatSheetFilePath } = usePreferencesStore()
 
   // ウィンドウサイズをチートシートごとに保存・復元
-  useWindowSize(selectCheatSheet)
+  useWindowSize(selectCheatSheet, jsonInputPath)
 
   // キーボードショートカット用の参照
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])

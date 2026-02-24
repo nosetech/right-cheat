@@ -14,6 +14,35 @@ lazy_static! {
     static ref CACHE: Mutex<Option<Vec<CheatSheet>>> = Mutex::new(None);
 }
 
+const DEFAULT_WINDOW_WIDTH: u32 = 500;
+const DEFAULT_WINDOW_HEIGHT: u32 = 800;
+const MIN_WINDOW_WIDTH: u32 = 400;
+const MIN_WINDOW_HEIGHT: u32 = 300;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WindowSize {
+    pub width: u32,
+    pub height: u32,
+}
+
+impl Default for WindowSize {
+    fn default() -> Self {
+        Self {
+            width: DEFAULT_WINDOW_WIDTH,
+            height: DEFAULT_WINDOW_HEIGHT,
+        }
+    }
+}
+
+impl WindowSize {
+    pub fn clamp_to_min(self) -> Self {
+        Self {
+            width: self.width.max(MIN_WINDOW_WIDTH),
+            height: self.height.max(MIN_WINDOW_HEIGHT),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
     success: bool,
@@ -26,6 +55,8 @@ pub struct CheatSheet {
     #[serde(rename = "type")]
     sheet_type: Option<String>,
     title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    window_size: Option<WindowSize>,
     commandlist: Vec<Command>,
 }
 impl fmt::Display for CheatSheet {
@@ -137,6 +168,69 @@ pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
     }
 
     format!("{{\"status\": {}}}", response)
+}
+
+#[tauri::command]
+pub fn get_cheat_sheet_window_size(input_path: &str, title: &str) -> Result<WindowSize, String> {
+    let mut cache = CACHE.lock().unwrap();
+
+    if cache.is_none() {
+        log::debug!("Cache is empty, reading from file: {}", input_path);
+        match read_json_from_file(PathBuf::from(input_path)) {
+            Ok(data) => *cache = Some(data),
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+
+    let binding = vec![];
+    let window_size = cache
+        .as_ref()
+        .unwrap_or(&binding)
+        .iter()
+        .find(|s| s.title == title)
+        .and_then(|s| s.window_size.clone())
+        .unwrap_or_default()
+        .clamp_to_min();
+
+    Ok(window_size)
+}
+
+#[tauri::command]
+pub fn save_cheat_sheet_window_size(
+    input_path: &str,
+    title: &str,
+    width: u32,
+    height: u32,
+) -> Result<(), String> {
+    let window_size = WindowSize { width, height }.clamp_to_min();
+    let file_path = PathBuf::from(input_path);
+
+    // ファイルから最新データを読み込む（キャッシュを経由しない）
+    let mut sheets: Vec<CheatSheet> = {
+        let file = File::open(&file_path).map_err(|e| e.to_string())?;
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader).map_err(|e| e.to_string())?
+    };
+
+    // 対象チートシートのウィンドウサイズを更新
+    match sheets.iter_mut().find(|s| s.title == title) {
+        Some(sheet) => {
+            sheet.window_size = Some(window_size);
+        }
+        None => {
+            return Err(format!("チートシート '{}' が見つかりません", title));
+        }
+    }
+
+    // ファイルに書き戻す
+    let json = serde_json::to_string_pretty(&sheets).map_err(|e| e.to_string())?;
+    std::fs::write(&file_path, format!("{}\n", json)).map_err(|e| e.to_string())?;
+
+    // キャッシュを更新
+    let mut cache = CACHE.lock().unwrap();
+    *cache = Some(sheets);
+
+    Ok(())
 }
 
 fn read_json_from_file(file_path: PathBuf) -> Result<Vec<CheatSheet>, Box<dyn Error>> {

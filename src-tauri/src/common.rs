@@ -1,7 +1,6 @@
 pub mod config {
     pub const SETTING_FILENAME: &str = "rightcheat-settings.json";
     pub const TOGGLE_VISIBLE_SHORTCUT: &str = "toggle_visibe_shortcut_settings";
-    pub const CHEAT_SHEET_WINDOW_SIZE_KEY_PREFIX: &str = "cheat_sheet_window_size";
 }
 
 pub mod event {
