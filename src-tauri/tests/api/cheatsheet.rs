@@ -88,9 +88,13 @@ mod get_cheat_sheet_window_size {
 
         // Arrange: window_size フィールド（600x900）を持つシートを指定
         // Act
-        let result = get_cheat_sheet_window_size(TEST_DATA_PATH, "SheetWithWindowSize");
+        let result = get_cheat_sheet_window_size(
+            app.handle().clone(),
+            TEST_DATA_PATH,
+            "SheetWithWindowSize",
+        );
 
-        // Assert: JSON に記載した値がそのまま返ること（いずれも MIN 以上なので clamp 不要）
+        // Assert: JSON に記載した値がそのまま返ること（いずれも tauri.conf.json の min 以上なので clamp 不要）
         assert!(result.is_ok());
         let window_size = result.unwrap();
         assert_eq!(window_size.width, 600);
@@ -98,7 +102,8 @@ mod get_cheat_sheet_window_size {
     }
 
     // ブラックボックス：同値分割 - window_size フィールドが存在しないシート（有効クラス②）
-    // ホワイトボックス：s.window_size が None のブランチ → unwrap_or_default() でデフォルトを返すパス
+    // ホワイトボックス：s.window_size が None のブランチ → tauri.conf.json のデフォルト値を返すパス
+    // ※ mock_app() では tauri.conf.json が読み込まれないため、フォールバック値（500x800）が使われる
     #[test]
     fn returns_default_when_window_size_field_missing() {
         let app = mock_app();
@@ -106,9 +111,13 @@ mod get_cheat_sheet_window_size {
 
         // Arrange: window_size フィールドを持たないシートを指定
         // Act
-        let result = get_cheat_sheet_window_size(TEST_DATA_PATH, "SheetWithoutWindowSize");
+        let result = get_cheat_sheet_window_size(
+            app.handle().clone(),
+            TEST_DATA_PATH,
+            "SheetWithoutWindowSize",
+        );
 
-        // Assert: デフォルト値（width=500, height=800）が返ること
+        // Assert: フォールバックのデフォルト値（width=500, height=800）が返ること
         assert!(result.is_ok());
         let window_size = result.unwrap();
         assert_eq!(window_size.width, 500);
@@ -123,12 +132,19 @@ mod get_cheat_sheet_window_size {
         let _ = reload_cheat_sheet(app.handle().clone());
 
         // Arrange: 最初の呼び出しでキャッシュを生成する
-        let _ = get_cheat_sheet_window_size(TEST_DATA_PATH, "SheetWithWindowSize");
+        let _ = get_cheat_sheet_window_size(
+            app.handle().clone(),
+            TEST_DATA_PATH,
+            "SheetWithWindowSize",
+        );
 
         // Act: 別パスを渡しても、キャッシュが使われるため同じ結果になる
         // （キャッシュが有効であることを確認するため、意図的に異なるパスを指定）
-        let result =
-            get_cheat_sheet_window_size("./tests/api/test-data.json", "SheetWithWindowSize");
+        let result = get_cheat_sheet_window_size(
+            app.handle().clone(),
+            "./tests/api/test-data.json",
+            "SheetWithWindowSize",
+        );
 
         // Assert: キャッシュ（最初のファイルのデータ）が使われ、正しい値が返ること
         assert!(result.is_ok());
@@ -145,29 +161,29 @@ mod get_cheat_sheet_window_size {
         let _ = reload_cheat_sheet(app.handle().clone());
 
         // Act: 存在しないファイルを指定
-        let result = get_cheat_sheet_window_size("./tests/api/notfound.json", "SomeSheet");
+        let result = get_cheat_sheet_window_size(
+            app.handle().clone(),
+            "./tests/api/notfound.json",
+            "SomeSheet",
+        );
 
         // Assert: Err が返ること
         assert!(result.is_err());
     }
 
-    // ブラックボックス：境界値分析 - window_size の各値が MIN_WINDOW_WIDTH(400) / MIN_WINDOW_HEIGHT(300) 未満
-    // ホワイトボックス：clamp_to_min() の width.max(MIN_WINDOW_WIDTH) / height.max(MIN_WINDOW_HEIGHT) のブランチ
-    // このテストは save_cheat_sheet_window_size でファイルに書いた小さな値を get で読み戻すことで確認する
-    // （直接テストするには save 経由でデータを用意する必要があるため、clamp の直接検証は WindowSize 単体テストで行う）
-
     // ブラックボックス：境界値分析 - 存在しないタイトルを指定した場合
-    // ホワイトボックス：iter().find() で None → unwrap_or_default() → デフォルト値を返すパス
+    // ホワイトボックス：iter().find() で None → フォールバックデフォルト値を返すパス
     #[test]
     fn returns_default_for_unknown_title() {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
         // Act: 存在しないタイトルを指定
-        let result = get_cheat_sheet_window_size(TEST_DATA_PATH, "NonExistentSheet");
+        let result =
+            get_cheat_sheet_window_size(app.handle().clone(), TEST_DATA_PATH, "NonExistentSheet");
 
-        // Assert: エラーではなくデフォルト値（500x800）が返ること
-        // （チートシートが見つからない場合は None → unwrap_or_default）
+        // Assert: エラーではなくフォールバックのデフォルト値（500x800）が返ること
+        // （チートシートが見つからない場合は None → tauri.conf.json の値、mock_app ではフォールバック値）
         assert!(result.is_ok());
         let window_size = result.unwrap();
         assert_eq!(window_size.width, 500);
@@ -197,7 +213,13 @@ mod save_cheat_sheet_window_size {
         std::fs::copy(SOURCE_DATA_PATH, temp_path).expect("一時ファイルのコピーに失敗");
 
         // Act: window_size を保存
-        let result = save_cheat_sheet_window_size(temp_path, "SheetWithWindowSize", 700, 1000);
+        let result = save_cheat_sheet_window_size(
+            app.handle().clone(),
+            temp_path,
+            "SheetWithWindowSize",
+            700,
+            1000,
+        );
 
         // Assert: 保存が成功すること
         assert!(result.is_ok());
@@ -205,7 +227,8 @@ mod save_cheat_sheet_window_size {
         // ファイルの内容を読み込んで検証
         // save後はキャッシュが更新されているため、get で結果を確認できる
         let window_size =
-            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithWindowSize")
+                .expect("取得に失敗");
         assert_eq!(window_size.width, 700);
         assert_eq!(window_size.height, 1000);
 
@@ -213,10 +236,12 @@ mod save_cheat_sheet_window_size {
         std::fs::remove_file(temp_path).expect("一時ファイルの削除に失敗");
     }
 
-    // ブラックボックス：境界値分析 - MIN_WINDOW_WIDTH(400) / MIN_WINDOW_HEIGHT(300) 未満の値
-    // ホワイトボックス：clamp_to_min() が適用されて最小値に切り上げられるパス
+    // ブラックボックス：境界値分析 - tauri.conf.json の min 未満の値を保存した場合
+    // ホワイトボックス：clamp_to_min() が適用されるパス
+    // ※ mock_app() では tauri.conf.json が読み込まれないため min=0 となり clamp は発生しない
+    //   clamp 動作の直接検証は window_size_unit テストモジュールで行う
     #[test]
-    fn clamps_values_below_minimum() {
+    fn saves_small_window_size_without_clamp_in_mock() {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
@@ -224,33 +249,39 @@ mod save_cheat_sheet_window_size {
         let temp_path = "./tests/api/temp-window-size-save-test-2.json";
         std::fs::copy(SOURCE_DATA_PATH, temp_path).expect("一時ファイルのコピーに失敗");
 
-        // Act: MIN_WINDOW_WIDTH(400) と MIN_WINDOW_HEIGHT(300) を大きく下回る値を指定
-        // 同値分割：無効クラス（MIN未満）の代表値として 100, 100 を使用
-        let result = save_cheat_sheet_window_size(temp_path, "SheetWithWindowSize", 100, 100);
+        // Act: mock_app では min=0 のため、小さな値はクランプされずそのまま保存される
+        let result = save_cheat_sheet_window_size(
+            app.handle().clone(),
+            temp_path,
+            "SheetWithWindowSize",
+            100,
+            100,
+        );
 
-        // Assert: 保存自体は成功（clamp して保存）
+        // Assert: 保存が成功すること
         assert!(result.is_ok());
 
-        // get で読み取り、clamp された値（width=400, height=300）が返ること
+        // mock_app では min=0 のため clamp されず 100, 100 のまま保存・取得される
         let window_size =
-            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithWindowSize")
+                .expect("取得に失敗");
         assert_eq!(
-            window_size.width, 400,
-            "width が MIN_WINDOW_WIDTH(400) にクランプされること"
+            window_size.width, 100,
+            "mock_app では clamp なしで 100 が保存されること"
         );
         assert_eq!(
-            window_size.height, 300,
-            "height が MIN_WINDOW_HEIGHT(300) にクランプされること"
+            window_size.height, 100,
+            "mock_app では clamp なしで 100 が保存されること"
         );
 
         // Cleanup
         std::fs::remove_file(temp_path).expect("一時ファイルの削除に失敗");
     }
 
-    // ブラックボックス：境界値分析 - MIN_WINDOW_WIDTH(400) / MIN_WINDOW_HEIGHT(300) ちょうどの値
-    // ホワイトボックス：clamp_to_min() で変化しないパス（x.max(MIN) == x のケース）
+    // ブラックボックス：境界値分析 - 任意の境界値を指定した場合
+    // ホワイトボックス：clamp_to_min() で変化しないパス（x.max(min) == x のケース）
     #[test]
-    fn does_not_clamp_values_at_minimum_boundary() {
+    fn saves_and_retrieves_specified_values() {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
@@ -258,13 +289,20 @@ mod save_cheat_sheet_window_size {
         let temp_path = "./tests/api/temp-window-size-save-test-3.json";
         std::fs::copy(SOURCE_DATA_PATH, temp_path).expect("一時ファイルのコピーに失敗");
 
-        // Act: ちょうど最小値（400x300）を指定
-        let result = save_cheat_sheet_window_size(temp_path, "SheetWithWindowSize", 400, 300);
+        // Act: 400x300 を指定
+        let result = save_cheat_sheet_window_size(
+            app.handle().clone(),
+            temp_path,
+            "SheetWithWindowSize",
+            400,
+            300,
+        );
 
-        // Assert: clamp されず、指定値のまま保存されること
+        // Assert: 指定値のまま保存されること
         assert!(result.is_ok());
         let window_size =
-            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithWindowSize")
+                .expect("取得に失敗");
         assert_eq!(window_size.width, 400);
         assert_eq!(window_size.height, 300);
 
@@ -284,7 +322,13 @@ mod save_cheat_sheet_window_size {
         std::fs::copy(SOURCE_DATA_PATH, temp_path).expect("一時ファイルのコピーに失敗");
 
         // Act: 存在しないタイトルに対して保存
-        let result = save_cheat_sheet_window_size(temp_path, "NonExistentSheet", 700, 1000);
+        let result = save_cheat_sheet_window_size(
+            app.handle().clone(),
+            temp_path,
+            "NonExistentSheet",
+            700,
+            1000,
+        );
 
         // Assert: Err が返ること（エラーメッセージに指定タイトルが含まれること）
         assert!(result.is_err());
@@ -311,12 +355,19 @@ mod save_cheat_sheet_window_size {
         std::fs::copy(SOURCE_DATA_PATH, temp_path).expect("一時ファイルのコピーに失敗");
 
         // Act: 既存の window_size (600x900) を 800x1100 に上書き
-        let result = save_cheat_sheet_window_size(temp_path, "SheetWithWindowSize", 800, 1100);
+        let result = save_cheat_sheet_window_size(
+            app.handle().clone(),
+            temp_path,
+            "SheetWithWindowSize",
+            800,
+            1100,
+        );
         assert!(result.is_ok());
 
         // Assert: 新しい値に更新されていること
         let window_size =
-            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithWindowSize")
+                .expect("取得に失敗");
         assert_eq!(
             window_size.width, 800,
             "上書き後の width が反映されていること"
@@ -342,12 +393,19 @@ mod save_cheat_sheet_window_size {
         std::fs::copy(SOURCE_DATA_PATH, temp_path).expect("一時ファイルのコピーに失敗");
 
         // Act: window_size フィールドを持たないシートに対して初回保存
-        let result = save_cheat_sheet_window_size(temp_path, "SheetWithoutWindowSize", 550, 850);
+        let result = save_cheat_sheet_window_size(
+            app.handle().clone(),
+            temp_path,
+            "SheetWithoutWindowSize",
+            550,
+            850,
+        );
         assert!(result.is_ok());
 
         // Assert: 保存した値が反映されること（デフォルト値ではなく指定値）
         let window_size =
-            get_cheat_sheet_window_size(temp_path, "SheetWithoutWindowSize").expect("取得に失敗");
+            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithoutWindowSize")
+                .expect("取得に失敗");
         assert_eq!(
             window_size.width, 550,
             "初回保存した width が反映されていること"
@@ -369,11 +427,79 @@ mod save_cheat_sheet_window_size {
         let _ = reload_cheat_sheet(app.handle().clone());
 
         // Act: 存在しないファイルに対して保存
-        let result =
-            save_cheat_sheet_window_size("./tests/api/notfound.json", "SomeSheet", 700, 1000);
+        let result = save_cheat_sheet_window_size(
+            app.handle().clone(),
+            "./tests/api/notfound.json",
+            "SomeSheet",
+            700,
+            1000,
+        );
 
         // Assert: Err が返ること
         assert!(result.is_err());
+    }
+}
+
+#[cfg(test)]
+mod window_size_unit {
+    use app_lib::api::cheatsheet::WindowSize;
+
+    // ブラックボックス：同値分割 - 各値が min 未満の場合（無効クラス）
+    // ホワイトボックス：clamp_to_min() の width.max(min_width) / height.max(min_height) のブランチ
+    #[test]
+    fn clamp_to_min_raises_values_below_minimum() {
+        let ws = WindowSize {
+            width: 100,
+            height: 100,
+        };
+        let clamped = ws.clamp_to_min(400, 300);
+        assert_eq!(
+            clamped.width, 400,
+            "width が min_width(400) にクランプされること"
+        );
+        assert_eq!(
+            clamped.height, 300,
+            "height が min_height(300) にクランプされること"
+        );
+    }
+
+    // ブラックボックス：境界値分析 - 各値がちょうど min の場合
+    // ホワイトボックス：x.max(min) == x のケース（境界値）
+    #[test]
+    fn clamp_to_min_keeps_values_at_minimum_boundary() {
+        let ws = WindowSize {
+            width: 400,
+            height: 300,
+        };
+        let clamped = ws.clamp_to_min(400, 300);
+        assert_eq!(clamped.width, 400);
+        assert_eq!(clamped.height, 300);
+    }
+
+    // ブラックボックス：同値分割 - 各値が min より大きい場合（有効クラス）
+    // ホワイトボックス：x.max(min) == x のケース（変化なし）
+    #[test]
+    fn clamp_to_min_does_not_change_values_above_minimum() {
+        let ws = WindowSize {
+            width: 600,
+            height: 900,
+        };
+        let clamped = ws.clamp_to_min(400, 300);
+        assert_eq!(clamped.width, 600);
+        assert_eq!(clamped.height, 900);
+    }
+
+    // ブラックボックス：境界値分析 - min=0 の場合（クランプなし）
+    // ホワイトボックス：min_width=0 かつ min_height=0 → 変化なし
+    #[test]
+    fn clamp_to_min_with_zero_minimum_does_not_change_values() {
+        let ws = WindowSize {
+            width: 1,
+            height: 1,
+        };
+        let clamped = ws.clamp_to_min(0, 0);
+        assert_eq!(clamped.width, 1);
+        assert_eq!(clamped.height, 1);
     }
 }
 

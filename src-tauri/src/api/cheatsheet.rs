@@ -14,33 +14,29 @@ lazy_static! {
     static ref CACHE: Mutex<Option<Vec<CheatSheet>>> = Mutex::new(None);
 }
 
-const DEFAULT_WINDOW_WIDTH: u32 = 500;
-const DEFAULT_WINDOW_HEIGHT: u32 = 800;
-const MIN_WINDOW_WIDTH: u32 = 400;
-const MIN_WINDOW_HEIGHT: u32 = 300;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WindowSize {
     pub width: u32,
     pub height: u32,
 }
 
-impl Default for WindowSize {
-    fn default() -> Self {
+impl WindowSize {
+    pub fn clamp_to_min(self, min_width: u32, min_height: u32) -> Self {
         Self {
-            width: DEFAULT_WINDOW_WIDTH,
-            height: DEFAULT_WINDOW_HEIGHT,
+            width: self.width.max(min_width),
+            height: self.height.max(min_height),
         }
     }
 }
 
-impl WindowSize {
-    pub fn clamp_to_min(self) -> Self {
-        Self {
-            width: self.width.max(MIN_WINDOW_WIDTH),
-            height: self.height.max(MIN_WINDOW_HEIGHT),
-        }
-    }
+fn window_size_defaults_from_config<R: tauri::Runtime>(app: &AppHandle<R>) -> (u32, u32, u32, u32) {
+    let config = app.config();
+    let first_window = config.app.windows.first();
+    let default_width = first_window.map(|w| w.width as u32).unwrap_or(500);
+    let default_height = first_window.map(|w| w.height as u32).unwrap_or(800);
+    let min_width = first_window.and_then(|w| w.min_width).unwrap_or(0.0) as u32;
+    let min_height = first_window.and_then(|w| w.min_height).unwrap_or(0.0) as u32;
+    (default_width, default_height, min_width, min_height)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -171,7 +167,11 @@ pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
 }
 
 #[tauri::command]
-pub fn get_cheat_sheet_window_size(input_path: &str, title: &str) -> Result<WindowSize, String> {
+pub fn get_cheat_sheet_window_size<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    input_path: &str,
+    title: &str,
+) -> Result<WindowSize, String> {
     let mut cache = CACHE.lock().unwrap();
 
     if cache.is_none() {
@@ -182,6 +182,9 @@ pub fn get_cheat_sheet_window_size(input_path: &str, title: &str) -> Result<Wind
         }
     }
 
+    let (default_width, default_height, min_width, min_height) =
+        window_size_defaults_from_config(&app);
+
     let binding = vec![];
     let window_size = cache
         .as_ref()
@@ -189,20 +192,25 @@ pub fn get_cheat_sheet_window_size(input_path: &str, title: &str) -> Result<Wind
         .iter()
         .find(|s| s.title == title)
         .and_then(|s| s.window_size.clone())
-        .unwrap_or_default()
-        .clamp_to_min();
+        .unwrap_or(WindowSize {
+            width: default_width,
+            height: default_height,
+        })
+        .clamp_to_min(min_width, min_height);
 
     Ok(window_size)
 }
 
 #[tauri::command]
-pub fn save_cheat_sheet_window_size(
+pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
+    app: AppHandle<R>,
     input_path: &str,
     title: &str,
     width: u32,
     height: u32,
 ) -> Result<(), String> {
-    let window_size = WindowSize { width, height }.clamp_to_min();
+    let (_, _, min_width, min_height) = window_size_defaults_from_config(&app);
+    let window_size = WindowSize { width, height }.clamp_to_min(min_width, min_height);
     let file_path = PathBuf::from(input_path);
 
     // ファイルから最新データを読み込む（キャッシュを経由しない）
