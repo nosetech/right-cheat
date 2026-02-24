@@ -194,7 +194,7 @@ mod get_cheat_sheet_window_size {
 #[cfg(test)]
 mod save_cheat_sheet_window_size {
     use app_lib::api::cheatsheet::{
-        get_cheat_sheet_window_size, reload_cheat_sheet, save_cheat_sheet_window_size,
+        get_cheat_sheet_window_size, reload_cheat_sheet, save_cheat_sheet_window_size, WindowSize,
     };
     use tauri::test::mock_app;
 
@@ -217,8 +217,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithWindowSize",
-            700,
-            1000,
+            WindowSize {
+                width: 700,
+                height: 1000,
+            },
         );
 
         // Assert: 保存が成功すること
@@ -254,8 +256,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithWindowSize",
-            100,
-            100,
+            WindowSize {
+                width: 100,
+                height: 100,
+            },
         );
 
         // Assert: 保存が成功すること
@@ -294,8 +298,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithWindowSize",
-            400,
-            300,
+            WindowSize {
+                width: 400,
+                height: 300,
+            },
         );
 
         // Assert: 指定値のまま保存されること
@@ -326,8 +332,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "NonExistentSheet",
-            700,
-            1000,
+            WindowSize {
+                width: 700,
+                height: 1000,
+            },
         );
 
         // Assert: Err が返ること（エラーメッセージに指定タイトルが含まれること）
@@ -359,8 +367,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithWindowSize",
-            800,
-            1100,
+            WindowSize {
+                width: 800,
+                height: 1100,
+            },
         );
         assert!(result.is_ok());
 
@@ -397,8 +407,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithoutWindowSize",
-            550,
-            850,
+            WindowSize {
+                width: 550,
+                height: 850,
+            },
         );
         assert!(result.is_ok());
 
@@ -431,8 +443,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             "./tests/api/notfound.json",
             "SomeSheet",
-            700,
-            1000,
+            WindowSize {
+                width: 700,
+                height: 1000,
+            },
         );
 
         // Assert: Err が返ること

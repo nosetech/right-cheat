@@ -206,11 +206,10 @@ pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
     app: AppHandle<R>,
     input_path: &str,
     title: &str,
-    width: u32,
-    height: u32,
+    window_size: WindowSize,
 ) -> Result<(), String> {
     let (_, _, min_width, min_height) = window_size_defaults_from_config(&app);
-    let window_size = WindowSize { width, height }.clamp_to_min(min_width, min_height);
+    let window_size = window_size.clamp_to_min(min_width, min_height);
     let file_path = PathBuf::from(input_path);
 
     // ファイルから最新データを読み込む（キャッシュを経由しない）

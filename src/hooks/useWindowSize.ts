@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react'
 
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow, PhysicalSize } from '@tauri-apps/api/window'
+import { error as logError } from '@tauri-apps/plugin-log'
 
 import { WindowSizeAPI, WindowSizeSettings } from '@/types/api/WindowSize'
 
@@ -24,7 +25,7 @@ export const useWindowSize = (
       const win = getCurrentWindow()
       await win.setSize(new PhysicalSize(settings.width, settings.height))
     } catch (e) {
-      // サイズ取得・適用に失敗しても動作を継続する
+      logError(`ウィンドウサイズの適用に失敗しました: ${e}`)
     }
   }, [])
 
@@ -35,11 +36,10 @@ export const useWindowSize = (
       await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
         inputPath: path,
         title,
-        width: size.width,
-        height: size.height,
+        windowSize: { width: size.width, height: size.height },
       })
     } catch (e) {
-      // 保存失敗時は無視
+      logError(`ウィンドウサイズの保存に失敗しました: ${e}`)
     }
   }, [])
 
