@@ -1,7 +1,17 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 
-import { Autocomplete, Grid, TextField, Typography } from '@mui/material'
+import PushPin from '@mui/icons-material/PushPin'
+import PushPinOutlined from '@mui/icons-material/PushPinOutlined'
+import {
+  Autocomplete,
+  Box,
+  Grid,
+  IconButton,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
@@ -39,8 +49,8 @@ export const CheatSheet = () => {
   const theme = useTheme()
   const { getCheatSheetFilePath } = usePreferencesStore()
 
-  // ウィンドウサイズをチートシートごとに保存・復元
-  useWindowSize(selectCheatSheet, jsonInputPath)
+  // ウィンドウサイズをチートシートごとにピン留め・復元
+  const { isPinned, togglePin } = useWindowSize(selectCheatSheet, jsonInputPath)
 
   // キーボードショートカット用の参照
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
@@ -194,7 +204,7 @@ export const CheatSheet = () => {
   })
 
   return (
-    <Stack padding={1}>
+    <Stack padding={1} sx={{ position: 'relative' }}>
       {jsonInputPath == undefined ? (
         <Typography variant='body1' color='error'>
           入力ファイルのパスが指定されていません。
@@ -292,6 +302,31 @@ export const CheatSheet = () => {
           )}
         </>
       )}
+      <Box sx={{ position: 'fixed', bottom: 4, right: 4 }}>
+        <Tooltip
+          title={
+            isPinned
+              ? 'ウィンドウサイズのピン留めを解除'
+              : '現在のウィンドウサイズをピン留め'
+          }
+          placement='left'
+        >
+          <span>
+            <IconButton
+              onClick={togglePin}
+              size='small'
+              disabled={!selectCheatSheet}
+              sx={{ opacity: selectCheatSheet ? 1 : 0.3 }}
+            >
+              {isPinned ? (
+                <PushPin fontSize='small' />
+              ) : (
+                <PushPinOutlined fontSize='small' />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Box>
     </Stack>
   )
 }

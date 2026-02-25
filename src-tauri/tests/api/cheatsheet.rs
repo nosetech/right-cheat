@@ -80,7 +80,7 @@ mod get_cheat_sheet_window_size {
 
     // ブラックボックス：同値分割 - window_size フィールドが存在するシート（有効クラス①）
     // ホワイトボックス：cache.is_none() が true のブランチ → ファイルから読み込むパス
-    //                   s.window_size が Some のブランチ → clamp_to_min() を適用して返すパス
+    //                   s.window_size が Some のブランチ → その値を返すパス
     #[test]
     fn returns_window_size_when_field_exists() {
         let app = mock_app();
@@ -88,40 +88,37 @@ mod get_cheat_sheet_window_size {
 
         // Arrange: window_size フィールド（600x900）を持つシートを指定
         // Act
-        let result = get_cheat_sheet_window_size(
-            app.handle().clone(),
-            TEST_DATA_PATH,
-            "SheetWithWindowSize",
-        );
+        let result = get_cheat_sheet_window_size(TEST_DATA_PATH, "SheetWithWindowSize");
 
-        // Assert: JSON に記載した値がそのまま返ること（いずれも tauri.conf.json の min 以上なので clamp 不要）
+        // Assert: JSON に記載した値が Some として返ること
         assert!(result.is_ok());
         let window_size = result.unwrap();
+        assert!(
+            window_size.is_some(),
+            "window_size が存在するシートは Some を返すこと"
+        );
+        let window_size = window_size.unwrap();
         assert_eq!(window_size.width, 600);
         assert_eq!(window_size.height, 900);
     }
 
     // ブラックボックス：同値分割 - window_size フィールドが存在しないシート（有効クラス②）
-    // ホワイトボックス：s.window_size が None のブランチ → tauri.conf.json のデフォルト値を返すパス
-    // ※ mock_app() では tauri.conf.json が読み込まれないため、フォールバック値（500x800）が使われる
+    // ホワイトボックス：s.window_size が None のブランチ → None を返すパス
     #[test]
-    fn returns_default_when_window_size_field_missing() {
+    fn returns_none_when_window_size_field_missing() {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
         // Arrange: window_size フィールドを持たないシートを指定
         // Act
-        let result = get_cheat_sheet_window_size(
-            app.handle().clone(),
-            TEST_DATA_PATH,
-            "SheetWithoutWindowSize",
-        );
+        let result = get_cheat_sheet_window_size(TEST_DATA_PATH, "SheetWithoutWindowSize");
 
-        // Assert: フォールバックのデフォルト値（width=500, height=800）が返ること
+        // Assert: None が返ること（デフォルト値ではなく未設定を表す）
         assert!(result.is_ok());
-        let window_size = result.unwrap();
-        assert_eq!(window_size.width, 500);
-        assert_eq!(window_size.height, 800);
+        assert!(
+            result.unwrap().is_none(),
+            "window_size が存在しないシートは None を返すこと"
+        );
     }
 
     // ブラックボックス：同値分割 - キャッシュが存在する状態（有効クラス③）
@@ -132,23 +129,18 @@ mod get_cheat_sheet_window_size {
         let _ = reload_cheat_sheet(app.handle().clone());
 
         // Arrange: 最初の呼び出しでキャッシュを生成する
-        let _ = get_cheat_sheet_window_size(
-            app.handle().clone(),
-            TEST_DATA_PATH,
-            "SheetWithWindowSize",
-        );
+        let _ = get_cheat_sheet_window_size(TEST_DATA_PATH, "SheetWithWindowSize");
 
         // Act: 別パスを渡しても、キャッシュが使われるため同じ結果になる
         // （キャッシュが有効であることを確認するため、意図的に異なるパスを指定）
-        let result = get_cheat_sheet_window_size(
-            app.handle().clone(),
-            "./tests/api/test-data.json",
-            "SheetWithWindowSize",
-        );
+        let result =
+            get_cheat_sheet_window_size("./tests/api/test-data.json", "SheetWithWindowSize");
 
         // Assert: キャッシュ（最初のファイルのデータ）が使われ、正しい値が返ること
         assert!(result.is_ok());
         let window_size = result.unwrap();
+        assert!(window_size.is_some());
+        let window_size = window_size.unwrap();
         assert_eq!(window_size.width, 600);
         assert_eq!(window_size.height, 900);
     }
@@ -161,33 +153,28 @@ mod get_cheat_sheet_window_size {
         let _ = reload_cheat_sheet(app.handle().clone());
 
         // Act: 存在しないファイルを指定
-        let result = get_cheat_sheet_window_size(
-            app.handle().clone(),
-            "./tests/api/notfound.json",
-            "SomeSheet",
-        );
+        let result = get_cheat_sheet_window_size("./tests/api/notfound.json", "SomeSheet");
 
         // Assert: Err が返ること
         assert!(result.is_err());
     }
 
     // ブラックボックス：境界値分析 - 存在しないタイトルを指定した場合
-    // ホワイトボックス：iter().find() で None → フォールバックデフォルト値を返すパス
+    // ホワイトボックス：iter().find() で None → None を返すパス
     #[test]
-    fn returns_default_for_unknown_title() {
+    fn returns_none_for_unknown_title() {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
 
         // Act: 存在しないタイトルを指定
-        let result =
-            get_cheat_sheet_window_size(app.handle().clone(), TEST_DATA_PATH, "NonExistentSheet");
+        let result = get_cheat_sheet_window_size(TEST_DATA_PATH, "NonExistentSheet");
 
-        // Assert: エラーではなくフォールバックのデフォルト値（500x800）が返ること
-        // （チートシートが見つからない場合は None → tauri.conf.json の値、mock_app ではフォールバック値）
+        // Assert: エラーではなく None が返ること（チートシートが見つからない場合は未設定扱い）
         assert!(result.is_ok());
-        let window_size = result.unwrap();
-        assert_eq!(window_size.width, 500);
-        assert_eq!(window_size.height, 800);
+        assert!(
+            result.unwrap().is_none(),
+            "存在しないタイトルは None を返すこと"
+        );
     }
 }
 
@@ -217,10 +204,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithWindowSize",
-            WindowSize {
+            Some(WindowSize {
                 width: 700,
                 height: 1000,
-            },
+            }),
         );
 
         // Assert: 保存が成功すること
@@ -229,8 +216,9 @@ mod save_cheat_sheet_window_size {
         // ファイルの内容を読み込んで検証
         // save後はキャッシュが更新されているため、get で結果を確認できる
         let window_size =
-            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithWindowSize")
-                .expect("取得に失敗");
+            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+        assert!(window_size.is_some());
+        let window_size = window_size.unwrap();
         assert_eq!(window_size.width, 700);
         assert_eq!(window_size.height, 1000);
 
@@ -256,10 +244,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithWindowSize",
-            WindowSize {
+            Some(WindowSize {
                 width: 100,
                 height: 100,
-            },
+            }),
         );
 
         // Assert: 保存が成功すること
@@ -267,8 +255,9 @@ mod save_cheat_sheet_window_size {
 
         // mock_app では min=0 のため clamp されず 100, 100 のまま保存・取得される
         let window_size =
-            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithWindowSize")
-                .expect("取得に失敗");
+            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+        assert!(window_size.is_some());
+        let window_size = window_size.unwrap();
         assert_eq!(
             window_size.width, 100,
             "mock_app では clamp なしで 100 が保存されること"
@@ -298,17 +287,18 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithWindowSize",
-            WindowSize {
+            Some(WindowSize {
                 width: 400,
                 height: 300,
-            },
+            }),
         );
 
         // Assert: 指定値のまま保存されること
         assert!(result.is_ok());
         let window_size =
-            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithWindowSize")
-                .expect("取得に失敗");
+            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+        assert!(window_size.is_some());
+        let window_size = window_size.unwrap();
         assert_eq!(window_size.width, 400);
         assert_eq!(window_size.height, 300);
 
@@ -332,10 +322,10 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "NonExistentSheet",
-            WindowSize {
+            Some(WindowSize {
                 width: 700,
                 height: 1000,
-            },
+            }),
         );
 
         // Assert: Err が返ること（エラーメッセージに指定タイトルが含まれること）
@@ -367,17 +357,18 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithWindowSize",
-            WindowSize {
+            Some(WindowSize {
                 width: 800,
                 height: 1100,
-            },
+            }),
         );
         assert!(result.is_ok());
 
         // Assert: 新しい値に更新されていること
         let window_size =
-            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithWindowSize")
-                .expect("取得に失敗");
+            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+        assert!(window_size.is_some());
+        let window_size = window_size.unwrap();
         assert_eq!(
             window_size.width, 800,
             "上書き後の width が反映されていること"
@@ -407,17 +398,18 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             temp_path,
             "SheetWithoutWindowSize",
-            WindowSize {
+            Some(WindowSize {
                 width: 550,
                 height: 850,
-            },
+            }),
         );
         assert!(result.is_ok());
 
         // Assert: 保存した値が反映されること（デフォルト値ではなく指定値）
         let window_size =
-            get_cheat_sheet_window_size(app.handle().clone(), temp_path, "SheetWithoutWindowSize")
-                .expect("取得に失敗");
+            get_cheat_sheet_window_size(temp_path, "SheetWithoutWindowSize").expect("取得に失敗");
+        assert!(window_size.is_some());
+        let window_size = window_size.unwrap();
         assert_eq!(
             window_size.width, 550,
             "初回保存した width が反映されていること"
@@ -443,14 +435,46 @@ mod save_cheat_sheet_window_size {
             app.handle().clone(),
             "./tests/api/notfound.json",
             "SomeSheet",
-            WindowSize {
+            Some(WindowSize {
                 width: 700,
                 height: 1000,
-            },
+            }),
         );
 
         // Assert: Err が返ること
         assert!(result.is_err());
+    }
+
+    // ブラックボックス：同値分割 - None を保存してウィンドウサイズ設定を削除
+    // ホワイトボックス：window_size が None → sheet.window_size = None に設定されるパス
+    #[test]
+    fn clears_window_size_when_none_is_saved() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: 一時ファイルを作成（SheetWithWindowSize は 600x900 で初期化済み）
+        let temp_path = "./tests/api/temp-window-size-save-test-7.json";
+        std::fs::copy(SOURCE_DATA_PATH, temp_path).expect("一時ファイルのコピーに失敗");
+
+        // Act: None を保存して window_size を削除
+        let result = save_cheat_sheet_window_size(
+            app.handle().clone(),
+            temp_path,
+            "SheetWithWindowSize",
+            None,
+        );
+        assert!(result.is_ok());
+
+        // Assert: None が返ること（削除されていること）
+        let window_size =
+            get_cheat_sheet_window_size(temp_path, "SheetWithWindowSize").expect("取得に失敗");
+        assert!(
+            window_size.is_none(),
+            "None 保存後は window_size が削除されていること"
+        );
+
+        // Cleanup
+        std::fs::remove_file(temp_path).expect("一時ファイルの削除に失敗");
     }
 }
 

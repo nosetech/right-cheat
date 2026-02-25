@@ -167,11 +167,10 @@ pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
 }
 
 #[tauri::command]
-pub fn get_cheat_sheet_window_size<R: tauri::Runtime>(
-    app: AppHandle<R>,
+pub fn get_cheat_sheet_window_size(
     input_path: &str,
     title: &str,
-) -> Result<WindowSize, String> {
+) -> Result<Option<WindowSize>, String> {
     let mut cache = CACHE.lock().unwrap();
 
     if cache.is_none() {
@@ -182,21 +181,13 @@ pub fn get_cheat_sheet_window_size<R: tauri::Runtime>(
         }
     }
 
-    let (default_width, default_height, min_width, min_height) =
-        window_size_defaults_from_config(&app);
-
     let binding = vec![];
     let window_size = cache
         .as_ref()
         .unwrap_or(&binding)
         .iter()
         .find(|s| s.title == title)
-        .and_then(|s| s.window_size.clone())
-        .unwrap_or(WindowSize {
-            width: default_width,
-            height: default_height,
-        })
-        .clamp_to_min(min_width, min_height);
+        .and_then(|s| s.window_size.clone());
 
     Ok(window_size)
 }
@@ -206,10 +197,12 @@ pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
     app: AppHandle<R>,
     input_path: &str,
     title: &str,
-    window_size: WindowSize,
+    window_size: Option<WindowSize>,
 ) -> Result<(), String> {
-    let (_, _, min_width, min_height) = window_size_defaults_from_config(&app);
-    let window_size = window_size.clamp_to_min(min_width, min_height);
+    let window_size = window_size.map(|ws| {
+        let (_, _, min_width, min_height) = window_size_defaults_from_config(&app);
+        ws.clamp_to_min(min_width, min_height)
+    });
     let file_path = PathBuf::from(input_path);
 
     // ファイルから最新データを読み込む（キャッシュを経由しない）
@@ -222,7 +215,7 @@ pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
     // 対象チートシートのウィンドウサイズを更新
     match sheets.iter_mut().find(|s| s.title == title) {
         Some(sheet) => {
-            sheet.window_size = Some(window_size);
+            sheet.window_size = window_size;
         }
         None => {
             return Err(format!("チートシート '{}' が見つかりません", title));

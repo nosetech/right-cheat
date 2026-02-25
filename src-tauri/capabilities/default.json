@@ -17,6 +17,7 @@
     "core:window:allow-set-visible-on-all-workspaces",
     "core:window:allow-set-size",
     "core:window:allow-inner-size",
+    "core:window:allow-current-monitor",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
