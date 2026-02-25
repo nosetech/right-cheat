@@ -18,7 +18,8 @@
       "WebSearch",
       "WebFetch(domain:docs.rs)",
       "mcp__inkdrop__search-notes",
-      "mcp__inkdrop__read-note"
+      "mcp__inkdrop__read-note",
+      "Bash(yarn fix:prettier:*)"
     ],
     "deny": [],
     "ask": []

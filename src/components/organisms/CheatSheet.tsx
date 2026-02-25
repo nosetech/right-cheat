@@ -1,7 +1,16 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 
-import { Autocomplete, Grid, TextField, Typography } from '@mui/material'
+import PushPin from '@mui/icons-material/PushPin'
+import PushPinOutlined from '@mui/icons-material/PushPinOutlined'
+import {
+  Autocomplete,
+  Box,
+  Grid,
+  IconButton,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
@@ -14,6 +23,7 @@ import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { useWindowSize } from '@/hooks/useWindowSize'
 import {
   CheatSheetAPI,
   CheatSheetData,
@@ -38,9 +48,13 @@ export const CheatSheet = () => {
   const theme = useTheme()
   const { getCheatSheetFilePath } = usePreferencesStore()
 
+  // ウィンドウサイズをチートシートごとにピン留め・復元
+  const { isPinned, togglePin } = useWindowSize(selectCheatSheet, jsonInputPath)
+
   // キーボードショートカット用の参照
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
   const selectRef = useRef<HTMLDivElement>(null)
+  const pinButtonRef = useRef<HTMLButtonElement>(null)
 
   // 初期化ロジック
   const { loadCheatSheetTitles, loadCheatSheetData } = useCheatSheetLoader({
@@ -139,6 +153,12 @@ export const CheatSheet = () => {
   const isCommandType = cheatSheetData?.type !== 'shortcut'
 
   useKeyboardShortcuts({
+    onPKey: async () => {
+      if (selectCheatSheet) {
+        await togglePin()
+        pinButtonRef.current?.focus()
+      }
+    },
     onNumberKey: (index) => {
       // 対応するコマンドフィールドをクリック (1-9)
       // コマンドタイプのチートシートのみ
@@ -190,7 +210,7 @@ export const CheatSheet = () => {
   })
 
   return (
-    <Stack padding={1}>
+    <Stack padding={1} sx={{ position: 'relative' }}>
       {jsonInputPath == undefined ? (
         <Typography variant='body1' color='error'>
           入力ファイルのパスが指定されていません。
@@ -288,6 +308,21 @@ export const CheatSheet = () => {
           )}
         </>
       )}
+      <Box sx={{ position: 'fixed', bottom: 4, right: 4 }}>
+        <IconButton
+          ref={pinButtonRef}
+          onClick={togglePin}
+          size='small'
+          disabled={!selectCheatSheet}
+          sx={{ opacity: selectCheatSheet ? 1 : 0.3 }}
+        >
+          {isPinned ? (
+            <PushPin fontSize='small' />
+          ) : (
+            <PushPinOutlined fontSize='small' />
+          )}
+        </IconButton>
+      </Box>
     </Stack>
   )
 }
