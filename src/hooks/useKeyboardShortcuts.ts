@@ -3,6 +3,7 @@ import { RefObject, useEffect } from 'react'
 export type KeyboardShortcutHandlers = {
   onNumberKey?: (index: number) => void
   onZeroKey?: () => void
+  onPKey?: () => void
 }
 
 export type UseKeyboardShortcutsOptions = {
@@ -41,6 +42,13 @@ export const useKeyboardShortcuts = (
       if (key === '0' && handlers.onZeroKey) {
         event.preventDefault()
         handlers.onZeroKey()
+        return
+      }
+
+      // pキーの処理
+      if (key === 'p' && handlers.onPKey) {
+        event.preventDefault()
+        handlers.onPKey()
         return
       }
 

@@ -152,6 +152,11 @@ export const CheatSheet = () => {
   const isCommandType = cheatSheetData?.type !== 'shortcut'
 
   useKeyboardShortcuts({
+    onPKey: () => {
+      if (selectCheatSheet) {
+        togglePin()
+      }
+    },
     onNumberKey: (index) => {
       // 対応するコマンドフィールドをクリック (1-9)
       // コマンドタイプのチートシートのみ
