@@ -54,6 +54,7 @@ export const CheatSheet = () => {
   // キーボードショートカット用の参照
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
   const selectRef = useRef<HTMLDivElement>(null)
+  const pinButtonRef = useRef<HTMLButtonElement>(null)
 
   // 初期化ロジック
   const { loadCheatSheetTitles, loadCheatSheetData } = useCheatSheetLoader({
@@ -152,9 +153,10 @@ export const CheatSheet = () => {
   const isCommandType = cheatSheetData?.type !== 'shortcut'
 
   useKeyboardShortcuts({
-    onPKey: () => {
+    onPKey: async () => {
       if (selectCheatSheet) {
-        togglePin()
+        await togglePin()
+        pinButtonRef.current?.focus()
       }
     },
     onNumberKey: (index) => {
@@ -308,6 +310,7 @@ export const CheatSheet = () => {
       )}
       <Box sx={{ position: 'fixed', bottom: 4, right: 4 }}>
         <IconButton
+          ref={pinButtonRef}
           onClick={togglePin}
           size='small'
           disabled={!selectCheatSheet}

@@ -30,7 +30,7 @@ const restoreFocusAfterWindowOp = async (
   const target =
     focused && focused !== document.body && document.body.contains(focused)
       ? focused
-      : (document.querySelector('input[type="text"]') as HTMLElement | null)
+      : null
 
   if (target) {
     target.blur()
