@@ -9,7 +9,6 @@ import {
   Grid,
   IconButton,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -303,29 +302,18 @@ export const CheatSheet = () => {
         </>
       )}
       <Box sx={{ position: 'fixed', bottom: 4, right: 4 }}>
-        <Tooltip
-          title={
-            isPinned
-              ? 'ウィンドウサイズのピン留めを解除'
-              : '現在のウィンドウサイズをピン留め'
-          }
-          placement='left'
+        <IconButton
+          onClick={togglePin}
+          size='small'
+          disabled={!selectCheatSheet}
+          sx={{ opacity: selectCheatSheet ? 1 : 0.3 }}
         >
-          <span>
-            <IconButton
-              onClick={togglePin}
-              size='small'
-              disabled={!selectCheatSheet}
-              sx={{ opacity: selectCheatSheet ? 1 : 0.3 }}
-            >
-              {isPinned ? (
-                <PushPin fontSize='small' />
-              ) : (
-                <PushPinOutlined fontSize='small' />
-              )}
-            </IconButton>
-          </span>
-        </Tooltip>
+          {isPinned ? (
+            <PushPin fontSize='small' />
+          ) : (
+            <PushPinOutlined fontSize='small' />
+          )}
+        </IconButton>
       </Box>
     </Stack>
   )
