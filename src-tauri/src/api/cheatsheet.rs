@@ -29,14 +29,12 @@ impl WindowSize {
     }
 }
 
-fn window_size_defaults_from_config<R: tauri::Runtime>(app: &AppHandle<R>) -> (u32, u32, u32, u32) {
+fn window_size_defaults_from_config<R: tauri::Runtime>(app: &AppHandle<R>) -> (u32, u32) {
     let config = app.config();
     let first_window = config.app.windows.first();
-    let default_width = first_window.map(|w| w.width as u32).unwrap_or(500);
-    let default_height = first_window.map(|w| w.height as u32).unwrap_or(800);
     let min_width = first_window.and_then(|w| w.min_width).unwrap_or(0.0) as u32;
     let min_height = first_window.and_then(|w| w.min_height).unwrap_or(0.0) as u32;
-    (default_width, default_height, min_width, min_height)
+    (min_width, min_height)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -200,7 +198,7 @@ pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
     window_size: Option<WindowSize>,
 ) -> Result<(), String> {
     let window_size = window_size.map(|ws| {
-        let (_, _, min_width, min_height) = window_size_defaults_from_config(&app);
+        let (min_width, min_height) = window_size_defaults_from_config(&app);
         ws.clamp_to_min(min_width, min_height)
     });
     let file_path = PathBuf::from(input_path);

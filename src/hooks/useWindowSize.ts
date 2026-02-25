@@ -161,49 +161,85 @@ export const useWindowSize = (
     if (savedSizeRef.current) {
       // ピン留め中 → 解除（保存済みサイズを削除してリサイズ可能に戻す）
       debug(`[useWindowSize] ピン留め解除: title="${selectedTitle}"`)
+
+      // Step 1: JSON から window_size を削除（失敗時は状態を変更せず早期リターン）
       try {
         await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
           inputPath,
           title: selectedTitle,
           windowSize: null,
         })
-        savedSizeRef.current = null
-        setIsPinned(false)
-        await win.setResizable(true)
-        isResizableRef.current = true
-        await restoreFocusAfterWindowOp(focusedBeforePin)
-        debug(`[useWindowSize] ピン留め解除完了: title="${selectedTitle}"`)
       } catch (e) {
         logError(`ウィンドウサイズの削除に失敗しました: ${e}`)
+        return
       }
+
+      // Step 2: 状態を更新し、setResizable 失敗時はロールバック
+      const prevSavedSize = savedSizeRef.current
+      savedSizeRef.current = null
+      setIsPinned(false)
+      try {
+        await win.setResizable(true)
+        isResizableRef.current = true
+      } catch (e) {
+        savedSizeRef.current = prevSavedSize
+        setIsPinned(true)
+        logError(`setResizable に失敗しました: ${e}`)
+        return
+      }
+
+      await restoreFocusAfterWindowOp(focusedBeforePin)
+      debug(`[useWindowSize] ピン留め解除完了: title="${selectedTitle}"`)
     } else {
       // 未ピン留め → ピン留め（現在のサイズを論理ピクセルで保存してリサイズ不可に）
       debug(`[useWindowSize] ピン留め: title="${selectedTitle}"`)
+
+      // Step 1: 現在のウィンドウサイズを取得
+      let logicalWidth: number
+      let logicalHeight: number
       try {
         const [size, monitor] = await Promise.all([
           win.innerSize(),
           currentMonitor().catch(() => null),
         ])
         const scaleFactor = monitor?.scaleFactor ?? 1.0
-        const logicalWidth = Math.round(size.width / scaleFactor)
-        const logicalHeight = Math.round(size.height / scaleFactor)
+        logicalWidth = Math.round(size.width / scaleFactor)
+        logicalHeight = Math.round(size.height / scaleFactor)
         debug(
           `[useWindowSize] ピン留めサイズ: ${logicalWidth}x${logicalHeight} (物理: ${size.width}x${size.height}, scaleFactor: ${scaleFactor})`,
         )
+      } catch (e) {
+        logError(`ウィンドウサイズの取得に失敗しました: ${e}`)
+        return
+      }
+
+      // Step 2: JSON に window_size を保存（失敗時は状態を変更せず早期リターン）
+      try {
         await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
           inputPath,
           title: selectedTitle,
           windowSize: { width: logicalWidth, height: logicalHeight },
         })
-        savedSizeRef.current = { width: logicalWidth, height: logicalHeight }
-        setIsPinned(true)
-        await win.setResizable(false)
-        isResizableRef.current = false
-        await restoreFocusAfterWindowOp(focusedBeforePin)
-        debug(`[useWindowSize] ピン留め完了: title="${selectedTitle}"`)
       } catch (e) {
         logError(`ウィンドウサイズの保存に失敗しました: ${e}`)
+        return
       }
+
+      // Step 3: 状態を更新し、setResizable 失敗時はロールバック
+      savedSizeRef.current = { width: logicalWidth, height: logicalHeight }
+      setIsPinned(true)
+      try {
+        await win.setResizable(false)
+        isResizableRef.current = false
+      } catch (e) {
+        savedSizeRef.current = null
+        setIsPinned(false)
+        logError(`setResizable に失敗しました: ${e}`)
+        return
+      }
+
+      await restoreFocusAfterWindowOp(focusedBeforePin)
+      debug(`[useWindowSize] ピン留め完了: title="${selectedTitle}"`)
     }
   }, [selectedTitle, inputPath])
 
