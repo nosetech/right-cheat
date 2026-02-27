@@ -56,7 +56,9 @@ pub fn init_visible_on_all_workspaces_settings<R: Runtime>(
     let settings_store = TauriSettingsStore;
     match settings_store.get_setting(app, VISIBLE_ON_ALL_WORKSPACES_SETTINGS_KEY) {
         Ok(Some(_)) => {
-            log::info!("Visible on all workspaces setting already exists");
+            log::info!(
+                "[visible_on_all_workspaces] Visible on all workspaces setting already exists"
+            );
         }
         Ok(None) => {
             let default_settings = VisibleOnAllWorkspacesSettings::default();
@@ -66,12 +68,15 @@ pub fn init_visible_on_all_workspaces_settings<R: Runtime>(
                 serde_json::to_value(&default_settings)?,
             )?;
             log::info!(
-                "Default visible on all workspaces setting initialized: {}",
+                "[visible_on_all_workspaces] Default visible on all workspaces setting initialized: {}",
                 default_settings.enabled
             );
         }
         Err(e) => {
-            log::error!("Error checking visible on all workspaces setting: {:?}", e);
+            log::error!(
+                "[visible_on_all_workspaces] Error checking visible on all workspaces setting: {:?}",
+                e
+            );
             return Err(Box::new(e));
         }
     }

@@ -60,7 +60,7 @@ export default function Page() {
       )
         .then((response) => {
           debug(
-            `invoke '${GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+            `[preferences] invoke '${GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
           )
           const res_json = JSON.parse(response)
           if (res_json.status === 'success') {
@@ -68,12 +68,14 @@ export default function Page() {
             setToggleVisibleShortcut(shortcut)
           } else {
             error(
-              `Failed to get toggle visible shortcut settings: ${res_json.message}`,
+              `[preferences] Failed to get toggle visible shortcut settings: ${res_json.message}`,
             )
           }
         })
         .catch((err) => {
-          error(`Error getting toggle visible shortcut settings: ${err}`)
+          error(
+            `[preferences] Error getting toggle visible shortcut settings: ${err}`,
+          )
         })
     })()
 
@@ -82,13 +84,13 @@ export default function Page() {
 
   const fileOpenCallback = (filepath: string) => {
     ;(async () => {
-      debug(`callback ${filepath}`)
+      debug(`[preferences] callback ${filepath}`)
       setSettedInputFilePath(filepath)
       await setCheatSheetFilePath(filepath)
       await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
         (response) => {
           debug(
-            `invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
+            `[preferences] invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
           )
         },
       )
@@ -104,7 +106,7 @@ export default function Page() {
         ]).execute()
         if (result.code != 0) {
           error(
-            `Failed to open file: ${settedInputFilePath}, code: ${result.code}`,
+            `[preferences] Failed to open file: ${settedInputFilePath}, code: ${result.code}`,
           )
         }
       })()
@@ -128,7 +130,7 @@ export default function Page() {
       if (shouldRestart) {
         await relaunch()
       } else {
-        debug('User cancelled the restart.')
+        debug('[preferences] User cancelled the restart.')
         // キャンセル時にユーザーに設定が保存されたことを通知
         await message(
           '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
@@ -139,7 +141,7 @@ export default function Page() {
         )
       }
     } else {
-      debug('Relaunch is not execute in development mode.')
+      debug('[preferences] Relaunch is not execute in development mode.')
     }
   }
 
@@ -163,17 +165,17 @@ export default function Page() {
       )
         .then((response) => {
           debug(
-            `invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+            `[preferences] invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
           )
           const res_json = JSON.parse(response)
           if (res_json.status !== 'success') {
             error(
-              `Failed to set toggle visible shortcut settings: ${res_json.message}`,
+              `[preferences] Failed to set toggle visible shortcut settings: ${res_json.message}`,
             )
             return
           }
         })
-        .catch((err) => error(`Error setting shortcut: ${err}`))
+        .catch((err) => error(`[preferences] Error setting shortcut: ${err}`))
 
       await showRestartConfirmationDialog()
     })()
@@ -186,10 +188,12 @@ export default function Page() {
     // Notify all windows about theme change
     await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
       .then((response) => {
-        debug(`invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`)
+        debug(
+          `[preferences] invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`,
+        )
       })
       .catch((err) => {
-        error(`Error notifying theme change: ${err}`)
+        error(`[preferences] Error notifying theme change: ${err}`)
       })
   }
 
@@ -209,11 +213,11 @@ export default function Page() {
       )
         .then(() => {
           debug(
-            `invoke '${VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING}' succeeded`,
+            `[preferences] invoke '${VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING}' succeeded`,
           )
         })
         .catch((err) => {
-          error(`Error setting visible on all workspaces: ${err}`)
+          error(`[preferences] Error setting visible on all workspaces: ${err}`)
           return
         })
 

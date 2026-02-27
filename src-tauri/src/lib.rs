@@ -14,10 +14,11 @@ use tauri_plugin_opener::OpenerExt;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_log::Builder::new().build())
         .plugin({
             let mut logger = tauri_plugin_log::Builder::new()
-                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal);
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+                .max_file_size(1_048_576)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(3));
             if cfg!(dev) {
                 logger = logger.level(log::LevelFilter::Trace)
             } else {
@@ -191,7 +192,7 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             let _ = api::font_size::reset_font_size(handle.clone());
         }
         _ => {
-            log::warn!("Unexpected event occurs. Event id={:?}", event.id());
+            log::warn!("[lib] Unexpected event occurs. Event id={:?}", event.id());
         }
     }
 }
@@ -209,7 +210,7 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
             let settings: api::global_shortcut::ShortcutDef = serde_json::from_value(json.clone())?;
             let window_visible_shortcut = settings.to_shortcut()?;
             log::info!(
-                "Toggle visible shortcut settings : {}",
+                "[lib] Toggle visible shortcut settings : {}",
                 window_visible_shortcut
             );
 

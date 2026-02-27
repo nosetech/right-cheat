@@ -81,7 +81,7 @@ export const CheatSheet = () => {
       await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
         (response) => {
           debug(
-            `チートシートをリロード: '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' レスポンス=${response}`,
+            `[CheatSheet] チートシートをリロード: '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' レスポンス=${response}`,
           )
         },
       )
@@ -118,7 +118,7 @@ export const CheatSheet = () => {
     if (listboxElement) {
       const firstOption = listboxElement.querySelector('li') as HTMLLIElement
       if (firstOption) {
-        debug('Enterキー: 最初の候補を選択しました')
+        debug('[CheatSheet] Enterキー: 最初の候補を選択しました')
         firstOption.click()
         setAutocompleteOpen(false)
       }
@@ -198,13 +198,15 @@ export const CheatSheet = () => {
           })
           input.dispatchEvent(arrowDownEvent)
           debug(
-            '0キー: オートコンプリート入力にフォーカスしてドロップダウンを開きました',
+            '[CheatSheet] 0キー: オートコンプリート入力にフォーカスしてドロップダウンを開きました',
           )
         } else {
-          debug('0キー: オートコンプリート内の入力要素が見つかりません')
+          debug(
+            '[CheatSheet] 0キー: オートコンプリート内の入力要素が見つかりません',
+          )
         }
       } else {
-        debug('0キー: selectRef.current が null です')
+        debug('[CheatSheet] 0キー: selectRef.current が null です')
       }
     },
   })
