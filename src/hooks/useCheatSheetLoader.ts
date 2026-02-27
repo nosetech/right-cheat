@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import { debug } from '@tauri-apps/plugin-log'
+import { debug, error as logError } from '@tauri-apps/plugin-log'
 import { useCallback } from 'react'
 
 import {
@@ -29,7 +29,7 @@ export const useCheatSheetLoader = ({
           inputPath: inputpath,
         })
         debug(
-          `チートシートタイトルを取得: '${CheatSheetAPI.GET_CHEAT_TITLES}' レスポンス=${response}`,
+          `[useCheatSheetLoader] チートシートタイトルを取得: '${CheatSheetAPI.GET_CHEAT_TITLES}' レスポンス=${response}`,
         )
 
         const parsedResponse = JSON.parse(response)
@@ -49,7 +49,9 @@ export const useCheatSheetLoader = ({
           error instanceof Error
             ? error.message
             : 'チートシートの読み込みに失敗しました'
-        debug(`チートシートタイトル読み込みエラー: ${errorMessage}`)
+        logError(
+          `[useCheatSheetLoader] チートシートタイトル読み込みエラー: ${errorMessage}`,
+        )
         setErrorMessage(errorMessage)
         setCheatSheetTitles(undefined)
       }
@@ -66,7 +68,7 @@ export const useCheatSheetLoader = ({
           title: title,
         })
         debug(
-          `チートシートデータを取得: '${CheatSheetAPI.GET_CHEAT_SHEET}' レスポンス=${response}`,
+          `[useCheatSheetLoader] チートシートデータを取得: '${CheatSheetAPI.GET_CHEAT_SHEET}' レスポンス=${response}`,
         )
 
         const parsedResponse = JSON.parse(response)
@@ -84,7 +86,9 @@ export const useCheatSheetLoader = ({
           error instanceof Error
             ? error.message
             : 'チートシートデータの読み込みに失敗しました'
-        debug(`チートシートデータ読み込みエラー: ${errorMessage}`)
+        logError(
+          `[useCheatSheetLoader] チートシートデータ読み込みエラー: ${errorMessage}`,
+        )
         setErrorMessage(errorMessage)
         return undefined
       }

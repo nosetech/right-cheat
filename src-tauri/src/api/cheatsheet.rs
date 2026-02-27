@@ -86,12 +86,15 @@ pub fn get_cheat_titles(input_path: &str) -> String {
 
     // キャッシュが空ならファイルから読み込む
     if cache.is_none() {
-        log::debug!("Cache is empty, reading from file: {}", input_path);
+        log::debug!(
+            "[cheatsheet] Cache is empty, reading from file: {}",
+            input_path
+        );
         match read_json_from_file(PathBuf::from(input_path)) {
             Ok(data) => *cache = Some(data),
             Err(e) => {
                 let error_msg = format_json_error(e.as_ref());
-                log::error!("Failed to read JSON file: {}", error_msg);
+                log::error!("[cheatsheet] Failed to read JSON file: {}", error_msg);
                 let error_response = ErrorResponse {
                     success: false,
                     error: error_msg,
@@ -120,12 +123,15 @@ pub fn get_cheat_sheet(input_path: &str, title: &str) -> String {
 
     // キャッシュが空ならファイルから読み込む
     if cache.is_none() {
-        log::debug!("Cache is empty, reading from file: {}", input_path);
+        log::debug!(
+            "[cheatsheet] Cache is empty, reading from file: {}",
+            input_path
+        );
         match read_json_from_file(PathBuf::from(input_path)) {
             Ok(data) => *cache = Some(data),
             Err(e) => {
                 let error_msg = format_json_error(e.as_ref());
-                log::error!("Failed to read JSON file: {}", error_msg);
+                log::error!("[cheatsheet] Failed to read JSON file: {}", error_msg);
                 let error_response = ErrorResponse {
                     success: false,
                     error: error_msg,
@@ -172,7 +178,10 @@ pub fn get_cheat_sheet_window_size(
     let mut cache = CACHE.lock().unwrap();
 
     if cache.is_none() {
-        log::debug!("Cache is empty, reading from file: {}", input_path);
+        log::debug!(
+            "[cheatsheet] Cache is empty, reading from file: {}",
+            input_path
+        );
         match read_json_from_file(PathBuf::from(input_path)) {
             Ok(data) => *cache = Some(data),
             Err(e) => return Err(e.to_string()),

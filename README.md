@@ -46,6 +46,16 @@ xattr -cr RightCheat*.dmg
 
 3. dmgファイルを実行して再度インストールします
 
+## ログファイル
+
+アプリケーションのログは以下のパスに出力されます：
+
+```plaintext
+~/Library/Logs/biz.nosetech.rightcheat/RightCheat.log
+```
+
+ログファイルは最大 1MB で、古いファイルを含めて最大 3 ファイルまで保持されます。ログファイルはアプリケーション動作のトラブルシューティングに役立ちます。
+
 ## アンインストール手順
 
 RightCheatを完全に削除するには、以下の手順を行います：
