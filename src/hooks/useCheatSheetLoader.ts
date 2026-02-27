@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import { debug } from '@tauri-apps/plugin-log'
+import { debug, error as logError } from '@tauri-apps/plugin-log'
 import { useCallback } from 'react'
 
 import {
@@ -49,7 +49,7 @@ export const useCheatSheetLoader = ({
           error instanceof Error
             ? error.message
             : 'チートシートの読み込みに失敗しました'
-        debug(
+        logError(
           `[useCheatSheetLoader] チートシートタイトル読み込みエラー: ${errorMessage}`,
         )
         setErrorMessage(errorMessage)
@@ -86,7 +86,7 @@ export const useCheatSheetLoader = ({
           error instanceof Error
             ? error.message
             : 'チートシートデータの読み込みに失敗しました'
-        debug(
+        logError(
           `[useCheatSheetLoader] チートシートデータ読み込みエラー: ${errorMessage}`,
         )
         setErrorMessage(errorMessage)
