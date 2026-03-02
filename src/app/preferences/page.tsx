@@ -218,19 +218,18 @@ export default function Page() {
     }
 
     // Notify all windows about theme change
-    await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
-      .then((response) => {
-        debug(
-          `[preferences] invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`,
-        )
+    try {
+      const response = await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
+      debug(
+        `[preferences] invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`,
+      )
+    } catch (err) {
+      error(`[preferences] Error notifying theme change: ${err}`)
+      await message('テーマ変更の反映に失敗しました', {
+        title: 'RightCheat',
+        kind: 'error',
       })
-      .catch(async (err) => {
-        error(`[preferences] Error notifying theme change: ${err}`)
-        await message('テーマ変更の反映に失敗しました', {
-          title: 'RightCheat',
-          kind: 'error',
-        })
-      })
+    }
   }
 
   const handleVisibleOnAllWorkspacesChange = async (
