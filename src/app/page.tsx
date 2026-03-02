@@ -8,6 +8,7 @@ import { error } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { CheatSheet } from '@/components/organisms/CheatSheet'
+import { useNotificationContext } from '@/context/NotificationContext'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 
 const changeWindowVisible = async () => {
@@ -22,6 +23,7 @@ const changeWindowVisible = async () => {
 
 export default function Home() {
   const { getVisibleOnAllWorkspacesSettings } = usePreferencesStore()
+  const { showError } = useNotificationContext() ?? {}
 
   useEffect(() => {
     let unlisten: (() => void) | null = null
@@ -35,6 +37,7 @@ export default function Home() {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         error(`[page] Failed to set visible on all workspaces: ${errorMessage}`)
+        showError?.('全ワークスペース表示設定の初期化に失敗しました')
       }
 
       unlisten = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
@@ -51,7 +54,7 @@ export default function Home() {
         unlisten()
       }
     }
-  }, [getVisibleOnAllWorkspacesSettings])
+  }, [getVisibleOnAllWorkspacesSettings, showError])
 
   return <CheatSheet />
 }

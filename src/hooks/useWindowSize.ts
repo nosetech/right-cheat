@@ -9,6 +9,7 @@ import {
 } from '@tauri-apps/api/window'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
+import { useNotificationContext } from '@/context/NotificationContext'
 import { WindowSizeAPI, WindowSizeSettings } from '@/types/api/WindowSize'
 
 // setSize/setResizable は macOS の NSWindow 状態を変更するため WKWebView が
@@ -43,6 +44,7 @@ export const useWindowSize = (
   inputPath: string | undefined,
 ) => {
   const [isPinned, setIsPinned] = useState(false)
+  const { showError } = useNotificationContext() ?? {}
   // 保存済みの論理ピクセルサイズ。null のときはピン留めなし
   const savedSizeRef = useRef<WindowSizeSettings | null>(null)
   // ウィンドウの実際のリサイズ可否状態を追跡（null = 不明）
@@ -131,6 +133,7 @@ export const useWindowSize = (
       } catch (e) {
         if (!cancelled) {
           logError(`ウィンドウサイズの読み込みに失敗しました: ${e}`)
+          showError?.('ウィンドウサイズの読み込みに失敗しました')
         }
       }
     }
@@ -142,7 +145,7 @@ export const useWindowSize = (
       savedSizeRef.current = null
       setIsPinned(false)
     }
-  }, [selectedTitle, inputPath])
+  }, [selectedTitle, inputPath, showError])
 
   // ピン留めのトグル（PushPin クリック時）
   const togglePin = useCallback(async () => {
@@ -171,6 +174,7 @@ export const useWindowSize = (
         })
       } catch (e) {
         logError(`ウィンドウサイズの削除に失敗しました: ${e}`)
+        showError?.('ピン留めの解除に失敗しました')
         return
       }
 
@@ -185,6 +189,7 @@ export const useWindowSize = (
         savedSizeRef.current = prevSavedSize
         setIsPinned(true)
         logError(`setResizable に失敗しました: ${e}`)
+        showError?.('ピン留めの解除に失敗しました')
         return
       }
 
@@ -210,6 +215,7 @@ export const useWindowSize = (
         )
       } catch (e) {
         logError(`ウィンドウサイズの取得に失敗しました: ${e}`)
+        showError?.('ウィンドウサイズの取得に失敗しました')
         return
       }
 
@@ -222,6 +228,7 @@ export const useWindowSize = (
         })
       } catch (e) {
         logError(`ウィンドウサイズの保存に失敗しました: ${e}`)
+        showError?.('ウィンドウサイズの保存に失敗しました')
         return
       }
 
@@ -235,13 +242,14 @@ export const useWindowSize = (
         savedSizeRef.current = null
         setIsPinned(false)
         logError(`setResizable に失敗しました: ${e}`)
+        showError?.('ピン留めの保存に失敗しました')
         return
       }
 
       await restoreFocusAfterWindowOp(focusedBeforePin)
       debug(`[useWindowSize] ピン留め完了: title="${selectedTitle}"`)
     }
-  }, [selectedTitle, inputPath])
+  }, [selectedTitle, inputPath, showError])
 
   return { isPinned, togglePin }
 }
