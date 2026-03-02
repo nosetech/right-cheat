@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import PushPin from '@mui/icons-material/PushPin'
 import PushPinOutlined from '@mui/icons-material/PushPinOutlined'
 import {
+  Alert,
   Autocomplete,
   Box,
   Grid,
   IconButton,
   TextField,
-  Typography,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { Stack } from '@mui/system'
@@ -214,15 +214,14 @@ export const CheatSheet = () => {
   return (
     <Stack padding={1} sx={{ position: 'relative' }}>
       {jsonInputPath == undefined ? (
-        <Typography variant='body1' color='error'>
+        <Alert severity='error'>
           入力ファイルのパスが指定されていません。
           <br />
           [メニュー] - [Preference]で入力ファイルパスを設定してください。
-        </Typography>
+        </Alert>
       ) : errorMessage ? (
-        <Typography
-          variant='body1'
-          color='error'
+        <Alert
+          severity='error'
           style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
         >
           {errorMessage}
@@ -230,13 +229,13 @@ export const CheatSheet = () => {
           <br />
           [メニュー] -
           [Preference]で指定されている入力ファイルの内容を見直してください。
-        </Typography>
+        </Alert>
       ) : reloading == false && cheatSheetTitles == undefined ? (
-        <Typography variant='body1' color='error'>
+        <Alert severity='error'>
           正しい内容の入力ファイルが指定されていないようです。
           <br /> [メニュー] -
           [Preference]で指定されている入力ファイルの内容を見直してください。
-        </Typography>
+        </Alert>
       ) : (
         <>
           <Autocomplete

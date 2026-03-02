@@ -55,28 +55,35 @@ export default function Page() {
         await getVisibleOnAllWorkspacesSettings()
       setVisibleOnAllWorkspaces(visibleOnAllWorkspacesValue)
 
-      await invoke<string>(
-        GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
-      )
-        .then((response) => {
-          debug(
-            `[preferences] invoke '${GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
-          )
-          const res_json = JSON.parse(response)
-          if (res_json.status === 'success') {
-            const shortcut: ShortcutDef = JSON.parse(response).message
-            setToggleVisibleShortcut(shortcut)
-          } else {
-            error(
-              `[preferences] Failed to get toggle visible shortcut settings: ${res_json.message}`,
-            )
-          }
-        })
-        .catch((err) => {
+      try {
+        const response = await invoke<string>(
+          GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
+        )
+        debug(
+          `[preferences] invoke '${GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+        )
+        const res_json = JSON.parse(response)
+        if (res_json.status === 'success') {
+          const shortcut: ShortcutDef = JSON.parse(response).message
+          setToggleVisibleShortcut(shortcut)
+        } else {
           error(
-            `[preferences] Error getting toggle visible shortcut settings: ${err}`,
+            `[preferences] Failed to get toggle visible shortcut settings: ${res_json.message}`,
           )
+          await message('グローバルショートカット設定の取得に失敗しました', {
+            title: 'RightCheat',
+            kind: 'error',
+          })
+        }
+      } catch (err) {
+        error(
+          `[preferences] Error getting toggle visible shortcut settings: ${err}`,
+        )
+        await message('グローバルショートカット設定の取得に失敗しました', {
+          title: 'RightCheat',
+          kind: 'error',
         })
+      }
     })()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,6 +115,10 @@ export default function Page() {
           error(
             `[preferences] Failed to open file: ${settedInputFilePath}, code: ${result.code}`,
           )
+          await message('エディタでファイルを開けませんでした', {
+            title: 'RightCheat',
+            kind: 'error',
+          })
         }
       })()
     }
@@ -152,38 +163,59 @@ export default function Page() {
     hotKey: string,
   ) => {
     ;(async () => {
-      await invoke<string>(
-        GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
-        {
-          shortcut: {
-            ctrl: ctrlKey,
-            option: optionKey,
-            command: commandKey,
-            hotkey: hotKey,
+      let saved = false
+      try {
+        const response = await invoke<string>(
+          GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
+          {
+            shortcut: {
+              ctrl: ctrlKey,
+              option: optionKey,
+              command: commandKey,
+              hotkey: hotKey,
+            },
           },
-        },
-      )
-        .then((response) => {
-          debug(
-            `[preferences] invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+        )
+        debug(
+          `[preferences] invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+        )
+        const res_json = JSON.parse(response)
+        if (res_json.status === 'success') {
+          saved = true
+        } else {
+          error(
+            `[preferences] Failed to set toggle visible shortcut settings: ${res_json.message}`,
           )
-          const res_json = JSON.parse(response)
-          if (res_json.status !== 'success') {
-            error(
-              `[preferences] Failed to set toggle visible shortcut settings: ${res_json.message}`,
-            )
-            return
-          }
+          await message('グローバルショートカット設定の保存に失敗しました', {
+            title: 'RightCheat',
+            kind: 'error',
+          })
+        }
+      } catch (err) {
+        error(`[preferences] Error setting shortcut: ${err}`)
+        await message('グローバルショートカット設定の保存に失敗しました', {
+          title: 'RightCheat',
+          kind: 'error',
         })
-        .catch((err) => error(`[preferences] Error setting shortcut: ${err}`))
+      }
 
-      await showRestartConfirmationDialog()
+      if (saved) {
+        await showRestartConfirmationDialog()
+      }
     })()
   }
 
   const handleThemeChange = async (newThemeMode: string) => {
     const mode = newThemeMode as 'light' | 'dark' | 'system'
-    await setStoredThemeMode(mode)
+    try {
+      await setStoredThemeMode(mode)
+    } catch {
+      await message('テーマ設定の保存に失敗しました', {
+        title: 'RightCheat',
+        kind: 'error',
+      })
+      return
+    }
 
     // Notify all windows about theme change
     await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
@@ -192,8 +224,12 @@ export default function Page() {
           `[preferences] invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`,
         )
       })
-      .catch((err) => {
+      .catch(async (err) => {
         error(`[preferences] Error notifying theme change: ${err}`)
+        await message('テーマ変更の反映に失敗しました', {
+          title: 'RightCheat',
+          kind: 'error',
+        })
       })
   }
 
@@ -203,25 +239,31 @@ export default function Page() {
     const newValue = event.target.checked
     setVisibleOnAllWorkspaces(newValue)
     ;(async () => {
-      await invoke(
-        VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING,
-        {
-          settings: {
-            enabled: newValue,
+      let saved = false
+      try {
+        await invoke(
+          VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING,
+          {
+            settings: {
+              enabled: newValue,
+            },
           },
-        },
-      )
-        .then(() => {
-          debug(
-            `[preferences] invoke '${VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING}' succeeded`,
-          )
+        )
+        debug(
+          `[preferences] invoke '${VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING}' succeeded`,
+        )
+        saved = true
+      } catch (err) {
+        error(`[preferences] Error setting visible on all workspaces: ${err}`)
+        await message('全ワークスペース表示設定の保存に失敗しました', {
+          title: 'RightCheat',
+          kind: 'error',
         })
-        .catch((err) => {
-          error(`[preferences] Error setting visible on all workspaces: ${err}`)
-          return
-        })
+      }
 
-      await showRestartConfirmationDialog()
+      if (saved) {
+        await showRestartConfirmationDialog()
+      }
     })()
   }
 
