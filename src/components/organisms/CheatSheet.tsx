@@ -303,6 +303,9 @@ export const CheatSheet = () => {
                   description={item.description}
                   command={item.command}
                   numberHint={index < 9 ? (index + 1).toString() : undefined}
+                  mode={
+                    cheatSheetData.type === 'application' ? 'execute' : 'copy'
+                  }
                 />
               ))}
             </Stack>
