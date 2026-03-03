@@ -1,5 +1,5 @@
 [package]
-name = "right-cheat"
+name = "RightCheat"
 version = "1.1.1"
 description = "A desktop cheatsheet application built with Tauri 2, displaying frequently used commands and shortcuts"
 authors = ["Hiroyuki Nose <nose.hiroyuki@nosetech.biz>"]
