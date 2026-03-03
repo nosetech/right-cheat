@@ -7,6 +7,7 @@ import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
+import { error as logError } from '@tauri-apps/plugin-log'
 import { forwardRef, useState } from 'react'
 
 export type CommandFieldProps = StackProps & {
@@ -43,6 +44,9 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       } catch (e) {
         // Tauri の invoke が throw する値は Rust の Err(String) がそのまま string として渡される。
         // そのため e instanceof Error は常に false になり、String(e) のパスのみ通る。
+        logError(
+          `[CommandField] Failed to run application: command=${command}, error=${String(e)}`,
+        )
         setExecuteError(true)
         setTimeout(() => setExecuteError(false), 2000)
         showError?.(
