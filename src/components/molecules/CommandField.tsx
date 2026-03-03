@@ -41,6 +41,8 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         setExecuteError(false)
         setTimeout(() => setHasExecuted(false), 1000)
       } catch (e) {
+        // Tauri の invoke が throw する値は Rust の Err(String) がそのまま string として渡される。
+        // そのため e instanceof Error は常に false になり、String(e) のパスのみ通る。
         setExecuteError(true)
         setTimeout(() => setExecuteError(false), 2000)
         showError?.(
