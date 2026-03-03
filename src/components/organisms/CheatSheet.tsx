@@ -149,8 +149,8 @@ export const CheatSheet = () => {
   }
 
   // キーボードショートカットハンドラー
-  // コマンドタイプのみ数字キーショートカットを有効化（ショートカットタイプではない）
-  const isCommandType = cheatSheetData?.type !== 'shortcut'
+  // shortcut タイプ以外（command / application / 未指定）で数字キーショートカットを有効化
+  const isKeyboardShortcutEnabled = cheatSheetData?.type !== 'shortcut'
 
   useKeyboardShortcuts({
     onPKey: async () => {
@@ -161,9 +161,9 @@ export const CheatSheet = () => {
     },
     onNumberKey: (index) => {
       // 対応するコマンドフィールドをクリック (1-9)
-      // コマンドタイプのチートシートのみ
+      // shortcut タイプ以外のチートシートで有効
       if (
-        isCommandType &&
+        isKeyboardShortcutEnabled &&
         cheatSheetData?.commandlist &&
         index < cheatSheetData.commandlist.length
       ) {
@@ -303,6 +303,9 @@ export const CheatSheet = () => {
                   description={item.description}
                   command={item.command}
                   numberHint={index < 9 ? (index + 1).toString() : undefined}
+                  mode={
+                    cheatSheetData.type === 'application' ? 'execute' : 'copy'
+                  }
                 />
               ))}
             </Stack>

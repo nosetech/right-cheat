@@ -52,6 +52,7 @@ pub fn run() {
             api::visible_on_all_workspaces::set_visible_on_all_workspaces_setting,
             api::cheatsheet::get_cheat_sheet_window_size,
             api::cheatsheet::save_cheat_sheet_window_size,
+            api::application::run_application,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

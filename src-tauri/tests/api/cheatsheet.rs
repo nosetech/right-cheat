@@ -631,6 +631,17 @@ mod get_cheat_sheet {
     }
 
     #[test]
+    fn json_with_application_type() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        assert_eq!(
+            get_cheat_sheet("./tests/api/test-data-with-types.json", "Applications"),
+            "{\"type\":\"application\",\"title\":\"Applications\",\"commandlist\":[{\"description\":\"Slack\",\"command\":\"open -a Slack\"},{\"description\":\"Google Chrome\",\"command\":\"open -a \\\"Google Chrome\\\"\"}]}"
+        );
+    }
+
+    #[test]
     fn json_without_type_field() {
         let app = mock_app();
         let _ = reload_cheat_sheet(app.handle().clone());
