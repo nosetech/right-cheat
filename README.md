@@ -95,9 +95,27 @@ RightCheatを完全に削除するには、以下の手順を行います：
         "command": "ショートカット"
       }
     ]
+  },
+  {
+    "title": "チートシートのタイトル",
+    "type": "application",
+    "commandlist": [
+      {
+        "description": "アプリケーション名",
+        "command": "起動コマンド"
+      }
+    ]
   }
 ]
 ```
+
+`type` の種類:
+
+| type | 動作 |
+|------|------|
+| `command`（省略時も同様） | クリックまたはEnterキーでコマンドをクリップボードにコピー |
+| `shortcut` | ショートカットキーの一覧表示（グリッド表示、コピー非対応） |
+| `application` | クリックまたはEnterキーでコマンドを実行してアプリケーションを起動 |
 
 チートシート JSON ファイルのサンプル
 
@@ -132,6 +150,20 @@ RightCheatを完全に削除するには、以下の手順を行います：
       {
         "description": "ウィンドウの名前変更",
         "command": ","
+      }
+    ]
+  },
+  {
+    "title": "アプリ起動",
+    "type": "application",
+    "commandlist": [
+      {
+        "description": "Slack",
+        "command": "open -a Slack"
+      },
+      {
+        "description": "Google Chrome",
+        "command": "open -a \"Google Chrome\""
       }
     ]
   }
@@ -182,6 +214,19 @@ RightCheatを完全に削除するには、以下の手順を行います：
   "command": "command1 && \ncommand2 && \ncommand3"
 }
 ```
+
+### アプリケーション起動
+
+アプリケーションランチャーチートシートの場合（JSONファイル内で `"type": "application"` を指定しているチートシート）、コマンドを実行してアプリケーションを起動することができます。
+
+- **マウス操作**: コマンドをクリックでアプリケーションを起動
+- **キーボード操作**:
+  - Tab/Shift+Tab: フォーカス移動
+  - Enter: 起動実行
+  - 1〜9: 数字キーで該当のアプリケーションを起動
+
+> [!NOTE]
+> コマンドはシェル（sh -c）経由で実行されます。macOS の `open` コマンドを使用する形式（例：`open -a Slack`）が標準的な使い方です。JSONファイルには信頼できる内容のみ記載してください。
 
 ### ウィンドウサイズのピン留め
 
