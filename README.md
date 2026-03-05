@@ -24,7 +24,7 @@ Mac Tahoe 26.0.1 (ARM)
 
 ### 新規インストール
 
-1. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/1.1.1/RightCheat_1.1.1_aarch64.dmg)します
+1. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/1.2.0/RightCheat_1.2.0_aarch64.dmg)します
 2. ダウンロードしたファイルを実行し、インストールします
 
 ### アップグレード（既存バージョンがある場合）
@@ -33,7 +33,7 @@ Mac Tahoe 26.0.1 (ARM)
 
 1. RightCheat を終了します
 2. `/Applications/RightCheat.app` を削除します（Finder でゴミ箱に移動）
-3. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/1.1.1/RightCheat_1.1.1_aarch64.dmg)します
+3. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/1.2.0/RightCheat_1.2.0_aarch64.dmg)します
 4. ターミナルを開き、以下のコマンドを実行してクォーランティン属性を削除します
 
 ```bash
