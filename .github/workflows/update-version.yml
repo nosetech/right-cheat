@@ -97,6 +97,10 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Clean Rust build cache
+        run: cargo clean
+        working-directory: src-tauri
+
       - name: Build Tauri application
         run: yarn tauri build
 
