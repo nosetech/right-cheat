@@ -97,6 +97,12 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      # ビルドキャッシュが古くなることで発生するビルド問題に対処するため、クリーンビルドを強制する
+      # ref: https://github.com/nosetech/right-cheat/issues/99
+      - name: Clean Rust build cache
+        run: cargo clean
+        working-directory: src-tauri
+
       - name: Build Tauri application
         run: yarn tauri build
 
