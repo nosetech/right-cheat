@@ -4,7 +4,6 @@ pub mod settings_store;
 
 use serde_json;
 use settings_store::{SettingsStore, TauriSettingsStore};
-use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
@@ -79,10 +78,9 @@ fn menu_configuration<R: tauri::Runtime>(
                                 .version(Some(format!("バージョン {}", app_version)))
                                 .short_version(Some(app_version))
                                 .copyright(Some("©︎ 2025 nosetech"));
-                            if cfg!(dev) {
-                                metadata = metadata
-                                    .icon(Some(Image::from_path(Path::new("./icons/icon.png"))?));
-                            }
+                            metadata = metadata.icon(Some(Image::from_bytes(include_bytes!(
+                                "../icons/icon.png"
+                            ))?));
                             metadata.build()
                         }),
                     )?,
