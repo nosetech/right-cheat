@@ -34,14 +34,27 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             {
                 use objc2::AllocAnyThread;
-                use objc2_app_kit::{NSApplication, NSImage};
-                use objc2_foundation::{MainThreadMarker, NSData};
+                use objc2_app_kit::{
+                    NSApplication, NSImage, NSWorkspace, NSWorkspaceIconCreationOptions,
+                };
+                use objc2_foundation::{MainThreadMarker, NSBundle, NSData};
                 let icon_bytes = include_bytes!("../icons/icon.png");
                 let mtm = unsafe { MainThreadMarker::new_unchecked() };
                 let ns_app = NSApplication::sharedApplication(mtm);
                 let data = NSData::with_bytes(icon_bytes);
                 if let Some(icon) = NSImage::initWithData(NSImage::alloc(), &data) {
+                    // 実行中のDock・Aboutアイコンを設定
                     unsafe { ns_app.setApplicationIconImage(Some(&icon)) };
+                    // FinderおよびDock（停止時）のアイコンをアプリバンドルに書き込む
+                    let bundle_path = unsafe { NSBundle::mainBundle().bundlePath() };
+                    let workspace = unsafe { NSWorkspace::sharedWorkspace() };
+                    unsafe {
+                        workspace.setIcon_forFile_options(
+                            Some(&icon),
+                            &bundle_path,
+                            NSWorkspaceIconCreationOptions(0),
+                        )
+                    };
                 }
             }
             global_shortcut_configuration(app)?;
