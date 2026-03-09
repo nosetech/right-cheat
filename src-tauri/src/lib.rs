@@ -31,6 +31,19 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .on_menu_event(|handle, event| on_menu_event_configuration(handle, event))
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                use objc2::AllocAnyThread;
+                use objc2_app_kit::{NSApplication, NSImage};
+                use objc2_foundation::{MainThreadMarker, NSData};
+                let icon_bytes = include_bytes!("../icons/icon.png");
+                let mtm = unsafe { MainThreadMarker::new_unchecked() };
+                let ns_app = NSApplication::sharedApplication(mtm);
+                let data = NSData::with_bytes(icon_bytes);
+                if let Some(icon) = NSImage::initWithData(NSImage::alloc(), &data) {
+                    unsafe { ns_app.setApplicationIconImage(Some(&icon)) };
+                }
+            }
             global_shortcut_configuration(app)?;
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
             Ok(())
