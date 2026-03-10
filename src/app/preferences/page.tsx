@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from 'react'
 
-import { FileEditButton, FileOpenButton, ThemeToggle } from '@/components/atoms'
+import {
+  FileEditButton,
+  FileOpenButton,
+  ThemedSwitch,
+  ThemeToggle,
+} from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
+import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
 import { Box, Divider, Stack, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -23,8 +29,14 @@ export default function Page() {
   const [settedInputFilePath, setSettedInputFilePath] = useState<string>()
   const [shortcutValidationError, setShortcutValidationError] =
     useState<boolean>(false)
+  const [visibleOnAllWorkspaces, setVisibleOnAllWorkspaces] =
+    useState<boolean>(true)
 
-  const { getCheatSheetFilePath, setCheatSheetFilePath } = usePreferencesStore()
+  const {
+    getCheatSheetFilePath,
+    setCheatSheetFilePath,
+    getVisibleOnAllWorkspacesSettings,
+  } = usePreferencesStore()
   const {
     themeMode,
     setThemeMode: setStoredThemeMode,
@@ -38,26 +50,40 @@ export default function Page() {
     ;(async () => {
       const inputpath = await getCheatSheetFilePath()
       setSettedInputFilePath(inputpath)
-      await invoke<string>(
-        GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
-      )
-        .then((response) => {
-          debug(
-            `invoke '${GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+
+      const visibleOnAllWorkspacesValue =
+        await getVisibleOnAllWorkspacesSettings()
+      setVisibleOnAllWorkspaces(visibleOnAllWorkspacesValue)
+
+      try {
+        const response = await invoke<string>(
+          GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
+        )
+        debug(
+          `[preferences] invoke '${GlobalShortcutAPI.GET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+        )
+        const res_json = JSON.parse(response)
+        if (res_json.status === 'success') {
+          const shortcut: ShortcutDef = JSON.parse(response).message
+          setToggleVisibleShortcut(shortcut)
+        } else {
+          error(
+            `[preferences] Failed to get toggle visible shortcut settings: ${res_json.message}`,
           )
-          const res_json = JSON.parse(response)
-          if (res_json.status === 'success') {
-            const shortcut: ShortcutDef = JSON.parse(response).message
-            setToggleVisibleShortcut(shortcut)
-          } else {
-            error(
-              `Failed to get toggle visible shortcut settings: ${res_json.message}`,
-            )
-          }
+          await message('グローバルショートカット設定の取得に失敗しました', {
+            title: 'RightCheat',
+            kind: 'error',
+          })
+        }
+      } catch (err) {
+        error(
+          `[preferences] Error getting toggle visible shortcut settings: ${err}`,
+        )
+        await message('グローバルショートカット設定の取得に失敗しました', {
+          title: 'RightCheat',
+          kind: 'error',
         })
-        .catch((err) => {
-          error(`Error getting toggle visible shortcut settings: ${err}`)
-        })
+      }
     })()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,13 +91,13 @@ export default function Page() {
 
   const fileOpenCallback = (filepath: string) => {
     ;(async () => {
-      debug(`callback ${filepath}`)
+      debug(`[preferences] callback ${filepath}`)
       setSettedInputFilePath(filepath)
       await setCheatSheetFilePath(filepath)
       await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
         (response) => {
           debug(
-            `invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
+            `[preferences] invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
           )
         },
       )
@@ -87,10 +113,46 @@ export default function Page() {
         ]).execute()
         if (result.code != 0) {
           error(
-            `Failed to open file: ${settedInputFilePath}, code: ${result.code}`,
+            `[preferences] Failed to open file: ${settedInputFilePath}, code: ${result.code}`,
           )
+          await message('エディタでファイルを開けませんでした', {
+            title: 'RightCheat',
+            kind: 'error',
+          })
         }
       })()
+    }
+  }
+
+  const showRestartConfirmationDialog = async () => {
+    // devモードでは正常にアプリの再起動が実行できないため、ログ出力だけにする。
+    if (process.env.NODE_ENV === 'production') {
+      // 再起動確認ダイアログを表示
+      const shouldRestart = await ask(
+        '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
+        {
+          title: 'RightCheat - 再起動の確認',
+          kind: 'info',
+          okLabel: 'はい',
+          cancelLabel: 'いいえ',
+        },
+      )
+
+      if (shouldRestart) {
+        await relaunch()
+      } else {
+        debug('[preferences] User cancelled the restart.')
+        // キャンセル時にユーザーに設定が保存されたことを通知
+        await message(
+          '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
+          {
+            title: 'RightCheat',
+            kind: 'info',
+          },
+        )
+      }
+    } else {
+      debug('[preferences] Relaunch is not execute in development mode.')
     }
   }
 
@@ -101,75 +163,107 @@ export default function Page() {
     hotKey: string,
   ) => {
     ;(async () => {
-      await invoke<string>(
-        GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
-        {
-          shortcut: {
-            ctrl: ctrlKey,
-            option: optionKey,
-            command: commandKey,
-            hotkey: hotKey,
-          },
-        },
-      )
-        .then((response) => {
-          debug(
-            `invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
-          )
-          const res_json = JSON.parse(response)
-          if (res_json.status !== 'success') {
-            error(
-              `Failed to set toggle visible shortcut settings: ${res_json.message}`,
-            )
-            return
-          }
-        })
-        .catch((err) => error(`Error setting shortcut: ${err}`))
-
-      // devモードでは正常にアプリの再起動が実行できないため、ログ出力だけにする。
-      if (process.env.NODE_ENV === 'production') {
-        // 再起動確認ダイアログを表示
-        const shouldRestart = await ask(
-          '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
+      let saved = false
+      try {
+        const response = await invoke<string>(
+          GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
           {
-            title: 'RightCheat - 再起動の確認',
-            kind: 'info',
-            okLabel: 'はい',
-            cancelLabel: 'いいえ',
+            shortcut: {
+              ctrl: ctrlKey,
+              option: optionKey,
+              command: commandKey,
+              hotkey: hotKey,
+            },
           },
         )
-
-        if (shouldRestart) {
-          await relaunch()
+        debug(
+          `[preferences] invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+        )
+        const res_json = JSON.parse(response)
+        if (res_json.status === 'success') {
+          saved = true
         } else {
-          debug('User cancelled the restart.')
-          // キャンセル時にユーザーに設定が保存されたことを通知
-          await message(
-            '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
-            {
-              title: 'RightCheat',
-              kind: 'info',
-            },
+          error(
+            `[preferences] Failed to set toggle visible shortcut settings: ${res_json.message}`,
           )
+          await message('グローバルショートカット設定の保存に失敗しました', {
+            title: 'RightCheat',
+            kind: 'error',
+          })
         }
-      } else {
-        debug('Relaunch is not execute in development mode.')
+      } catch (err) {
+        error(`[preferences] Error setting shortcut: ${err}`)
+        await message('グローバルショートカット設定の保存に失敗しました', {
+          title: 'RightCheat',
+          kind: 'error',
+        })
+      }
+
+      if (saved) {
+        await showRestartConfirmationDialog()
       }
     })()
   }
 
   const handleThemeChange = async (newThemeMode: string) => {
     const mode = newThemeMode as 'light' | 'dark' | 'system'
-    await setStoredThemeMode(mode)
+    try {
+      await setStoredThemeMode(mode)
+    } catch {
+      await message('テーマ設定の保存に失敗しました', {
+        title: 'RightCheat',
+        kind: 'error',
+      })
+      return
+    }
 
     // Notify all windows about theme change
-    await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
-      .then((response) => {
-        debug(`invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`)
+    try {
+      const response = await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
+      debug(
+        `[preferences] invoke '${WindowAPI.NOTIFY_THEME_CHANGED}' response=${response}`,
+      )
+    } catch (err) {
+      error(`[preferences] Error notifying theme change: ${err}`)
+      await message('テーマ変更の反映に失敗しました', {
+        title: 'RightCheat',
+        kind: 'error',
       })
-      .catch((err) => {
-        error(`Error notifying theme change: ${err}`)
-      })
+    }
+  }
+
+  const handleVisibleOnAllWorkspacesChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const newValue = event.target.checked
+    setVisibleOnAllWorkspaces(newValue)
+    ;(async () => {
+      let saved = false
+      try {
+        await invoke(
+          VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING,
+          {
+            settings: {
+              enabled: newValue,
+            },
+          },
+        )
+        debug(
+          `[preferences] invoke '${VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING}' succeeded`,
+        )
+        saved = true
+      } catch (err) {
+        error(`[preferences] Error setting visible on all workspaces: ${err}`)
+        await message('全ワークスペース表示設定の保存に失敗しました', {
+          title: 'RightCheat',
+          kind: 'error',
+        })
+      }
+
+      if (saved) {
+        await showRestartConfirmationDialog()
+      }
+    })()
   }
 
   return (
@@ -223,6 +317,15 @@ export default function Page() {
           themeMode={themeMode}
           onChange={handleThemeChange}
           disabled={isLoading}
+        />
+      </Stack>
+      <Divider />
+      <Typography variant='body1'>Other Settings</Typography>
+      <Stack direction='row' px={1} spacing={1} alignItems='center'>
+        <Typography variant='body1'>Visible on all workspaces</Typography>
+        <ThemedSwitch
+          checked={visibleOnAllWorkspaces}
+          onChange={handleVisibleOnAllWorkspacesChange}
         />
       </Stack>
     </Stack>

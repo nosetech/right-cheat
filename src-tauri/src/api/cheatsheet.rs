@@ -14,12 +14,43 @@ lazy_static! {
     static ref CACHE: Mutex<Option<Vec<CheatSheet>>> = Mutex::new(None);
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WindowSize {
+    pub width: u32,
+    pub height: u32,
+}
+
+impl WindowSize {
+    pub fn clamp_to_min(self, min_width: u32, min_height: u32) -> Self {
+        Self {
+            width: self.width.max(min_width),
+            height: self.height.max(min_height),
+        }
+    }
+}
+
+fn window_size_defaults_from_config<R: tauri::Runtime>(app: &AppHandle<R>) -> (u32, u32) {
+    let config = app.config();
+    let first_window = config.app.windows.first();
+    let min_width = first_window.and_then(|w| w.min_width).unwrap_or(0.0) as u32;
+    let min_height = first_window.and_then(|w| w.min_height).unwrap_or(0.0) as u32;
+    (min_width, min_height)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    success: bool,
+    error: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CheatSheet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[serde(rename = "type")]
     sheet_type: Option<String>,
     title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    window_size: Option<WindowSize>,
     commandlist: Vec<Command>,
 }
 impl fmt::Display for CheatSheet {
@@ -55,8 +86,24 @@ pub fn get_cheat_titles(input_path: &str) -> String {
 
     // キャッシュが空ならファイルから読み込む
     if cache.is_none() {
-        log::debug!("Cache is empty, reading from file: {}", input_path);
-        *cache = read_json_from_file(PathBuf::from(input_path)).ok();
+        log::debug!(
+            "[cheatsheet] Cache is empty, reading from file: {}",
+            input_path
+        );
+        match read_json_from_file(PathBuf::from(input_path)) {
+            Ok(data) => *cache = Some(data),
+            Err(e) => {
+                let error_msg = format_json_error(e.as_ref());
+                log::error!("[cheatsheet] Failed to read JSON file: {}", error_msg);
+                let error_response = ErrorResponse {
+                    success: false,
+                    error: error_msg,
+                };
+                return serde_json::to_string(&error_response).unwrap_or_else(|_| {
+                    r#"{"success":false,"error":"JSONレスポンス生成エラー"}"#.to_string()
+                });
+            }
+        }
     }
 
     let titlelist = cache
@@ -76,8 +123,24 @@ pub fn get_cheat_sheet(input_path: &str, title: &str) -> String {
 
     // キャッシュが空ならファイルから読み込む
     if cache.is_none() {
-        log::debug!("Cache is empty, reading from file: {}", input_path);
-        *cache = read_json_from_file(PathBuf::from(input_path)).ok();
+        log::debug!(
+            "[cheatsheet] Cache is empty, reading from file: {}",
+            input_path
+        );
+        match read_json_from_file(PathBuf::from(input_path)) {
+            Ok(data) => *cache = Some(data),
+            Err(e) => {
+                let error_msg = format_json_error(e.as_ref());
+                log::error!("[cheatsheet] Failed to read JSON file: {}", error_msg);
+                let error_response = ErrorResponse {
+                    success: false,
+                    error: error_msg,
+                };
+                return serde_json::to_string(&error_response).unwrap_or_else(|_| {
+                    r#"{"success":false,"error":"JSONレスポンス生成エラー"}"#.to_string()
+                });
+            }
+        }
     }
 
     let binding = vec![];
@@ -107,9 +170,103 @@ pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
     format!("{{\"status\": {}}}", response)
 }
 
+#[tauri::command]
+pub fn get_cheat_sheet_window_size(
+    input_path: &str,
+    title: &str,
+) -> Result<Option<WindowSize>, String> {
+    let mut cache = CACHE.lock().unwrap();
+
+    if cache.is_none() {
+        log::debug!(
+            "[cheatsheet] Cache is empty, reading from file: {}",
+            input_path
+        );
+        match read_json_from_file(PathBuf::from(input_path)) {
+            Ok(data) => *cache = Some(data),
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+
+    let binding = vec![];
+    let window_size = cache
+        .as_ref()
+        .unwrap_or(&binding)
+        .iter()
+        .find(|s| s.title == title)
+        .and_then(|s| s.window_size.clone());
+
+    Ok(window_size)
+}
+
+#[tauri::command]
+pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    input_path: &str,
+    title: &str,
+    window_size: Option<WindowSize>,
+) -> Result<(), String> {
+    let window_size = window_size.map(|ws| {
+        let (min_width, min_height) = window_size_defaults_from_config(&app);
+        ws.clamp_to_min(min_width, min_height)
+    });
+    let file_path = PathBuf::from(input_path);
+
+    // ファイルから最新データを読み込む（キャッシュを経由しない）
+    let mut sheets: Vec<CheatSheet> = {
+        let file = File::open(&file_path).map_err(|e| e.to_string())?;
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader).map_err(|e| e.to_string())?
+    };
+
+    // 対象チートシートのウィンドウサイズを更新
+    match sheets.iter_mut().find(|s| s.title == title) {
+        Some(sheet) => {
+            sheet.window_size = window_size;
+        }
+        None => {
+            return Err(format!("チートシート '{}' が見つかりません", title));
+        }
+    }
+
+    // ファイルに書き戻す
+    let json = serde_json::to_string_pretty(&sheets).map_err(|e| e.to_string())?;
+    std::fs::write(&file_path, format!("{}\n", json)).map_err(|e| e.to_string())?;
+
+    // キャッシュを更新
+    let mut cache = CACHE.lock().unwrap();
+    *cache = Some(sheets);
+
+    Ok(())
+}
+
 fn read_json_from_file(file_path: PathBuf) -> Result<Vec<CheatSheet>, Box<dyn Error>> {
     let file = File::open(file_path)?;
     let reader = BufReader::new(file);
     let cheatsheet: Vec<CheatSheet> = serde_json::from_reader(reader)?;
     Ok(cheatsheet)
+}
+
+fn format_json_error(error: &dyn std::error::Error) -> String {
+    let error_msg = error.to_string();
+
+    // serde_json エラーはメッセージに行とカラムの情報を含む
+    // 例: "expected value at line 5 column 10"
+    // このメッセージをそのままユーザーに返す
+    if error_msg.contains("line") && error_msg.contains("column") {
+        format!(
+            "JSONファイルのパースに失敗しました。\nエラー: {}",
+            error_msg
+        )
+    } else if error_msg.contains("No such file") || error_msg.contains("not found") {
+        format!(
+            "指定されたJSONファイルが見つかりません。\nエラー: {}",
+            error_msg
+        )
+    } else {
+        format!(
+            "JSONファイルの読み込みに失敗しました。\nエラー: {}",
+            error_msg
+        )
+    }
 }

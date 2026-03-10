@@ -33,6 +33,7 @@ export const useThemeStore = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err)
       error(`[useThemeStore] Failed to save theme mode: ${errorMessage}`)
+      throw err
     }
   }
 

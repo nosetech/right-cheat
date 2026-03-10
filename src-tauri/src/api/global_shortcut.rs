@@ -139,7 +139,10 @@ pub fn init_toggle_visible_shortcut_settings<R: tauri::Runtime>(
     match shortcut_settings {
         Ok(result) => match result {
             Some(value) => {
-                log::info!("Toggle visible shortcut settings already exists: {}", value);
+                log::info!(
+                    "[global_shortcut] Toggle visible shortcut settings already exists: {}",
+                    value
+                );
             }
             None => {
                 let default_shortcut = ShortcutDef {
@@ -154,17 +157,22 @@ pub fn init_toggle_visible_shortcut_settings<R: tauri::Runtime>(
                     json!(default_shortcut),
                 ) {
                     log::error!(
-                        "Failed to set default toggle visible shortcut settings: {}",
+                        "[global_shortcut] Failed to set default toggle visible shortcut settings: {}",
                         err
                     );
                     return Err(err);
                 } else {
-                    log::info!("Default toggle visible shortcut settings initialized.");
+                    log::info!(
+                        "[global_shortcut] Default toggle visible shortcut settings initialized."
+                    );
                 }
             }
         },
         Err(err) => {
-            log::error!("{:?}", err);
+            log::error!(
+                "[global_shortcut] Failed to initialize toggle visible shortcut settings: {:?}",
+                err
+            );
             return Err(err);
         }
     }
@@ -198,7 +206,10 @@ pub fn get_toggle_visible_shortcut_settings_with_store<R: tauri::Runtime, S: Set
             }
         },
         Err(err) => {
-            log::error!("{:?}", err);
+            log::error!(
+                "[global_shortcut] Failed to get toggle visible shortcut settings: {:?}",
+                err
+            );
             response = "\"fail\"";
             message = format!("{}", err);
         }
@@ -235,7 +246,10 @@ pub fn set_toggle_visible_shortcut_settings_with_store<R: tauri::Runtime, S: Set
             message = format!("{}", json!(shortcut));
         }
         Err(err) => {
-            log::error!("{:?}", err);
+            log::error!(
+                "[global_shortcut] Failed to set toggle visible shortcut settings: {:?}",
+                err
+            );
             response = "\"fail\"";
             message = format!("{}", err);
         }

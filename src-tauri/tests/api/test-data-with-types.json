@@ -30,5 +30,19 @@
         "command": "c]"
       }
     ]
+  },
+  {
+    "type": "application",
+    "title": "Applications",
+    "commandlist": [
+      {
+        "description": "Slack",
+        "command": "open -a Slack"
+      },
+      {
+        "description": "Google Chrome",
+        "command": "open -a \"Google Chrome\""
+      }
+    ]
   }
 ]

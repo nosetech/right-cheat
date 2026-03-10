@@ -17,6 +17,7 @@ export const usePreferencesStore = (options?: StoreOptions) => {
   const setCheatSheetFilePath = async (filepath: string) => {
     const store = await loadPreferencesFile()
     await store.set('input_path', { path: filepath })
+    await store.save()
   }
 
   const getThemeMode = async (): Promise<ThemeMode> => {
@@ -28,6 +29,15 @@ export const usePreferencesStore = (options?: StoreOptions) => {
   const setThemeMode = async (mode: ThemeMode) => {
     const store = await loadPreferencesFile()
     await store.set('theme', { mode })
+    await store.save()
+  }
+
+  const getVisibleOnAllWorkspacesSettings = async (): Promise<boolean> => {
+    const store = await loadPreferencesFile()
+    const settings = await store.get<{ enabled: boolean }>(
+      'visible_on_all_workspaces_settings',
+    )
+    return settings?.enabled ?? true
   }
 
   return {
@@ -35,5 +45,6 @@ export const usePreferencesStore = (options?: StoreOptions) => {
     setCheatSheetFilePath,
     getThemeMode,
     setThemeMode,
+    getVisibleOnAllWorkspacesSettings,
   }
 }

@@ -4,7 +4,6 @@ pub mod settings_store;
 
 use serde_json;
 use settings_store::{SettingsStore, TauriSettingsStore};
-use std::path::Path;
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
@@ -14,10 +13,11 @@ use tauri_plugin_opener::OpenerExt;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_log::Builder::new().build())
         .plugin({
             let mut logger = tauri_plugin_log::Builder::new()
-                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal);
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+                .max_file_size(1_048_576)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(3));
             if cfg!(dev) {
                 logger = logger.level(log::LevelFilter::Trace)
             } else {
@@ -30,7 +30,37 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .on_menu_event(|handle, event| on_menu_event_configuration(handle, event))
-        .setup(|app| global_shortcut_configuration(app))
+        .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                use objc2::AllocAnyThread;
+                use objc2_app_kit::{
+                    NSApplication, NSImage, NSWorkspace, NSWorkspaceIconCreationOptions,
+                };
+                use objc2_foundation::{MainThreadMarker, NSBundle, NSData};
+                let icon_bytes = include_bytes!("../icons/icon.png");
+                let mtm = unsafe { MainThreadMarker::new_unchecked() };
+                let ns_app = NSApplication::sharedApplication(mtm);
+                let data = NSData::with_bytes(icon_bytes);
+                if let Some(icon) = NSImage::initWithData(NSImage::alloc(), &data) {
+                    // 実行中のDock・Aboutアイコンを設定
+                    unsafe { ns_app.setApplicationIconImage(Some(&icon)) };
+                    // FinderおよびDock（停止時）のアイコンをアプリバンドルに書き込む
+                    let bundle_path = unsafe { NSBundle::mainBundle().bundlePath() };
+                    let workspace = unsafe { NSWorkspace::sharedWorkspace() };
+                    unsafe {
+                        workspace.setIcon_forFile_options(
+                            Some(&icon),
+                            &bundle_path,
+                            NSWorkspaceIconCreationOptions(0),
+                        )
+                    };
+                }
+            }
+            global_shortcut_configuration(app)?;
+            api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             api::cheatsheet::get_cheat_titles,
             api::cheatsheet::get_cheat_sheet,
@@ -43,6 +73,11 @@ pub fn run() {
             api::font_size::increase_font_size,
             api::font_size::decrease_font_size,
             api::font_size::reset_font_size,
+            api::visible_on_all_workspaces::get_visible_on_all_workspaces_setting,
+            api::visible_on_all_workspaces::set_visible_on_all_workspaces_setting,
+            api::cheatsheet::get_cheat_sheet_window_size,
+            api::cheatsheet::save_cheat_sheet_window_size,
+            api::application::run_application,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -69,10 +104,9 @@ fn menu_configuration<R: tauri::Runtime>(
                                 .version(Some(format!("バージョン {}", app_version)))
                                 .short_version(Some(app_version))
                                 .copyright(Some("©︎ 2025 nosetech"));
-                            if cfg!(dev) {
-                                metadata = metadata
-                                    .icon(Some(Image::from_path(Path::new("./icons/icon.png"))?));
-                            }
+                            metadata = metadata.icon(Some(Image::from_bytes(include_bytes!(
+                                "../icons/icon.png"
+                            ))?));
                             metadata.build()
                         }),
                     )?,
@@ -160,9 +194,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(520.0, 340.0)
-            .max_inner_size(800.0, 340.0)
-            .min_inner_size(520.0, 340.0)
+            .inner_size(520.0, 420.0)
+            .max_inner_size(800.0, 420.0)
+            .min_inner_size(520.0, 420.0)
             .build();
         }
         "id_reload" => {
@@ -183,7 +217,7 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             let _ = api::font_size::reset_font_size(handle.clone());
         }
         _ => {
-            log::warn!("Unexpected event occurs. Event id={:?}", event.id());
+            log::warn!("[lib] Unexpected event occurs. Event id={:?}", event.id());
         }
     }
 }
@@ -201,7 +235,7 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
             let settings: api::global_shortcut::ShortcutDef = serde_json::from_value(json.clone())?;
             let window_visible_shortcut = settings.to_shortcut()?;
             log::info!(
-                "Toggle visible shortcut settings : {}",
+                "[lib] Toggle visible shortcut settings : {}",
                 window_visible_shortcut
             );
 
