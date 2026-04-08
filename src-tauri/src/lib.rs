@@ -7,6 +7,7 @@ use settings_store::{SettingsStore, TauriSettingsStore};
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
+use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
@@ -59,6 +60,22 @@ pub fn run() {
             }
             global_shortcut_configuration(app)?;
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
+
+            // Command+Tab でアプリがアクティブになった際、WKWebView が
+            // キーボードの first responder を取得できない場合がある。
+            // WindowEvent::Focused(true) を検知してフロントエンドへ通知する。
+            if let Some(main_window) = app.get_webview_window("main") {
+                let main_window_clone = main_window.clone();
+                main_window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(true) = event {
+                        log::debug!("[lib] Window focused: emitting window_focused event");
+                        main_window_clone
+                            .emit(common::event::WINDOW_FOCUSED, ())
+                            .ok();
+                    }
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

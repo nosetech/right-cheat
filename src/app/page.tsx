@@ -26,7 +26,8 @@ export default function Home() {
   const { showError } = useNotificationContext() ?? {}
 
   useEffect(() => {
-    let unlisten: (() => void) | null = null
+    let unlistenToggle: (() => void) | null = null
+    let unlistenFocused: (() => void) | null = null
 
     const setupListener = async () => {
       // アプリケーション初期化時に設定ファイルから取得した値を使用
@@ -40,18 +41,38 @@ export default function Home() {
         showError?.('全ワークスペース表示設定の初期化に失敗しました')
       }
 
-      unlisten = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
+      unlistenToggle = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
         ;(async () => {
           await changeWindowVisible()
         })()
+      })
+
+      // Command+Tab などでアプリがアクティブになった際、WKWebView が
+      // キーボードの first responder を取得できない場合がある。
+      // Rust 側の WindowEvent::Focused(true) を検知して emit された
+      // イベントを受け取り、WKWebView のフォーカスを復元する。
+      unlistenFocused = await listen<{}>(Event.WINDOW_FOCUSED, async () => {
+        const focused = document.activeElement as HTMLElement | null
+        await getCurrentWindow().setFocus()
+        if (
+          focused &&
+          focused !== document.body &&
+          document.body.contains(focused)
+        ) {
+          focused.blur()
+          focused.focus()
+        }
       })
     }
 
     setupListener()
 
     return () => {
-      if (unlisten) {
-        unlisten()
+      if (unlistenToggle) {
+        unlistenToggle()
+      }
+      if (unlistenFocused) {
+        unlistenFocused()
       }
     }
   }, [getVisibleOnAllWorkspacesSettings, showError])
