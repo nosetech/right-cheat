@@ -53,6 +53,9 @@ export default function Home() {
       // イベントを受け取り、WKWebView のフォーカスを復元する。
       unlistenFocused = await listen<{}>(Event.WINDOW_FOCUSED, async () => {
         const focused = document.activeElement as HTMLElement | null
+        // Rust の WindowEvent::Focused(true) 検知後に emit されるため、
+        // native イベントの後処理は完了済み。useWindowSize.ts の
+        // restoreFocusAfterWindowOp() と異なり待機は不要。
         await getCurrentWindow().setFocus()
         if (
           focused &&
