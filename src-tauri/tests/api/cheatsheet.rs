@@ -695,4 +695,201 @@ mod get_cheat_sheet {
         // 連続するバックスラッシュ (4つのバックスラッシュは8つにエスケープされる)
         assert!(result.contains("path\\\\\\\\\\\\\\\\to\\\\\\\\\\\\\\\\file"));
     }
+
+    // ブラックボックス：同値分割 - CheatSheet レベルの layout フィールドが存在するシート（有効クラス①）
+    // ホワイトボックス：CheatSheet.layout が Some のブランチ → シリアライズ時にフィールドが出力されるパス
+    #[test]
+    fn json_with_sheet_layout_field() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: layout フィールドを持つチートシートを指定
+        // Act
+        let result = get_cheat_sheet("./tests/api/test-data-with-layout.json", "SheetWithLayout");
+
+        // Assert: レスポンスに "layout":"grid" が含まれること（skip_serializing_if = None の反対パス）
+        assert!(
+            result.contains("\"layout\":\"grid\""),
+            "layout フィールドが Some の場合、シリアライズ結果に含まれること: {}",
+            result
+        );
+    }
+
+    // ブラックボックス：同値分割 - CheatSheet レベルの layout フィールドが存在しないシート（有効クラス②）
+    // ホワイトボックス：CheatSheet.layout が None → skip_serializing_if により出力されないパス
+    #[test]
+    fn json_without_sheet_layout_field() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: layout フィールドを持たないチートシートを指定
+        // Act
+        let result = get_cheat_sheet(
+            "./tests/api/test-data-with-layout.json",
+            "SheetWithoutLayout",
+        );
+
+        // Assert: レスポンスに "layout" キーが含まれないこと（skip_serializing_if = "Option::is_none" の確認）
+        // ただし commandlist 内の command.layout も確認対象外にするため、
+        // チートシートレベルの "layout" が title と commandlist の間に存在しないことを検証する
+        let parsed: serde_json::Value = serde_json::from_str(&result).expect("JSON パースに失敗");
+        assert!(
+            parsed.get("layout").is_none(),
+            "layout が None の場合、シリアライズ結果にフィールドが含まれないこと: {}",
+            result
+        );
+    }
+
+    // ブラックボックス：同値分割 - Command レベルの layout フィールドが存在するコマンド（有効クラス①）
+    // ホワイトボックス：Command.layout が Some → シリアライズ時にフィールドが出力されるパス
+    #[test]
+    fn json_with_command_layout_field() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: command に layout フィールドを持つシートを指定
+        // Act
+        let result = get_cheat_sheet("./tests/api/test-data-with-layout.json", "SheetWithLayout");
+
+        // Assert: commandlist 内に "layout":"wide" が含まれること
+        assert!(
+            result.contains("\"layout\":\"wide\""),
+            "Command.layout が Some の場合、シリアライズ結果に含まれること: {}",
+            result
+        );
+    }
+
+    // ブラックボックス：同値分割 - Command レベルの layout フィールドが存在しないコマンド（有効クラス②）
+    // ホワイトボックス：Command.layout が None → skip_serializing_if により出力されないパス
+    #[test]
+    fn json_without_command_layout_field() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: 2番目のコマンドに layout フィールドがないシートを指定
+        // Act
+        let result = get_cheat_sheet("./tests/api/test-data-with-layout.json", "SheetWithLayout");
+
+        // Assert: commandlist 配列を解析して、layout なしコマンドには "layout" キーがないことを確認
+        let parsed: serde_json::Value = serde_json::from_str(&result).expect("JSON パースに失敗");
+        let commandlist = parsed["commandlist"]
+            .as_array()
+            .expect("commandlist が配列であること");
+
+        // 2番目のコマンド（"command2"）は layout なし
+        let cmd2 = commandlist
+            .iter()
+            .find(|c| c["command"] == "command2")
+            .expect("command2 が存在すること");
+        assert!(
+            cmd2.get("layout").is_none(),
+            "Command.layout が None の場合、シリアライズ結果にフィールドが含まれないこと: {:?}",
+            cmd2
+        );
+    }
+
+    // ブラックボックス：同値分割 - Command の description フィールドが存在しないコマンド（有効クラス）
+    // ホワイトボックス：Command.description が None → skip_serializing_if により出力されないパス
+    //                   （パターン3のユースケース: description を省略したコマンド）
+    #[test]
+    fn json_without_command_description_field() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: description フィールドなしのコマンドを含む SheetWithoutLayout を指定
+        // Act
+        let result = get_cheat_sheet(
+            "./tests/api/test-data-with-layout.json",
+            "SheetWithoutLayout",
+        );
+
+        // Assert: "command3" のコマンドは description なしでデシリアライズされ、
+        //         シリアライズ結果にも "description" キーが含まれないこと
+        let parsed: serde_json::Value = serde_json::from_str(&result).expect("JSON パースに失敗");
+        let commandlist = parsed["commandlist"]
+            .as_array()
+            .expect("commandlist が配列であること");
+
+        let cmd3 = commandlist
+            .iter()
+            .find(|c| c["command"] == "command3")
+            .expect("command3 が存在すること");
+        assert!(
+            cmd3.get("description").is_none(),
+            "description が None の場合、シリアライズ結果にフィールドが含まれないこと: {:?}",
+            cmd3
+        );
+    }
+
+    // ブラックボックス：同値分割 - Command の description フィールドが存在するコマンド（有効クラス）
+    // ホワイトボックス：Command.description が Some → シリアライズ時にフィールドが出力されるパス
+    #[test]
+    fn json_with_command_description_field() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: description フィールドありのコマンドを含む SheetWithoutLayout を指定
+        // Act
+        let result = get_cheat_sheet(
+            "./tests/api/test-data-with-layout.json",
+            "SheetWithoutLayout",
+        );
+
+        // Assert: "command4" のコマンドは description ありでシリアライズされること
+        let parsed: serde_json::Value = serde_json::from_str(&result).expect("JSON パースに失敗");
+        let commandlist = parsed["commandlist"]
+            .as_array()
+            .expect("commandlist が配列であること");
+
+        let cmd4 = commandlist
+            .iter()
+            .find(|c| c["command"] == "command4")
+            .expect("command4 が存在すること");
+        assert_eq!(
+            cmd4["description"], "コマンド4",
+            "description が Some の場合、シリアライズ結果に含まれること: {:?}",
+            cmd4
+        );
+    }
+
+    // ブラックボックス：同値分割 - layout フィールドを持つシートのシリアライズ完全検証
+    // ホワイトボックス：CheatSheet および Command の全フィールドが Some/None で正しく制御されるパス
+    #[test]
+    fn json_with_layout_full_serialization() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Act
+        let result = get_cheat_sheet("./tests/api/test-data-with-layout.json", "SheetWithLayout");
+
+        // Assert: 期待される JSON 構造全体を検証
+        // layout="grid" (Some), command1 は layout="wide" (Some) と description (Some)
+        // command2 は layout なし (None) と description (Some)
+        assert_eq!(
+            result,
+            "{\"title\":\"SheetWithLayout\",\"layout\":\"grid\",\"commandlist\":[{\"description\":\"コマンド1\",\"command\":\"command1\",\"layout\":\"wide\"},{\"description\":\"コマンド2\",\"command\":\"command2\"}]}"
+        );
+    }
+
+    // ブラックボックス：同値分割 - layout フィールドのないシートのシリアライズ完全検証
+    // ホワイトボックス：CheatSheet.layout が None で skip_serializing_if が適用されるパス
+    //                   Command.description が None で skip_serializing_if が適用されるパス
+    #[test]
+    fn json_without_layout_full_serialization() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Act
+        let result = get_cheat_sheet(
+            "./tests/api/test-data-with-layout.json",
+            "SheetWithoutLayout",
+        );
+
+        // Assert: 期待される JSON 構造全体を検証
+        // layout なし (None), command3 は description なし (None), command4 は description あり (Some)
+        assert_eq!(
+            result,
+            "{\"title\":\"SheetWithoutLayout\",\"commandlist\":[{\"command\":\"command3\"},{\"description\":\"コマンド4\",\"command\":\"command4\"}]}"
+        );
+    }
 }

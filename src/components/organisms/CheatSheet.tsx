@@ -306,6 +306,7 @@ export const CheatSheet = () => {
                   mode={
                     cheatSheetData.type === 'application' ? 'execute' : 'copy'
                   }
+                  layout={item.layout ?? cheatSheetData.layout ?? 'inline'}
                 />
               ))}
             </Stack>
