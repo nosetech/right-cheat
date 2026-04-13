@@ -286,7 +286,7 @@ export const CheatSheet = () => {
                 <Grid key={index} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
                   <ShortcutField
                     m={0.5}
-                    description={item.description}
+                    description={item.description ?? ''}
                     command={item.command}
                   />
                 </Grid>
