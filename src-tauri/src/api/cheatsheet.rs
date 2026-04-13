@@ -51,6 +51,8 @@ pub struct CheatSheet {
     title: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     window_size: Option<WindowSize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    layout: Option<String>,
     commandlist: Vec<Command>,
 }
 impl fmt::Display for CheatSheet {
@@ -67,15 +69,19 @@ impl fmt::Display for CheatSheet {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Command {
-    description: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
     command: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    layout: Option<String>,
 }
 impl fmt::Display for Command {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
             "description = {}, command = {}",
-            self.description, self.command
+            self.description.as_deref().unwrap_or(""),
+            self.command
         )
     }
 }

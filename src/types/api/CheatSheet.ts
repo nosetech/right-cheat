@@ -9,13 +9,17 @@ export type CheatSheetTitleData = {
   title: string[]
 }
 
+export type CommandLayout = 'inline' | 'stacked' | 'command_only'
+
 export type CheatSheetData = {
   type?: 'command' | 'shortcut' | 'application'
   title: string
+  layout?: CommandLayout
   commandlist: CommandData[]
 }
 
 export type CommandData = {
-  description: string
+  description?: string
   command: string
+  layout?: CommandLayout
 }

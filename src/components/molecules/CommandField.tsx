@@ -3,18 +3,21 @@ import { TruncatedText } from '@/components/atoms/TruncatedText'
 import { CommandDisplay } from '@/components/molecules/CommandDisplay'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useClipboard } from '@/hooks/useClipboard'
-import { CheatSheetAPI } from '@/types/api/CheatSheet'
+import { CheatSheetAPI, CommandLayout } from '@/types/api/CheatSheet'
 import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { error as logError } from '@tauri-apps/plugin-log'
 import { forwardRef, useState } from 'react'
 
+const NUMBER_HINT_WIDTH = '10px'
+
 export type CommandFieldProps = StackProps & {
-  description: string
+  description?: string
   command: string
   numberHint?: string
   mode?: 'copy' | 'execute'
+  layout: CommandLayout
 }
 
 export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
@@ -24,6 +27,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       command,
       numberHint,
       mode = 'copy',
+      layout,
       tabIndex,
       ...remainProps
     } = props
@@ -89,47 +93,74 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       }
     }
 
+    const numberHintBox = (
+      <Box
+        sx={{
+          width: NUMBER_HINT_WIDTH,
+          minWidth: NUMBER_HINT_WIDTH,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        {numberHint && (
+          <Typography
+            variant='caption'
+            color='text.disabled'
+            sx={{
+              textAlign: 'center',
+            }}
+          >
+            {numberHint}
+          </Typography>
+        )}
+      </Box>
+    )
+
+    const commandDisplay = (
+      <CommandDisplay
+        command={command}
+        boxProps={{
+          ref,
+          maxWidth: '100%',
+          width: 'fit-content',
+          tabIndex: tabIndex ?? 0,
+          padding: 0.5,
+          sx: colorScheme(),
+          onClick: handleAction,
+          onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === 'Enter') {
+              handleAction()
+            }
+          },
+        }}
+      />
+    )
+
+    if (layout === 'stacked' && description) {
+      return (
+        <Stack spacing={0.25} {...remainProps}>
+          <Stack direction='row' spacing={1} alignItems='baseline'>
+            {numberHintBox}
+            <TruncatedText text={description} color='text.secondary' />
+          </Stack>
+          <Stack direction='row' spacing={1} alignItems='baseline'>
+            <Box
+              sx={{ width: NUMBER_HINT_WIDTH, minWidth: NUMBER_HINT_WIDTH }}
+            />
+            {commandDisplay}
+          </Stack>
+        </Stack>
+      )
+    }
+
     return (
       <Stack direction='row' spacing={1} alignItems='baseline' {...remainProps}>
-        <Box
-          sx={{
-            width: '10px',
-            minWidth: '10px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          {numberHint && (
-            <Typography
-              variant='caption'
-              color='text.disabled'
-              sx={{
-                textAlign: 'center',
-              }}
-            >
-              {numberHint}
-            </Typography>
-          )}
-        </Box>
-        <CommandDisplay
-          command={command}
-          boxProps={{
-            ref,
-            maxWidth: '100%',
-            width: 'fit-content',
-            tabIndex: tabIndex ?? 0,
-            padding: 0.5,
-            sx: colorScheme(),
-            onClick: handleAction,
-            onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
-              if (event.key === 'Enter') {
-                handleAction()
-              }
-            },
-          }}
-        />
-        <TruncatedText text={description} color='text.secondary' />
+        {numberHintBox}
+        {commandDisplay}
+        {layout !== 'command_only' && description && (
+          <TruncatedText text={description} color='text.secondary' />
+        )}
       </Stack>
     )
   },
