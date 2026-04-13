@@ -134,6 +134,48 @@ RightCheatを完全に削除するには、以下の手順を行います：
 | `shortcut`                | ショートカットキーの一覧表示（グリッド表示、コピー非対応）        |
 | `application`             | クリックまたはEnterキーでコマンドを実行してアプリケーションを起動 |
 
+### コマンドの表示レイアウト
+
+`command` / `application` タイプのチートシートでは、`layout` フィールドでコマンドの表示レイアウトを変更できます。
+
+| layout         | 表示                                               |
+| -------------- | -------------------------------------------------- |
+| `inline`（省略時も同様） | `番号　コマンド　説明` を1行で表示（デフォルト） |
+| `stacked`      | 1行目に `番号　説明`、2行目に `コマンド` を表示    |
+| `command_only` | `番号　コマンド` のみ表示（説明を非表示）          |
+
+`layout` はチートシート全体のデフォルトとして指定するか、コマンド単位で指定することができます。コマンド単位の指定はチートシート全体の設定よりも優先されます。
+
+```json
+[
+  {
+    "title": "レイアウト指定の例",
+    "type": "command",
+    "layout": "stacked",
+    "commandlist": [
+      {
+        "description": "チートシート全体のlayoutに従いstackedで表示",
+        "command": "command1"
+      },
+      {
+        "description": "コマンド単位の指定が優先されinlineで表示",
+        "command": "command2",
+        "layout": "inline"
+      },
+      {
+        "command": "command3",
+        "layout": "command_only"
+      }
+    ]
+  }
+]
+```
+
+> [!NOTE]
+> `command_only` レイアウトを使用する場合、`description` フィールドは省略できます。
+>
+> `stacked` レイアウトで `description` が省略された場合は、`inline` と同様の1行表示になります。
+
 チートシート JSON ファイルのサンプル
 
 ```json
