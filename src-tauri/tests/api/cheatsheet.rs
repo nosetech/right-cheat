@@ -707,9 +707,9 @@ mod get_cheat_sheet {
         // Act
         let result = get_cheat_sheet("./tests/api/test-data-with-layout.json", "SheetWithLayout");
 
-        // Assert: レスポンスに "layout":"grid" が含まれること（skip_serializing_if = None の反対パス）
+        // Assert: レスポンスに "layout":"stacked" が含まれること（skip_serializing_if = None の反対パス）
         assert!(
-            result.contains("\"layout\":\"grid\""),
+            result.contains("\"layout\":\"stacked\""),
             "layout フィールドが Some の場合、シリアライズ結果に含まれること: {}",
             result
         );
@@ -751,9 +751,9 @@ mod get_cheat_sheet {
         // Act
         let result = get_cheat_sheet("./tests/api/test-data-with-layout.json", "SheetWithLayout");
 
-        // Assert: commandlist 内に "layout":"wide" が含まれること
+        // Assert: commandlist 内に "layout":"command_only" が含まれること
         assert!(
-            result.contains("\"layout\":\"wide\""),
+            result.contains("\"layout\":\"command_only\""),
             "Command.layout が Some の場合、シリアライズ結果に含まれること: {}",
             result
         );
@@ -863,11 +863,11 @@ mod get_cheat_sheet {
         let result = get_cheat_sheet("./tests/api/test-data-with-layout.json", "SheetWithLayout");
 
         // Assert: 期待される JSON 構造全体を検証
-        // layout="grid" (Some), command1 は layout="wide" (Some) と description (Some)
+        // layout="stacked" (Some), command1 は layout="command_only" (Some) と description (Some)
         // command2 は layout なし (None) と description (Some)
         assert_eq!(
             result,
-            "{\"title\":\"SheetWithLayout\",\"layout\":\"grid\",\"commandlist\":[{\"description\":\"コマンド1\",\"command\":\"command1\",\"layout\":\"wide\"},{\"description\":\"コマンド2\",\"command\":\"command2\"}]}"
+            "{\"title\":\"SheetWithLayout\",\"layout\":\"stacked\",\"commandlist\":[{\"description\":\"コマンド1\",\"command\":\"command1\",\"layout\":\"command_only\"},{\"description\":\"コマンド2\",\"command\":\"command2\"}]}"
         );
     }
 

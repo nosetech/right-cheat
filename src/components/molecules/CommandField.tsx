@@ -10,12 +10,14 @@ import { invoke } from '@tauri-apps/api/core'
 import { error as logError } from '@tauri-apps/plugin-log'
 import { forwardRef, useState } from 'react'
 
+const NUMBER_HINT_WIDTH = '10px'
+
 export type CommandFieldProps = StackProps & {
   description?: string
   command: string
   numberHint?: string
   mode?: 'copy' | 'execute'
-  layout?: CommandLayout
+  layout: CommandLayout
 }
 
 export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
@@ -25,7 +27,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       command,
       numberHint,
       mode = 'copy',
-      layout = 'inline',
+      layout,
       tabIndex,
       ...remainProps
     } = props
@@ -94,8 +96,8 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
     const numberHintBox = (
       <Box
         sx={{
-          width: '10px',
-          minWidth: '10px',
+          width: NUMBER_HINT_WIDTH,
+          minWidth: NUMBER_HINT_WIDTH,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -135,17 +137,17 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       />
     )
 
-    if (layout === 'stacked') {
+    if (layout === 'stacked' && description) {
       return (
         <Stack spacing={0.25} {...remainProps}>
           <Stack direction='row' spacing={1} alignItems='baseline'>
             {numberHintBox}
-            {description && (
-              <TruncatedText text={description} color='text.secondary' />
-            )}
+            <TruncatedText text={description} color='text.secondary' />
           </Stack>
           <Stack direction='row' spacing={1} alignItems='baseline'>
-            <Box sx={{ width: '10px', minWidth: '10px' }} />
+            <Box
+              sx={{ width: NUMBER_HINT_WIDTH, minWidth: NUMBER_HINT_WIDTH }}
+            />
             {commandDisplay}
           </Stack>
         </Stack>

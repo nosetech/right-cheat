@@ -1,12 +1,12 @@
 [
   {
     "title": "SheetWithLayout",
-    "layout": "grid",
+    "layout": "stacked",
     "commandlist": [
       {
         "description": "コマンド1",
         "command": "command1",
-        "layout": "wide"
+        "layout": "command_only"
       },
       {
         "description": "コマンド2",
