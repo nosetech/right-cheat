@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import PushPin from '@mui/icons-material/PushPin'
 import PushPinOutlined from '@mui/icons-material/PushPinOutlined'
@@ -19,6 +19,7 @@ import { debug } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { CommandField } from '@/components/molecules/CommandField'
+import { CommandFieldGroup } from '@/components/molecules/CommandFieldGroup'
 import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
@@ -154,6 +155,27 @@ export const CheatSheet = () => {
   // shortcut タイプ以外（command / application / 未指定）で数字キーショートカットを有効化
   const isKeyboardShortcutEnabled = cheatSheetData?.type !== 'shortcut'
 
+  // グループを展開したフラットなコマンド一覧（数字キーの件数チェックに使用）
+  const flatCommandCount = useMemo(() => {
+    if (!cheatSheetData || cheatSheetData.type === 'shortcut') return 0
+    return cheatSheetData.commandlist.reduce(
+      (acc, item) =>
+        acc + (isCommandGroupData(item) ? item.commandlist.length : 1),
+      0,
+    )
+  }, [cheatSheetData])
+
+  // commandlist の各アイテムに対するフラットインデックスの開始位置
+  const flatStartIndices = useMemo(() => {
+    if (!cheatSheetData) return []
+    let acc = 0
+    return cheatSheetData.commandlist.map((item) => {
+      const start = acc
+      acc += isCommandGroupData(item) ? item.commandlist.length : 1
+      return start
+    })
+  }, [cheatSheetData])
+
   useKeyboardShortcuts({
     onPKey: async () => {
       if (selectCheatSheet) {
@@ -164,11 +186,7 @@ export const CheatSheet = () => {
     onNumberKey: (index) => {
       // 対応するコマンドフィールドをクリック (1-9)
       // shortcut タイプ以外のチートシートで有効
-      if (
-        isKeyboardShortcutEnabled &&
-        cheatSheetData?.commandlist &&
-        index < cheatSheetData.commandlist.length
-      ) {
+      if (isKeyboardShortcutEnabled && index < flatCommandCount) {
         const targetElement = commandFieldRefs.current[index]
         if (targetElement) {
           // Enterキーイベントをトリガーしてコマンドをコピー
@@ -312,23 +330,34 @@ export const CheatSheet = () => {
             <Stack paddingY={1} spacing={1} width='100%'>
               {cheatSheetData?.commandlist.map(
                 (item: CommandListItem, index) => {
-                  if (isCommandGroupData(item)) return null
+                  const flatIndex = flatStartIndices[index]
+                  const mode =
+                    cheatSheetData.type === 'application' ? 'execute' : 'copy'
+                  if (isCommandGroupData(item)) {
+                    return (
+                      <CommandFieldGroup
+                        key={index}
+                        group={item.group}
+                        commandlist={item.commandlist}
+                        startIndex={flatIndex}
+                        mode={mode}
+                        cheatSheetLayout={cheatSheetData.layout}
+                        commandFieldRefs={commandFieldRefs}
+                      />
+                    )
+                  }
                   return (
                     <CommandField
                       key={index}
                       ref={(el) => {
-                        commandFieldRefs.current[index] = el
+                        commandFieldRefs.current[flatIndex] = el
                       }}
                       description={item.description}
                       command={item.command}
                       numberHint={
-                        index < 9 ? (index + 1).toString() : undefined
+                        flatIndex < 9 ? (flatIndex + 1).toString() : undefined
                       }
-                      mode={
-                        cheatSheetData.type === 'application'
-                          ? 'execute'
-                          : 'copy'
-                      }
+                      mode={mode}
                       layout={item.layout ?? cheatSheetData.layout ?? 'inline'}
                     />
                   )
