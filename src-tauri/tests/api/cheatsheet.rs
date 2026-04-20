@@ -68,6 +68,25 @@ mod get_cheat_titles {
             "{\"title\": [\"MultilineCommands\"]}"
         );
     }
+
+    // ブラックボックス：同値分割 - グループを含むチートシートのタイトル一覧取得（有効クラス）
+    // ホワイトボックス：CommandItem::Group と CommandItem::Single が混在する commandlist を持つ
+    //                   CheatSheet が正常にデシリアライズされ、タイトル一覧が返るパス
+    #[test]
+    fn json_with_group_returns_titles() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: グループを含むチートシートと含まないチートシートが混在するファイルを指定
+        // Act
+        let result = get_cheat_titles("./tests/api/test-data-with-group.json");
+
+        // Assert: 2つのタイトルが返ること
+        assert_eq!(
+            result,
+            "{\"title\": [\"ShortcutWithGroup\",\"ShortcutWithoutGroup\"]}"
+        );
+    }
 }
 
 #[cfg(test)]
@@ -890,6 +909,187 @@ mod get_cheat_sheet {
         assert_eq!(
             result,
             "{\"title\":\"SheetWithoutLayout\",\"commandlist\":[{\"command\":\"command3\"},{\"description\":\"コマンド4\",\"command\":\"command4\"}]}"
+        );
+    }
+
+    // ブラックボックス：同値分割 - グループを含むチートシートの取得（有効クラス①）
+    // ホワイトボックス：CommandItem::Group と CommandItem::Single が混在する commandlist が
+    //                   #[serde(untagged)] により正しくデシリアライズ・シリアライズされるパス
+    #[test]
+    fn json_with_group_contains_group_names() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: Single 1つ + Group 2つが混在するチートシートを指定
+        // Act
+        let result = get_cheat_sheet("./tests/api/test-data-with-group.json", "ShortcutWithGroup");
+
+        // Assert: シリアライズされた JSON に "group":"移動" と "group":"編集" が含まれること
+        assert!(
+            result.contains("\"group\":\"移動\""),
+            "グループ名「移動」がシリアライズ結果に含まれること: {}",
+            result
+        );
+        assert!(
+            result.contains("\"group\":\"編集\""),
+            "グループ名「編集」がシリアライズ結果に含まれること: {}",
+            result
+        );
+    }
+
+    // ブラックボックス：同値分割 - グループを含むチートシートの構造検証（有効クラス①詳細）
+    // ホワイトボックス：#[serde(untagged)] による CommandItem::Group/Single の分岐、
+    //                   各グループ内の Vec<Command> が正しくシリアライズされるパス
+    #[test]
+    fn json_with_group_structure_is_correct() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: Single 1つ + Group 2つが混在するチートシートを指定
+        // Act
+        let result = get_cheat_sheet("./tests/api/test-data-with-group.json", "ShortcutWithGroup");
+
+        // Assert: serde_json::Value でパースして構造を検証
+        let parsed: serde_json::Value = serde_json::from_str(&result).expect("JSON パースに失敗");
+
+        let commandlist = parsed["commandlist"]
+            .as_array()
+            .expect("commandlist が配列であること");
+
+        // commandlist の要素数が3であること（Single 1つ + Group 2つ）
+        assert_eq!(
+            commandlist.len(),
+            3,
+            "commandlist の要素数が3であること（Single 1つ + Group 2つ）: {:?}",
+            commandlist
+        );
+
+        // 0番目の要素は command: "x" の Single コマンドであること
+        // ブラックボックス：境界値分析 - 最初の要素（Single）
+        let item0 = &commandlist[0];
+        assert_eq!(
+            item0["command"], "x",
+            "0番目の要素は command: \"x\" の Single コマンドであること: {:?}",
+            item0
+        );
+        assert!(
+            item0.get("group").is_none(),
+            "0番目の要素は Group ではなく Single であること（group フィールドなし）: {:?}",
+            item0
+        );
+
+        // 1番目の要素は group: "移動" で commandlist に "k" と "j" を持つ Group であること
+        // ブラックボックス：同値分割 - Group 要素（2コマンド含む）
+        let item1 = &commandlist[1];
+        assert_eq!(
+            item1["group"], "移動",
+            "1番目の要素の group が「移動」であること: {:?}",
+            item1
+        );
+        let group1_commands = item1["commandlist"]
+            .as_array()
+            .expect("1番目の要素の commandlist が配列であること");
+        assert_eq!(
+            group1_commands.len(),
+            2,
+            "「移動」グループのコマンド数が2であること: {:?}",
+            group1_commands
+        );
+        assert!(
+            group1_commands.iter().any(|c| c["command"] == "k"),
+            "「移動」グループに command: \"k\" が含まれること: {:?}",
+            group1_commands
+        );
+        assert!(
+            group1_commands.iter().any(|c| c["command"] == "j"),
+            "「移動」グループに command: \"j\" が含まれること: {:?}",
+            group1_commands
+        );
+
+        // 2番目の要素は group: "編集" で commandlist に "y", "p", "d" を持つ Group であること
+        // ブラックボックス：同値分割 - Group 要素（3コマンド含む）
+        let item2 = &commandlist[2];
+        assert_eq!(
+            item2["group"], "編集",
+            "2番目の要素の group が「編集」であること: {:?}",
+            item2
+        );
+        let group2_commands = item2["commandlist"]
+            .as_array()
+            .expect("2番目の要素の commandlist が配列であること");
+        assert_eq!(
+            group2_commands.len(),
+            3,
+            "「編集」グループのコマンド数が3であること: {:?}",
+            group2_commands
+        );
+        assert!(
+            group2_commands.iter().any(|c| c["command"] == "y"),
+            "「編集」グループに command: \"y\" が含まれること: {:?}",
+            group2_commands
+        );
+        assert!(
+            group2_commands.iter().any(|c| c["command"] == "p"),
+            "「編集」グループに command: \"p\" が含まれること: {:?}",
+            group2_commands
+        );
+        assert!(
+            group2_commands.iter().any(|c| c["command"] == "d"),
+            "「編集」グループに command: \"d\" が含まれること: {:?}",
+            group2_commands
+        );
+    }
+
+    // ブラックボックス：同値分割 - グループなしのチートシートの取得（後方互換性）（有効クラス②）
+    // ホワイトボックス：commandlist の全要素が CommandItem::Single にデシリアライズされるパス
+    //                   （CommandItem::Group のブランチを通らず、全て Single として処理されること）
+    #[test]
+    fn json_without_group_is_parsed_correctly() {
+        let app = mock_app();
+        let _ = reload_cheat_sheet(app.handle().clone());
+
+        // Arrange: グループを含まない（全て Single コマンド）チートシートを指定
+        // Act
+        let result = get_cheat_sheet(
+            "./tests/api/test-data-with-group.json",
+            "ShortcutWithoutGroup",
+        );
+
+        // Assert: serde_json::Value でパースして構造を検証
+        let parsed: serde_json::Value = serde_json::from_str(&result).expect("JSON パースに失敗");
+
+        // commandlist の要素数が2であること
+        let commandlist = parsed["commandlist"]
+            .as_array()
+            .expect("commandlist が配列であること");
+        assert_eq!(
+            commandlist.len(),
+            2,
+            "グループなしの commandlist の要素数が2であること: {:?}",
+            commandlist
+        );
+
+        // 全要素が Group ではなく Single であること（group フィールドが存在しない）
+        for (i, item) in commandlist.iter().enumerate() {
+            assert!(
+                item.get("group").is_none(),
+                "{}番目の要素は Group ではなく Single であること（group フィールドなし）: {:?}",
+                i,
+                item
+            );
+        }
+
+        // 各コマンドの値が正しいこと
+        // ブラックボックス：境界値分析 - 境界要素（先頭・末尾）の確認
+        assert!(
+            commandlist.iter().any(|c| c["command"] == ":w"),
+            "command: \":w\" が含まれること: {:?}",
+            commandlist
+        );
+        assert!(
+            commandlist.iter().any(|c| c["command"] == ":q"),
+            "command: \":q\" が含まれること: {:?}",
+            commandlist
         );
     }
 }

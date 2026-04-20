@@ -11,15 +11,26 @@ export type CheatSheetTitleData = {
 
 export type CommandLayout = 'inline' | 'stacked' | 'command_only'
 
-export type CheatSheetData = {
-  type?: 'command' | 'shortcut' | 'application'
-  title: string
-  layout?: CommandLayout
-  commandlist: CommandData[]
-}
-
 export type CommandData = {
   description?: string
   command: string
   layout?: CommandLayout
+}
+
+export type CommandGroupData = {
+  group: string
+  commandlist: CommandData[]
+}
+
+export type CommandListItem = CommandData | CommandGroupData
+
+export const isCommandGroupData = (
+  item: CommandListItem,
+): item is CommandGroupData => 'group' in item
+
+export type CheatSheetData = {
+  type?: 'command' | 'shortcut' | 'application'
+  title: string
+  layout?: CommandLayout
+  commandlist: CommandListItem[]
 }
