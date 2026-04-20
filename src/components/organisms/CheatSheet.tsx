@@ -29,6 +29,7 @@ import {
   CheatSheetAPI,
   CheatSheetData,
   CheatSheetTitleData,
+  CommandData,
   CommandListItem,
   isCommandGroupData,
 } from '@/types/api/CheatSheet'
