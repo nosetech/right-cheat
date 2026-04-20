@@ -1,0 +1,35 @@
+[
+  {
+    "type": "shortcut",
+    "title": "ShortcutWithGroup",
+    "commandlist": [
+      {
+        "description": "通常ショートカット",
+        "command": "x"
+      },
+      {
+        "group": "移動",
+        "commandlist": [
+          { "description": "上へ移動", "command": "k" },
+          { "description": "下へ移動", "command": "j" }
+        ]
+      },
+      {
+        "group": "編集",
+        "commandlist": [
+          { "description": "コピー", "command": "y" },
+          { "description": "ペースト", "command": "p" },
+          { "description": "削除", "command": "d" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "shortcut",
+    "title": "ShortcutWithoutGroup",
+    "commandlist": [
+      { "description": "保存", "command": ":w" },
+      { "description": "終了", "command": ":q" }
+    ]
+  }
+]

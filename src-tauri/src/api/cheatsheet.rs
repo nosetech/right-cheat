@@ -53,18 +53,41 @@ pub struct CheatSheet {
     window_size: Option<WindowSize>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     layout: Option<String>,
-    commandlist: Vec<Command>,
+    commandlist: Vec<CommandItem>,
 }
 impl fmt::Display for CheatSheet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "title = {}, commandlist = ", self.title)?;
-        for command in self.commandlist.iter() {
+        for item in self.commandlist.iter() {
             write!(f, "(")?;
-            command.fmt(f)?;
+            item.fmt(f)?;
             write!(f, "),")?;
         }
         write!(f, "")
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CommandItem {
+    // Group を Single より先に定義する: untagged enum は上から順にマッチを試みるため、
+    // Single が先だと `group` フィールドを持つオブジェクトが Command としてパースされ失敗する
+    Group(CommandGroup),
+    Single(Command),
+}
+impl fmt::Display for CommandItem {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CommandItem::Group(g) => write!(f, "group = {}", g.group),
+            CommandItem::Single(c) => c.fmt(f),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CommandGroup {
+    pub group: String,
+    pub commandlist: Vec<Command>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

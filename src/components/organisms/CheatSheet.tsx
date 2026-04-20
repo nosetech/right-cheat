@@ -20,6 +20,7 @@ import { debug } from '@tauri-apps/plugin-log'
 import { Event } from '@/common'
 import { CommandField } from '@/components/molecules/CommandField'
 import { ShortcutField } from '@/components/molecules/ShortcutField'
+import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
@@ -28,7 +29,8 @@ import {
   CheatSheetAPI,
   CheatSheetData,
   CheatSheetTitleData,
-  CommandData,
+  CommandListItem,
+  isCommandGroupData,
 } from '@/types/api/CheatSheet'
 
 export const CheatSheet = () => {
@@ -282,33 +284,56 @@ export const CheatSheet = () => {
           />
           {cheatSheetData?.type === 'shortcut' ? (
             <Grid container spacing={1} p={1} width='100%'>
-              {cheatSheetData?.commandlist.map((item: CommandData, index) => (
-                <Grid key={index} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-                  <ShortcutField
-                    m={0.5}
-                    description={item.description ?? ''}
-                    command={item.command}
-                  />
-                </Grid>
-              ))}
+              {cheatSheetData?.commandlist.map(
+                (item: CommandListItem, index) => {
+                  if (isCommandGroupData(item)) {
+                    return (
+                      <Grid key={index} size={{ xs: 12 }}>
+                        <ShortcutGroup
+                          group={item.group}
+                          commandlist={item.commandlist}
+                        />
+                      </Grid>
+                    )
+                  }
+                  return (
+                    <Grid key={index} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
+                      <ShortcutField
+                        m={0.5}
+                        description={item.description ?? ''}
+                        command={item.command}
+                      />
+                    </Grid>
+                  )
+                },
+              )}
             </Grid>
           ) : (
             <Stack paddingY={1} spacing={1} width='100%'>
-              {cheatSheetData?.commandlist.map((item: CommandData, index) => (
-                <CommandField
-                  key={index}
-                  ref={(el) => {
-                    commandFieldRefs.current[index] = el
-                  }}
-                  description={item.description}
-                  command={item.command}
-                  numberHint={index < 9 ? (index + 1).toString() : undefined}
-                  mode={
-                    cheatSheetData.type === 'application' ? 'execute' : 'copy'
-                  }
-                  layout={item.layout ?? cheatSheetData.layout ?? 'inline'}
-                />
-              ))}
+              {cheatSheetData?.commandlist.map(
+                (item: CommandListItem, index) => {
+                  if (isCommandGroupData(item)) return null
+                  return (
+                    <CommandField
+                      key={index}
+                      ref={(el) => {
+                        commandFieldRefs.current[index] = el
+                      }}
+                      description={item.description}
+                      command={item.command}
+                      numberHint={
+                        index < 9 ? (index + 1).toString() : undefined
+                      }
+                      mode={
+                        cheatSheetData.type === 'application'
+                          ? 'execute'
+                          : 'copy'
+                      }
+                      layout={item.layout ?? cheatSheetData.layout ?? 'inline'}
+                    />
+                  )
+                },
+              )}
             </Stack>
           )}
         </>
