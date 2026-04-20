@@ -70,6 +70,8 @@ impl fmt::Display for CheatSheet {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum CommandItem {
+    // Group を Single より先に定義する: untagged enum は上から順にマッチを試みるため、
+    // Single が先だと `group` フィールドを持つオブジェクトが Command としてパースされ失敗する
     Group(CommandGroup),
     Single(Command),
 }
