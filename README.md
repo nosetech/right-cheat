@@ -134,6 +134,44 @@ RightCheatを完全に削除するには、以下の手順を行います：
 | `shortcut`                | ショートカットキーの一覧表示（グリッド表示、コピー非対応）        |
 | `application`             | クリックまたはEnterキーでコマンドを実行してアプリケーションを起動 |
 
+### ショートカットのグループ表示
+
+`shortcut` タイプのチートシートでは、`commandlist` 内に `group` オブジェクトを追加することで、関連するショートカットをグループ化して表示できます。グループと通常ショートカットは混在可能です。
+
+```json
+[
+  {
+    "title": "vim",
+    "type": "shortcut",
+    "commandlist": [
+      {
+        "description": "保存",
+        "command": ":w"
+      },
+      {
+        "group": "移動",
+        "commandlist": [
+          { "description": "上へ移動", "command": "k" },
+          { "description": "下へ移動", "command": "j" },
+          { "description": "左へ移動", "command": "h" },
+          { "description": "右へ移動", "command": "l" }
+        ]
+      },
+      {
+        "group": "編集",
+        "commandlist": [
+          { "description": "コピー（行）", "command": "yy" },
+          { "description": "ペースト", "command": "p" },
+          { "description": "削除（行）", "command": "dd" }
+        ]
+      }
+    ]
+  }
+]
+```
+
+グループは角丸のボーダーボックスで囲まれ、グループ名がボーダー上部に表示されます。グループのネストはサポートしていません。
+
 ### コマンドの表示レイアウト
 
 `command` / `application` タイプのチートシートでは、`layout` フィールドでコマンドの表示レイアウトを変更できます。
