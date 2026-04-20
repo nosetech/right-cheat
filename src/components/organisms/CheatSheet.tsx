@@ -29,7 +29,6 @@ import {
   CheatSheetAPI,
   CheatSheetData,
   CheatSheetTitleData,
-  CommandData,
   CommandListItem,
   isCommandGroupData,
 } from '@/types/api/CheatSheet'
@@ -311,21 +310,30 @@ export const CheatSheet = () => {
             </Grid>
           ) : (
             <Stack paddingY={1} spacing={1} width='100%'>
-              {cheatSheetData?.commandlist.map((item: CommandData, index) => (
-                <CommandField
-                  key={index}
-                  ref={(el) => {
-                    commandFieldRefs.current[index] = el
-                  }}
-                  description={item.description}
-                  command={item.command}
-                  numberHint={index < 9 ? (index + 1).toString() : undefined}
-                  mode={
-                    cheatSheetData.type === 'application' ? 'execute' : 'copy'
-                  }
-                  layout={item.layout ?? cheatSheetData.layout ?? 'inline'}
-                />
-              ))}
+              {cheatSheetData?.commandlist.map(
+                (item: CommandListItem, index) => {
+                  if (isCommandGroupData(item)) return null
+                  return (
+                    <CommandField
+                      key={index}
+                      ref={(el) => {
+                        commandFieldRefs.current[index] = el
+                      }}
+                      description={item.description}
+                      command={item.command}
+                      numberHint={
+                        index < 9 ? (index + 1).toString() : undefined
+                      }
+                      mode={
+                        cheatSheetData.type === 'application'
+                          ? 'execute'
+                          : 'copy'
+                      }
+                      layout={item.layout ?? cheatSheetData.layout ?? 'inline'}
+                    />
+                  )
+                },
+              )}
             </Stack>
           )}
         </>
