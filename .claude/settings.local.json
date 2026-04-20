@@ -19,7 +19,8 @@
       "WebFetch(domain:docs.rs)",
       "mcp__inkdrop__search-notes",
       "mcp__inkdrop__read-note",
-      "Bash(yarn fix:prettier:*)"
+      "Bash(yarn fix:prettier:*)",
+      "Bash(git checkout *)"
     ],
     "deny": [],
     "ask": []
