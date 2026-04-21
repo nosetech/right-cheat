@@ -109,7 +109,7 @@ const getBaseThemeOptions = (fontScale: number = 1.0) => ({
 const getLightPalette = () => ({
   mode: 'light' as const,
   primary: {
-    main: blue[300],
+    main: blue[200],
   },
   secondary: {
     main: pink[300],
@@ -142,7 +142,7 @@ const getLightPalette = () => ({
     bright: '#f5f5f5',
   },
   switch: {
-    checked: blue[500],
+    checked: blue[200],
     unchecked: grey[400],
     track: grey[300],
     trackBackground: 'rgba(0, 0, 0, 0.2)',
