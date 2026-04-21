@@ -68,8 +68,9 @@ export const CheatSheet = () => {
   })
 
   useEffect(() => {
+    let unlisten: (() => void) | undefined
     ;(async () => {
-      await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
+      unlisten = await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
         ;(async () => {
           const inputpath = await getCheatSheetFilePath()
           if (inputpath) {
@@ -95,6 +96,10 @@ export const CheatSheet = () => {
         await loadCheatSheetTitles(inputpath)
       }
     })()
+
+    return () => {
+      unlisten?.()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadCheatSheetTitles])
 
