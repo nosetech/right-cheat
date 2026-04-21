@@ -134,9 +134,13 @@ RightCheatを完全に削除するには、以下の手順を行います：
 | `shortcut`                | ショートカットキーの一覧表示（グリッド表示、コピー非対応）        |
 | `application`             | クリックまたはEnterキーでコマンドを実行してアプリケーションを起動 |
 
-### ショートカットのグループ表示
+### グループ表示
 
-`shortcut` タイプのチートシートでは、`commandlist` 内に `group` オブジェクトを追加することで、関連するショートカットをグループ化して表示できます。グループと通常ショートカットは混在可能です。
+すべてのタイプ（`command` / `shortcut` / `application`）のチートシートで、`commandlist` 内に `group` オブジェクトを追加することで、関連するコマンドやショートカットをグループ化して表示できます。グループと通常コマンドは混在可能です。
+
+グループは角丸のボーダーボックスで囲まれ、グループ名がボーダー上部に表示されます。グループのネストはサポートしていません。
+
+**`shortcut` タイプの例：**
 
 ```json
 [
@@ -156,21 +160,44 @@ RightCheatを完全に削除するには、以下の手順を行います：
           { "description": "左へ移動", "command": "h" },
           { "description": "右へ移動", "command": "l" }
         ]
-      },
-      {
-        "group": "編集",
-        "commandlist": [
-          { "description": "コピー（行）", "command": "yy" },
-          { "description": "ペースト", "command": "p" },
-          { "description": "削除（行）", "command": "dd" }
-        ]
       }
     ]
   }
 ]
 ```
 
-グループは角丸のボーダーボックスで囲まれ、グループ名がボーダー上部に表示されます。グループのネストはサポートしていません。
+**`command` タイプの例：**
+
+グループ内のコマンドにも数字キー（1〜9）が連続して割り当てられます。
+
+```json
+[
+  {
+    "title": "git",
+    "type": "command",
+    "commandlist": [
+      {
+        "description": "状態確認",
+        "command": "git status"
+      },
+      {
+        "group": "コミット",
+        "commandlist": [
+          { "description": "ステージング", "command": "git add ." },
+          { "description": "コミット", "command": "git commit -m 'message'" }
+        ]
+      },
+      {
+        "group": "リモート",
+        "commandlist": [
+          { "description": "プッシュ", "command": "git push" },
+          { "description": "プル", "command": "git pull" }
+        ]
+      }
+    ]
+  }
+]
+```
 
 ### コマンドの表示レイアウト
 
