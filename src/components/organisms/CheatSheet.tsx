@@ -340,15 +340,17 @@ export const CheatSheet = () => {
                     cheatSheetData.type === 'application' ? 'execute' : 'copy'
                   if (isCommandGroupData(item)) {
                     return (
-                      <CommandFieldGroup
-                        key={index}
-                        group={item.group}
-                        commandlist={item.commandlist}
-                        startIndex={flatIndex}
-                        mode={mode}
-                        cheatSheetLayout={cheatSheetData.layout}
-                        commandFieldRefs={commandFieldRefs}
-                      />
+                      <Box key={index} pt={1}>
+                        <CommandFieldGroup
+                          key={index}
+                          group={item.group}
+                          commandlist={item.commandlist}
+                          startIndex={flatIndex}
+                          mode={mode}
+                          cheatSheetLayout={cheatSheetData.layout}
+                          commandFieldRefs={commandFieldRefs}
+                        />
+                      </Box>
                     )
                   }
                   return (
