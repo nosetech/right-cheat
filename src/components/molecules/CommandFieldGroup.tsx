@@ -53,7 +53,7 @@ export const CommandFieldGroup = ({
       >
         {group}
       </Typography>
-      <Stack spacing={1}>
+      <Stack spacing={1} sx={{ minWidth: 0, overflow: 'hidden' }}>
         {commandlist.map((item, i) => {
           const flatIndex = startIndex + i
           return (

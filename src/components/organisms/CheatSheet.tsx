@@ -68,6 +68,7 @@ export const CheatSheet = () => {
   })
 
   useEffect(() => {
+    let cancelled = false
     let unlisten: (() => void) | undefined
     ;(async () => {
       unlisten = await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
@@ -81,6 +82,12 @@ export const CheatSheet = () => {
           }
         })()
       })
+      // cleanup が先に実行された場合は即座に解除
+      if (cancelled) {
+        unlisten()
+        unlisten = undefined
+        return
+      }
 
       await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
         (response) => {
@@ -98,6 +105,7 @@ export const CheatSheet = () => {
     })()
 
     return () => {
+      cancelled = true
       unlisten?.()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
