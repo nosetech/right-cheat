@@ -26,6 +26,7 @@ export default function Home() {
   const { showError } = useNotificationContext() ?? {}
 
   useEffect(() => {
+    let cancelled = false
     let unlistenToggle: (() => void) | null = null
     let unlistenFocused: (() => void) | null = null
 
@@ -34,18 +35,27 @@ export default function Home() {
       try {
         const window = getCurrentWindow()
         const visibleOnAllWorkspaces = await getVisibleOnAllWorkspacesSettings()
+        if (cancelled) return
         await window.setVisibleOnAllWorkspaces(visibleOnAllWorkspaces)
       } catch (err) {
+        if (cancelled) return
         const errorMessage = err instanceof Error ? err.message : String(err)
         error(`[page] Failed to set visible on all workspaces: ${errorMessage}`)
         showError?.('全ワークスペース表示設定の初期化に失敗しました')
       }
 
+      if (cancelled) return
       unlistenToggle = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
         ;(async () => {
           await changeWindowVisible()
         })()
       })
+      // cleanup が先に実行された場合は即座に解除
+      if (cancelled) {
+        unlistenToggle()
+        unlistenToggle = null
+        return
+      }
 
       // Command+Tab などでアプリがアクティブになった際、WKWebView が
       // キーボードの first responder を取得できない場合がある。
@@ -66,11 +76,16 @@ export default function Home() {
           focused.focus()
         }
       })
+      if (cancelled) {
+        unlistenFocused()
+        unlistenFocused = null
+      }
     }
 
     setupListener()
 
     return () => {
+      cancelled = true
       if (unlistenToggle) {
         unlistenToggle()
       }
