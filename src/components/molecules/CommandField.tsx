@@ -124,6 +124,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           ref,
           maxWidth: '100%',
           width: 'fit-content',
+          minWidth: 0,
           tabIndex: tabIndex ?? 0,
           padding: 0.5,
           sx: colorScheme(),
