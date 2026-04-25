@@ -24,7 +24,7 @@ Mac Tahoe 26.0.1 (ARM)
 
 ### 新規インストール
 
-1. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/1.2.0/RightCheat_1.2.0_aarch64.dmg)します
+1. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/1.3.0/RightCheat_1.3.0_aarch64.dmg)します
 2. ダウンロードしたファイルを実行し、インストールします
 
 ### アップグレード（既存バージョンがある場合）
@@ -33,7 +33,7 @@ Mac Tahoe 26.0.1 (ARM)
 
 1. RightCheat を終了します
 2. `/Applications/RightCheat.app` を削除します（Finder でゴミ箱に移動）
-3. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/1.2.0/RightCheat_1.2.0_aarch64.dmg)します
+3. [dmgファイルをダウンロード](https://github.com/nosetech/right-cheat/releases/download/1.3.0/RightCheat_1.3.0_aarch64.dmg)します
 4. ターミナルを開き、以下のコマンドを実行してクォーランティン属性を削除します
 
 ```bash
@@ -133,6 +133,112 @@ RightCheatを完全に削除するには、以下の手順を行います：
 | `command`（省略時も同様） | クリックまたはEnterキーでコマンドをクリップボードにコピー         |
 | `shortcut`                | ショートカットキーの一覧表示（グリッド表示、コピー非対応）        |
 | `application`             | クリックまたはEnterキーでコマンドを実行してアプリケーションを起動 |
+
+### グループ表示
+
+すべてのタイプ（`command` / `shortcut` / `application`）のチートシートで、`commandlist` 内に `group` オブジェクトを追加することで、関連するコマンドやショートカットをグループ化して表示できます。グループと通常コマンドは混在可能です。
+
+グループは角丸のボーダーボックスで囲まれ、グループ名がボーダー上部に表示されます。グループのネストはサポートしていません。
+
+**`shortcut` タイプの例：**
+
+```json
+[
+  {
+    "title": "vim",
+    "type": "shortcut",
+    "commandlist": [
+      {
+        "description": "保存",
+        "command": ":w"
+      },
+      {
+        "group": "移動",
+        "commandlist": [
+          { "description": "上へ移動", "command": "k" },
+          { "description": "下へ移動", "command": "j" },
+          { "description": "左へ移動", "command": "h" },
+          { "description": "右へ移動", "command": "l" }
+        ]
+      }
+    ]
+  }
+]
+```
+
+**`command` タイプの例：**
+
+グループ内のコマンドにも数字キー（1〜9）が連続して割り当てられます。
+
+```json
+[
+  {
+    "title": "git",
+    "type": "command",
+    "commandlist": [
+      {
+        "description": "状態確認",
+        "command": "git status"
+      },
+      {
+        "group": "コミット",
+        "commandlist": [
+          { "description": "ステージング", "command": "git add ." },
+          { "description": "コミット", "command": "git commit -m 'message'" }
+        ]
+      },
+      {
+        "group": "リモート",
+        "commandlist": [
+          { "description": "プッシュ", "command": "git push" },
+          { "description": "プル", "command": "git pull" }
+        ]
+      }
+    ]
+  }
+]
+```
+
+### コマンドの表示レイアウト
+
+`command` / `application` タイプのチートシートでは、`layout` フィールドでコマンドの表示レイアウトを変更できます。
+
+| layout                   | 表示                                             |
+| ------------------------ | ------------------------------------------------ |
+| `inline`（省略時も同様） | `番号　コマンド　説明` を1行で表示（デフォルト） |
+| `stacked`                | 1行目に `番号　説明`、2行目に `コマンド` を表示  |
+| `command_only`           | `番号　コマンド` のみ表示（説明を非表示）        |
+
+`layout` はチートシート全体のデフォルトとして指定するか、コマンド単位で指定することができます。コマンド単位の指定はチートシート全体の設定よりも優先されます。
+
+```json
+[
+  {
+    "title": "レイアウト指定の例",
+    "type": "command",
+    "layout": "stacked",
+    "commandlist": [
+      {
+        "description": "チートシート全体のlayoutに従いstackedで表示",
+        "command": "command1"
+      },
+      {
+        "description": "コマンド単位の指定が優先されinlineで表示",
+        "command": "command2",
+        "layout": "inline"
+      },
+      {
+        "command": "command3",
+        "layout": "command_only"
+      }
+    ]
+  }
+]
+```
+
+> [!NOTE] > `command_only` レイアウトを使用する場合、`description` フィールドは省略できます。
+>
+> `stacked` レイアウトで `description` が省略された場合は、`inline` と同様の1行表示になります。
 
 チートシート JSON ファイルのサンプル
 
