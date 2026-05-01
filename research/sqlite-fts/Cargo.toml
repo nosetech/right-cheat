@@ -1,0 +1,14 @@
+[package]
+name = "sqlite-fts-research"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# RightCheat 本体には含めない検証用クレート。
+# SQLite FTS5 + trigram tokenizer で日本語全文検索を行う際の挙動を確認する。
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+rusqlite = { version = "0.32", features = ["bundled"] }
