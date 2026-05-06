@@ -11,7 +11,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='ja'>
-      <body>
+      <body style={{ paddingTop: '28px' }}>
         <ThemeProviderWrapper>
           <CssBaseline />
           <NotificationProvider>{children}</NotificationProvider>

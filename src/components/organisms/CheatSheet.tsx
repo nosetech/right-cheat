@@ -246,6 +246,17 @@ export const CheatSheet = () => {
 
   return (
     <Stack padding={1} sx={{ position: 'relative' }}>
+      <Box
+        data-tauri-drag-region
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '28px',
+          zIndex: 1000,
+        }}
+      />
       {jsonInputPath == undefined ? (
         <Alert severity='error'>
           入力ファイルのパスが指定されていません。
