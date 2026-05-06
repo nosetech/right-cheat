@@ -12,6 +12,7 @@ import {
 import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { debug } from '@tauri-apps/plugin-log'
 
 export type SheetSwitchButtonHandle = {
   open: () => void
@@ -59,6 +60,18 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
       setTimeout(() => inputRef.current?.focus(), 0)
     }, [open])
 
+    // ドロップダウンを閉じた後に WKWebView の first responder を復元する。
+    // input がアンマウントされると WKWebView がキーボードの first responder を失うため、
+    // setFocus() でウィンドウをキーウィンドウに戻し、トリガーボタンを focus() する。
+    const restoreFocusAfterClose = useCallback(() => {
+      setTimeout(async () => {
+        debug('[SheetSwitchButton] first responder をトリガーボタンに復元')
+        await getCurrentWindow().setFocus()
+        const btn = containerRef.current?.querySelector<HTMLElement>('button')
+        btn?.focus()
+      }, 0)
+    }, [])
+
     useEffect(() => {
       if (!open) return
       const handler = (e: MouseEvent) => {
@@ -67,24 +80,18 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
           !containerRef.current.contains(e.target as Node)
         ) {
           setOpen(false)
+          // 外側クリックでは自然なフォーカス遷移が起きるが、余白クリック等で
+          // クリック先がフォーカス可能要素でない場合は WKWebView が first responder
+          // を失ったままになるため、ここでも復元を行う。
+          restoreFocusAfterClose()
         }
       }
       document.addEventListener('mousedown', handler)
       return () => document.removeEventListener('mousedown', handler)
-    }, [open])
-
-    // ドロップダウンを閉じた後に WKWebView の first responder を復元する。
-    // input がアンマウントされると WKWebView がキーボードの first responder を失うため、
-    // setFocus() でウィンドウをキーウィンドウに戻し、トリガーボタンを focus() する。
-    const restoreFocusAfterClose = useCallback(() => {
-      setTimeout(async () => {
-        await getCurrentWindow().setFocus()
-        const btn = containerRef.current?.querySelector<HTMLElement>('button')
-        btn?.focus()
-      }, 0)
-    }, [])
+    }, [open, restoreFocusAfterClose])
 
     const commit = (sheet: string) => {
+      debug(`[SheetSwitchButton] シート選択: "${sheet}"`)
       onSelect(sheet)
       setOpen(false)
       setQuery('')
@@ -117,6 +124,8 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
           component='button'
           onClick={() => setOpen((o) => !o)}
           title='チートシートを切替'
+          aria-haspopup='listbox'
+          aria-expanded={open}
           sx={{
             background: open
               ? isDark

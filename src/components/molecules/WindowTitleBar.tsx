@@ -11,6 +11,9 @@ type Props = {
   rightControls?: ReactNode
 }
 
+// このコンポーネント自体はドラッグ機能を持たない（pointerEvents: 'none'）。
+// ドラッグ領域は呼び出し側が data-tauri-drag-region を持つ透明な Box を
+// 同じ位置・高さ（TITLEBAR_HEIGHT）で別途配置する必要がある。
 export const WindowTitleBar = ({ title, rightControls }: Props) => {
   const theme = useTheme()
 

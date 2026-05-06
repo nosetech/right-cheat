@@ -156,7 +156,8 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           alignItems: 'flex-start',
           gap: 1,
           outline: 'none',
-          width: '100%',
+          flex: 1,
+          minWidth: 0,
         }}
         onClick={handleAction}
         onFocus={() => setIsFocused(true)}

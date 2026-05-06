@@ -164,6 +164,8 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[preferences]` - `src/app/preferences/page.tsx`
 - `[CheatSheet]` - `src/components/organisms/CheatSheet.tsx`
 - `[CommandField]` - `src/components/molecules/CommandField.tsx`
+- `[SheetSwitchButton]` - `src/components/molecules/SheetSwitchButton.tsx`
+- `[WindowTitleBar]` - `src/components/molecules/WindowTitleBar.tsx`
 - `[useCheatSheetLoader]` - `src/hooks/useCheatSheetLoader.ts`
 - `[useThemeStore]` - `src/hooks/useThemeStore.ts`
 - `[useFontSize]` - `src/hooks/useFontSize.ts`
