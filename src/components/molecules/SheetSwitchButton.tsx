@@ -1,6 +1,7 @@
 'use client'
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -30,6 +31,11 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
     const [activeIdx, setActiveIdx] = useState(0)
     const containerRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+    const activeItemRef = useRef<HTMLDivElement>(null)
+
+    const scrollActiveIntoView = useCallback(() => {
+      activeItemRef.current?.scrollIntoView({ block: 'nearest' })
+    }, [])
 
     useImperativeHandle(ref, () => ({ open: () => setOpen(true) }))
 
@@ -41,6 +47,10 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
     useEffect(() => {
       setActiveIdx(0)
     }, [query])
+
+    useEffect(() => {
+      scrollActiveIntoView()
+    }, [activeIdx, scrollActiveIntoView])
 
     useEffect(() => {
       if (!open) return
@@ -248,6 +258,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
             </Box>
 
             <Box
+              role='listbox'
               sx={{
                 maxHeight: '200px',
                 overflowY: 'auto',
@@ -269,6 +280,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                 filtered.map((title, i) => (
                   <SheetDropdownItem
                     key={title}
+                    ref={i === activeIdx ? activeItemRef : undefined}
                     label={title}
                     selected={title === selected}
                     active={i === activeIdx}
@@ -303,60 +315,68 @@ type DropdownItemProps = {
   onClick: () => void
 }
 
-function SheetDropdownItem({
-  label,
-  selected,
-  active,
-  query,
-  isDark,
-  textPrimary,
-  accentColor,
-  onMouseEnter,
-  onClick,
-}: DropdownItemProps) {
-  return (
-    <Box
-      onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      sx={{
-        padding: '7px 12px',
-        cursor: 'pointer',
-        fontSize: '13px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        color: selected ? accentColor : textPrimary,
-        background: active
-          ? isDark
-            ? 'rgba(255,255,255,0.08)'
-            : 'rgba(0,0,0,0.05)'
-          : 'none',
-        transition: 'background 0.08s',
-      }}
-    >
+const SheetDropdownItem = forwardRef<HTMLDivElement, DropdownItemProps>(
+  function SheetDropdownItem(
+    {
+      label,
+      selected,
+      active,
+      query,
+      isDark,
+      textPrimary,
+      accentColor,
+      onMouseEnter,
+      onClick,
+    },
+    ref,
+  ) {
+    return (
       <Box
+        ref={ref}
+        role='option'
+        aria-selected={selected}
+        onClick={onClick}
+        onMouseEnter={onMouseEnter}
         sx={{
-          width: '12px',
-          flexShrink: 0,
-          color: accentColor,
-          opacity: selected ? 1 : 0,
+          padding: '7px 12px',
+          cursor: 'pointer',
+          fontSize: '13px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          color: selected ? accentColor : textPrimary,
+          background: active
+            ? isDark
+              ? 'rgba(255,255,255,0.08)'
+              : 'rgba(0,0,0,0.05)'
+            : 'none',
+          transition: 'background 0.08s',
         }}
       >
-        <svg
-          width='11'
-          height='11'
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2.8'
+        <Box
+          sx={{
+            width: '12px',
+            flexShrink: 0,
+            color: accentColor,
+            opacity: selected ? 1 : 0,
+          }}
         >
-          <polyline points='20 6 9 17 4 12' />
-        </svg>
+          <svg
+            width='11'
+            height='11'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2.8'
+          >
+            <polyline points='20 6 9 17 4 12' />
+          </svg>
+        </Box>
+        <HighlightMatch text={label} query={query} isDark={isDark} />
       </Box>
-      <HighlightMatch text={label} query={query} isDark={isDark} />
-    </Box>
-  )
-}
+    )
+  },
+)
 
 function HighlightMatch({
   text,

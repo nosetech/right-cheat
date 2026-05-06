@@ -31,7 +31,6 @@
     "core:event:default",
     "core:event:allow-listen",
     "log:default",
-    "log:default",
     {
       "identifier": "shell:allow-execute",
       "allow": [

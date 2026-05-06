@@ -4,7 +4,7 @@ import { ReactNode } from 'react'
 import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
-import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { TITLEBAR_HEIGHT, TRAFFIC_LIGHTS_WIDTH } from '@/constants/layout'
 
 type Props = {
   title?: string
@@ -41,14 +41,14 @@ export const WindowTitleBar = ({ title, rightControls }: Props) => {
       }}
     >
       {/* traffic lights 分のスペーサー */}
-      <Box sx={{ width: '72px', flexShrink: 0 }} />
+      <Box sx={{ width: `${TRAFFIC_LIGHTS_WIDTH}px`, flexShrink: 0 }} />
 
       {title && (
         <Box
           sx={{
             position: 'absolute',
-            left: 72,
-            right: rightControls ? 72 : 16,
+            left: TRAFFIC_LIGHTS_WIDTH,
+            right: rightControls ? TRAFFIC_LIGHTS_WIDTH : 16,
             textAlign: 'center',
             pointerEvents: 'none',
           }}

@@ -283,7 +283,7 @@ export default function Page() {
       />
       <WindowTitleBar title='Preferences' />
       <Stack padding={1} spacing={1}>
-        <Typography variant='body1'>CheetSheet Json File</Typography>
+        <Typography variant='body1'>CheatSheet Json File</Typography>
         <Stack direction='row' padding={1} spacing={1}>
           <FileOpenButton callback={fileOpenCallback} size='small' />
           <Box

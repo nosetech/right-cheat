@@ -185,7 +185,7 @@ export const lightTheme: Theme = createTheme({
   palette: getLightPalette(),
   typography: {
     ...baseThemeOptions.typography,
-    body2: { fontSize: 15, color: grey[300] },
+    body2: { ...baseThemeOptions.typography.body2, color: grey[300] },
   },
   components: lightComponents,
 })
@@ -195,7 +195,7 @@ export const darkTheme: Theme = createTheme({
   palette: getDarkPalette(),
   typography: {
     ...baseThemeOptions.typography,
-    body2: { fontSize: 15, color: grey[600] },
+    body2: { ...baseThemeOptions.typography.body2, color: grey[600] },
   },
   components: darkComponents,
 })
