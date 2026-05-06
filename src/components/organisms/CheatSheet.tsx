@@ -22,6 +22,7 @@ import { CommandField } from '@/components/molecules/CommandField'
 import { CommandFieldGroup } from '@/components/molecules/CommandFieldGroup'
 import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
+import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
@@ -253,7 +254,7 @@ export const CheatSheet = () => {
           top: 0,
           left: 0,
           right: 0,
-          height: '28px',
+          height: `${TITLEBAR_HEIGHT}px`,
           zIndex: 1000,
         }}
       />

@@ -9,6 +9,7 @@ import {
   ThemeToggle,
 } from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
+import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
@@ -275,7 +276,7 @@ export default function Page() {
           top: 0,
           left: 0,
           right: 0,
-          height: '28px',
+          height: `${TITLEBAR_HEIGHT}px`,
           zIndex: 1000,
         }}
       />
