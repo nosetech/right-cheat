@@ -1,8 +1,8 @@
 'use client'
-import { TruncatedText } from '@/components/atoms/TruncatedText'
-import { CommandDisplay } from '@/components/molecules/CommandDisplay'
-import { Stack, StackProps } from '@mui/material'
+import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
+
+import { TruncatedText } from '@/components/atoms/TruncatedText'
 
 export type ShortcutFieldProps = StackProps & {
   description: string
@@ -11,27 +11,42 @@ export type ShortcutFieldProps = StackProps & {
 
 export const ShortcutField = (props: ShortcutFieldProps) => {
   const { description, command, ...remainProps } = props
-
   const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
 
   return (
-    <Stack direction='row' spacing={1} alignItems='baseline' {...remainProps}>
-      <CommandDisplay
-        command={command}
-        boxProps={{
-          maxWidth: '100%',
-          width: 'fit-content',
+    <Stack direction='row' spacing={1} alignItems='center' {...remainProps}>
+      <Box
+        sx={{
+          flexShrink: 0,
+          background: isDark
+            ? 'rgba(255,255,255,0.055)'
+            : 'rgba(255,255,255,0.48)',
+          border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          borderRadius: 1,
           px: 1,
-          py: 0.5,
-          sx: {
-            border: 2,
-            borderColor: theme.palette.base.pale,
-            backgroundColor: theme.palette.primary.main,
+          py: '3px',
+        }}
+      >
+        <Typography
+          sx={{
+            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+            fontSize: '11.5px',
             color: theme.palette.text.primary,
-          },
+            whiteSpace: 'nowrap',
+            lineHeight: 1.55,
+          }}
+        >
+          {command}
+        </Typography>
+      </Box>
+      <TruncatedText
+        text={description}
+        sx={{
+          fontSize: '11px',
+          color: theme.palette.text.secondary,
         }}
       />
-      <TruncatedText text={description} color='text.secondary' />
     </Stack>
   )
 }

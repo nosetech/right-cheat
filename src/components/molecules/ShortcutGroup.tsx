@@ -30,7 +30,7 @@ export const ShortcutGroup = ({ group, commandlist }: ShortcutGroupProps) => {
         variant='caption'
         sx={{
           position: 'absolute',
-          top: -10,
+          top: -6,
           left: 8,
           px: 0.5,
           backgroundColor: theme.palette.background.paper,
