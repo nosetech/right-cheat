@@ -11,6 +11,7 @@ import {
 
 import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 
 export type SheetSwitchButtonHandle = {
   open: () => void
@@ -72,10 +73,22 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
       return () => document.removeEventListener('mousedown', handler)
     }, [open])
 
+    // ドロップダウンを閉じた後に WKWebView の first responder を復元する。
+    // input がアンマウントされると WKWebView がキーボードの first responder を失うため、
+    // setFocus() でウィンドウをキーウィンドウに戻し、トリガーボタンを focus() する。
+    const restoreFocusAfterClose = useCallback(() => {
+      setTimeout(async () => {
+        await getCurrentWindow().setFocus()
+        const btn = containerRef.current?.querySelector<HTMLElement>('button')
+        btn?.focus()
+      }, 0)
+    }, [])
+
     const commit = (sheet: string) => {
       onSelect(sheet)
       setOpen(false)
       setQuery('')
+      restoreFocusAfterClose()
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -90,6 +103,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
         if (filtered[activeIdx]) commit(filtered[activeIdx])
       } else if (e.key === 'Escape') {
         setOpen(false)
+        restoreFocusAfterClose()
       }
     }
 
