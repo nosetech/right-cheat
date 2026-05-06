@@ -68,6 +68,8 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
 
     const isMultiLine = command.includes('\n')
 
+    const accentColor = theme.palette.accent.main
+
     const getCommandBoxSx = () => {
       if (hasError) {
         return {
@@ -78,36 +80,40 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       }
       if (hasDone) {
         return {
-          background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-          border: `0.5px solid ${theme.palette.base.main}50`,
+          background: isDark
+            ? 'rgba(100,180,255,0.09)'
+            : 'rgba(0,113,227,0.06)',
+          border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.32)' : 'rgba(0,113,227,0.30)'}`,
           borderRadius: 1,
         }
       }
       if (isFocused) {
         return {
-          background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-          border: `0.5px solid ${theme.palette.base.main}40`,
-          borderLeft: `2.5px solid ${theme.palette.base.main}`,
+          background: isDark
+            ? 'rgba(255,255,255,0.06)'
+            : 'rgba(255,255,255,0.78)',
+          border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.22)'}`,
+          borderLeft: `2.5px solid ${accentColor}`,
           borderRadius: '0 4px 4px 0',
         }
       }
       return {
         background: isHovered
           ? isDark
-            ? 'rgba(255,255,255,0.08)'
-            : 'rgba(0,0,0,0.05)'
+            ? 'rgba(255,255,255,0.10)'
+            : 'rgba(255,255,255,0.78)'
           : isDark
-            ? 'rgba(255,255,255,0.04)'
-            : 'rgba(0,0,0,0.025)',
+            ? 'rgba(255,255,255,0.055)'
+            : 'rgba(255,255,255,0.48)',
         border: `0.5px solid ${
-          isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)'
+          isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
         }`,
         borderRadius: 1,
       }
     }
 
     const numberHintColor = isFocused
-      ? theme.palette.base.main
+      ? accentColor
       : theme.palette.text.disabled
 
     const numberHintBox = (
@@ -168,9 +174,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
             fontSize: isMultiLine ? '10px' : '11.5px',
-            color: hasDone
-              ? theme.palette.base.main
-              : theme.palette.text.primary,
+            color: hasDone ? accentColor : theme.palette.text.primary,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
             lineHeight: 1.55,
@@ -185,9 +189,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           sx={{
             opacity: hasDone ? 1 : isFocused || isHovered ? 0.55 : 0,
             transition: 'opacity 0.14s',
-            color: hasDone
-              ? theme.palette.base.main
-              : theme.palette.text.disabled,
+            color: hasDone ? accentColor : theme.palette.text.disabled,
             flexShrink: 0,
             paddingTop: '2px',
           }}

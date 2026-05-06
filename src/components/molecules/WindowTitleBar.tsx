@@ -23,8 +23,17 @@ export const WindowTitleBar = ({ title, rightControls }: Props) => {
         right: 0,
         height: `${TITLEBAR_HEIGHT}px`,
         zIndex: 1000,
-        background: theme.palette.background.default,
-        borderBottom: `0.5px solid ${theme.palette.divider}`,
+        background:
+          theme.palette.mode === 'dark'
+            ? 'rgba(15,34,54,0.75)'
+            : 'rgba(236,242,252,0.72)',
+        backdropFilter: 'blur(28px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(200%)',
+        borderBottom: `0.5px solid ${
+          theme.palette.mode === 'dark'
+            ? 'rgba(255,255,255,0.09)'
+            : 'rgba(200,210,230,0.72)'
+        }`,
         display: 'flex',
         alignItems: 'center',
         px: 1.75,

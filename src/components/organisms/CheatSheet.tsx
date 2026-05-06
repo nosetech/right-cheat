@@ -197,7 +197,7 @@ export const CheatSheet = () => {
               sx={{
                 opacity: selectCheatSheet ? 1 : 0.3,
                 color: isPinned
-                  ? theme.palette.base.main
+                  ? theme.palette.accent.main
                   : theme.palette.text.disabled,
                 p: '4px',
               }}

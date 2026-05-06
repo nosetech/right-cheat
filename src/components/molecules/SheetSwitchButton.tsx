@@ -99,14 +99,16 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                 ? 'rgba(255,255,255,0.12)'
                 : 'rgba(0,0,0,0.08)'
               : 'none',
-            border: `0.5px solid ${open ? theme.palette.base.main : 'transparent'}`,
+            border: `0.5px solid ${open ? theme.palette.accent.main : 'transparent'}`,
             borderRadius: '6px',
             cursor: 'pointer',
             p: '3px 6px',
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
-            color: open ? theme.palette.base.main : theme.palette.text.disabled,
+            color: open
+              ? theme.palette.accent.main
+              : theme.palette.text.disabled,
             transition: 'all 0.15s',
             '&:hover': { color: theme.palette.text.primary },
           }}
@@ -273,7 +275,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                     query={query}
                     isDark={isDark}
                     textPrimary={theme.palette.text.primary}
-                    accentColor={theme.palette.base.main}
+                    accentColor={theme.palette.accent.main}
                     onMouseEnter={() => setActiveIdx(i)}
                     onClick={() => commit(title)}
                   />
