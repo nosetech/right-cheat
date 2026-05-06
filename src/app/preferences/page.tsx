@@ -268,6 +268,17 @@ export default function Page() {
 
   return (
     <Stack padding={1} spacing={1}>
+      <Box
+        data-tauri-drag-region
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '28px',
+          zIndex: 1000,
+        }}
+      />
       <Typography variant='body1'>CheetSheet Json File</Typography>
       <Stack direction='row' padding={1} spacing={1}>
         <FileOpenButton callback={fileOpenCallback} size='small' />
