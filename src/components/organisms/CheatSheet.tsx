@@ -3,14 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import PushPin from '@mui/icons-material/PushPin'
 import PushPinOutlined from '@mui/icons-material/PushPinOutlined'
-import {
-  Alert,
-  Autocomplete,
-  Box,
-  Grid,
-  IconButton,
-  TextField,
-} from '@mui/material'
+import { Alert, Box, Grid, IconButton } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { Stack } from '@mui/system'
 import { invoke } from '@tauri-apps/api/core'
@@ -20,8 +13,13 @@ import { debug } from '@tauri-apps/plugin-log'
 import { Event } from '@/common'
 import { CommandField } from '@/components/molecules/CommandField'
 import { CommandFieldGroup } from '@/components/molecules/CommandFieldGroup'
+import {
+  SheetSwitchButton,
+  SheetSwitchButtonHandle,
+} from '@/components/molecules/SheetSwitchButton'
 import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
+import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
@@ -47,20 +45,16 @@ export const CheatSheet = () => {
   const [errorMessage, setErrorMessage] = useState<string>()
 
   const [reloading, setReloading] = useState<boolean>(false)
-  const [autocompleteOpen, setAutocompleteOpen] = useState<boolean>(false)
 
   const theme = useTheme()
   const { getCheatSheetFilePath } = usePreferencesStore()
 
-  // ウィンドウサイズをチートシートごとにピン留め・復元
   const { isPinned, togglePin } = useWindowSize(selectCheatSheet, jsonInputPath)
 
-  // キーボードショートカット用の参照
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
-  const selectRef = useRef<HTMLDivElement>(null)
   const pinButtonRef = useRef<HTMLButtonElement>(null)
+  const sheetSwitchRef = useRef<SheetSwitchButtonHandle>(null)
 
-  // 初期化ロジック
   const { loadCheatSheetTitles, loadCheatSheetData } = useCheatSheetLoader({
     setCheatSheetTitles,
     setCheatSheet,
@@ -83,7 +77,6 @@ export const CheatSheet = () => {
           }
         })()
       })
-      // cleanup が先に実行された場合は即座に解除
       if (cancelled) {
         unlisten()
         unlisten = undefined
@@ -98,7 +91,6 @@ export const CheatSheet = () => {
         },
       )
 
-      // 初期化時に CheatSheet タイトルを読み込む
       const inputpath = await getCheatSheetFilePath()
       if (inputpath) {
         await loadCheatSheetTitles(inputpath)
@@ -124,52 +116,8 @@ export const CheatSheet = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectCheatSheet, loadCheatSheetData])
 
-  const handleChange = (_event: unknown, value: string | null) => {
-    setCheatSheet(value ?? '')
-  }
-
-  const handleSelectFirstOption = () => {
-    // リストが開いている状態で、最初の項目を選択
-    const listboxElement = document.querySelector('[role="listbox"]')
-
-    if (listboxElement) {
-      const firstOption = listboxElement.querySelector('li') as HTMLLIElement
-      if (firstOption) {
-        debug('[CheatSheet] Enterキー: 最初の候補を選択しました')
-        firstOption.click()
-        setAutocompleteOpen(false)
-      }
-    }
-  }
-
-  const handleTextFieldKeyDown = (
-    event: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
-    // EscapeキーはclearOnEscapeで自動処理される
-    if (event.key === 'Enter' && autocompleteOpen) {
-      event.preventDefault()
-      handleSelectFirstOption()
-    }
-  }
-
-  const handleListboxKeyDown = (
-    event: React.KeyboardEvent<HTMLUListElement>,
-  ) => {
-    // リストが開いている状態でエンターキーが押された場合、最初の項目を選択
-    // EscapeキーはclearOnEscapeで自動処理される
-    if (event.key === 'Enter' && autocompleteOpen) {
-      event.preventDefault()
-      event.stopPropagation()
-      handleSelectFirstOption()
-    }
-  }
-
-  // キーボードショートカットハンドラー
-  // shortcut タイプ以外（command / application / 未指定）で数字キーショートカットを有効化
   const isKeyboardShortcutEnabled = cheatSheetData?.type !== 'shortcut'
 
-  // グループを展開したフラットなコマンド一覧（数字キーの件数チェックに使用）
   const flatCommandCount = useMemo(() => {
     if (!cheatSheetData || cheatSheetData.type === 'shortcut') return 0
     return cheatSheetData.commandlist.reduce(
@@ -179,7 +127,6 @@ export const CheatSheet = () => {
     )
   }, [cheatSheetData])
 
-  // commandlist の各アイテムに対するフラットインデックスの開始位置
   const flatStartIndices = useMemo(() => {
     if (!cheatSheetData) return []
     let acc = 0
@@ -198,12 +145,9 @@ export const CheatSheet = () => {
       }
     },
     onNumberKey: (index) => {
-      // 対応するコマンドフィールドをクリック (1-9)
-      // shortcut タイプ以外のチートシートで有効
       if (isKeyboardShortcutEnabled && index < flatCommandCount) {
         const targetElement = commandFieldRefs.current[index]
         if (targetElement) {
-          // Enterキーイベントをトリガーしてコマンドをコピー
           const enterEvent = new KeyboardEvent('keydown', {
             key: 'Enter',
             bubbles: true,
@@ -214,39 +158,14 @@ export const CheatSheet = () => {
       }
     },
     onZeroKey: () => {
-      // 入力にフォーカスしてオートコンプリートドロップダウンを開く
-      if (selectRef.current) {
-        // オートコンプリート内の入力要素を検索
-        const input = selectRef.current.querySelector(
-          'input[type="text"]',
-        ) as HTMLInputElement
-
-        if (input) {
-          input.focus()
-          // ドロップダウンを開くために ArrowDown イベントをディスパッチ
-          const arrowDownEvent = new KeyboardEvent('keydown', {
-            key: 'ArrowDown',
-            code: 'ArrowDown',
-            bubbles: true,
-            cancelable: true,
-          })
-          input.dispatchEvent(arrowDownEvent)
-          debug(
-            '[CheatSheet] 0キー: オートコンプリート入力にフォーカスしてドロップダウンを開きました',
-          )
-        } else {
-          debug(
-            '[CheatSheet] 0キー: オートコンプリート内の入力要素が見つかりません',
-          )
-        }
-      } else {
-        debug('[CheatSheet] 0キー: selectRef.current が null です')
-      }
+      sheetSwitchRef.current?.open()
+      debug('[CheatSheet] 0キー: シートスイッチドロップダウンを開きました')
     },
   })
 
   return (
-    <Stack padding={1} sx={{ position: 'relative' }}>
+    <>
+      {/* ドラッグ領域（透明） */}
       <Box
         data-tauri-drag-region
         sx={{
@@ -255,160 +174,142 @@ export const CheatSheet = () => {
           left: 0,
           right: 0,
           height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 1000,
+          zIndex: 999,
         }}
       />
-      {jsonInputPath == undefined ? (
-        <Alert severity='error'>
-          入力ファイルのパスが指定されていません。
-          <br />
-          [メニュー] - [Preference]で入力ファイルパスを設定してください。
-        </Alert>
-      ) : errorMessage ? (
-        <Alert
-          severity='error'
-          style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-        >
-          {errorMessage}
-          <br />
-          <br />
-          [メニュー] -
-          [Preference]で指定されている入力ファイルの内容を見直してください。
-        </Alert>
-      ) : reloading == false && cheatSheetTitles == undefined ? (
-        <Alert severity='error'>
-          正しい内容の入力ファイルが指定されていないようです。
-          <br /> [メニュー] -
-          [Preference]で指定されている入力ファイルの内容を見直してください。
-        </Alert>
-      ) : (
-        <>
-          <Autocomplete
-            ref={selectRef}
-            options={cheatSheetTitles?.title || []}
-            value={selectCheatSheet}
-            onChange={handleChange}
-            open={autocompleteOpen}
-            onOpen={() => setAutocompleteOpen(true)}
-            onClose={() => setAutocompleteOpen(false)}
-            slotProps={{
-              listbox: {
-                onKeyDown: handleListboxKeyDown,
-              },
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label='CheatSheet'
-                size='small'
-                onKeyDown={handleTextFieldKeyDown}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.base.main,
-                    },
-                  },
-                  '& .MuiInputBase-input::placeholder': {
-                    opacity: 1,
-                  },
-                  '& .MuiInputLabel-root': {
-                    '&.Mui-focused': {
-                      color: theme.palette.base.main,
-                    },
-                  },
-                }}
-              />
-            )}
-            freeSolo={false}
-            clearOnEscape
-            noOptionsText='チートシートが見つかりません'
-            loadingText='読み込み中...'
-            size='small'
-          />
-          {cheatSheetData?.type === 'shortcut' ? (
-            <Grid container spacing={1} p={1} width='100%'>
-              {cheatSheetData?.commandlist.map(
-                (item: CommandListItem, index) => {
-                  if (isCommandGroupData(item)) {
+      {/* 視覚タイトルバー */}
+      <WindowTitleBar
+        title={selectCheatSheet || 'RightCheat'}
+        rightControls={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <SheetSwitchButton
+              ref={sheetSwitchRef}
+              titles={cheatSheetTitles?.title ?? []}
+              selected={selectCheatSheet}
+              onSelect={(value) => setCheatSheet(value)}
+            />
+            <IconButton
+              ref={pinButtonRef}
+              onClick={selectCheatSheet ? togglePin : undefined}
+              size='small'
+              disabled={!selectCheatSheet}
+              title={isPinned ? 'ピン留め解除 (p)' : 'ピン留め (p)'}
+              sx={{
+                opacity: selectCheatSheet ? 1 : 0.3,
+                color: isPinned
+                  ? theme.palette.base.main
+                  : theme.palette.text.disabled,
+                p: '4px',
+              }}
+            >
+              {isPinned ? (
+                <PushPin sx={{ fontSize: 13 }} />
+              ) : (
+                <PushPinOutlined sx={{ fontSize: 13 }} />
+              )}
+            </IconButton>
+          </Box>
+        }
+      />
+      {/* メインコンテンツ */}
+      <Stack padding={1} sx={{ position: 'relative' }}>
+        {jsonInputPath == undefined ? (
+          <Alert severity='error'>
+            入力ファイルのパスが指定されていません。
+            <br />
+            [メニュー] - [Preference]で入力ファイルパスを設定してください。
+          </Alert>
+        ) : errorMessage ? (
+          <Alert
+            severity='error'
+            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+          >
+            {errorMessage}
+            <br />
+            <br />
+            [メニュー] -
+            [Preference]で指定されている入力ファイルの内容を見直してください。
+          </Alert>
+        ) : reloading == false && cheatSheetTitles == undefined ? (
+          <Alert severity='error'>
+            正しい内容の入力ファイルが指定されていないようです。
+            <br /> [メニュー] -
+            [Preference]で指定されている入力ファイルの内容を見直してください。
+          </Alert>
+        ) : (
+          <>
+            {cheatSheetData?.type === 'shortcut' ? (
+              <Grid container spacing={1} p={1} width='100%'>
+                {cheatSheetData?.commandlist.map(
+                  (item: CommandListItem, index) => {
+                    if (isCommandGroupData(item)) {
+                      return (
+                        <Grid key={index} size={{ xs: 12 }}>
+                          <ShortcutGroup
+                            group={item.group}
+                            commandlist={item.commandlist}
+                          />
+                        </Grid>
+                      )
+                    }
                     return (
-                      <Grid key={index} size={{ xs: 12 }}>
-                        <ShortcutGroup
-                          group={item.group}
-                          commandlist={item.commandlist}
+                      <Grid key={index} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
+                        <ShortcutField
+                          m={0.5}
+                          description={item.description ?? ''}
+                          command={item.command}
                         />
                       </Grid>
                     )
-                  }
-                  return (
-                    <Grid key={index} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-                      <ShortcutField
-                        m={0.5}
-                        description={item.description ?? ''}
-                        command={item.command}
-                      />
-                    </Grid>
-                  )
-                },
-              )}
-            </Grid>
-          ) : (
-            <Stack paddingY={1} spacing={1} width='100%'>
-              {cheatSheetData?.commandlist.map(
-                (item: CommandListItem, index) => {
-                  const flatIndex = flatStartIndices[index]
-                  const mode =
-                    cheatSheetData.type === 'application' ? 'execute' : 'copy'
-                  if (isCommandGroupData(item)) {
+                  },
+                )}
+              </Grid>
+            ) : (
+              <Stack paddingY={1} spacing={1} width='100%'>
+                {cheatSheetData?.commandlist.map(
+                  (item: CommandListItem, index) => {
+                    const flatIndex = flatStartIndices[index]
+                    const mode =
+                      cheatSheetData.type === 'application' ? 'execute' : 'copy'
+                    if (isCommandGroupData(item)) {
+                      return (
+                        <Box key={index} pt={1}>
+                          <CommandFieldGroup
+                            key={index}
+                            group={item.group}
+                            commandlist={item.commandlist}
+                            startIndex={flatIndex}
+                            mode={mode}
+                            cheatSheetLayout={cheatSheetData.layout}
+                            commandFieldRefs={commandFieldRefs}
+                          />
+                        </Box>
+                      )
+                    }
                     return (
-                      <Box key={index} pt={1}>
-                        <CommandFieldGroup
-                          key={index}
-                          group={item.group}
-                          commandlist={item.commandlist}
-                          startIndex={flatIndex}
-                          mode={mode}
-                          cheatSheetLayout={cheatSheetData.layout}
-                          commandFieldRefs={commandFieldRefs}
-                        />
-                      </Box>
+                      <CommandField
+                        key={index}
+                        ref={(el) => {
+                          commandFieldRefs.current[flatIndex] = el
+                        }}
+                        description={item.description}
+                        command={item.command}
+                        numberHint={
+                          flatIndex < 9 ? (flatIndex + 1).toString() : undefined
+                        }
+                        mode={mode}
+                        layout={
+                          item.layout ?? cheatSheetData.layout ?? 'inline'
+                        }
+                      />
                     )
-                  }
-                  return (
-                    <CommandField
-                      key={index}
-                      ref={(el) => {
-                        commandFieldRefs.current[flatIndex] = el
-                      }}
-                      description={item.description}
-                      command={item.command}
-                      numberHint={
-                        flatIndex < 9 ? (flatIndex + 1).toString() : undefined
-                      }
-                      mode={mode}
-                      layout={item.layout ?? cheatSheetData.layout ?? 'inline'}
-                    />
-                  )
-                },
-              )}
-            </Stack>
-          )}
-        </>
-      )}
-      <Box sx={{ position: 'fixed', bottom: 4, right: 4 }}>
-        <IconButton
-          ref={pinButtonRef}
-          onClick={togglePin}
-          size='small'
-          disabled={!selectCheatSheet}
-          sx={{ opacity: selectCheatSheet ? 1 : 0.3 }}
-        >
-          {isPinned ? (
-            <PushPin fontSize='small' />
-          ) : (
-            <PushPinOutlined fontSize='small' />
-          )}
-        </IconButton>
-      </Box>
-    </Stack>
+                  },
+                )}
+              </Stack>
+            )}
+          </>
+        )}
+      </Stack>
+    </>
   )
 }
