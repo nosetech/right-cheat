@@ -1,6 +1,9 @@
 'use client'
 
+import './globals.css'
+
 import { ThemeProviderWrapper } from '@/components/ThemeProviderWrapper'
+import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { NotificationProvider } from '@/context/NotificationContext'
 import CssBaseline from '@mui/material/CssBaseline'
 
@@ -11,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='ja'>
-      <body>
+      <body style={{ paddingTop: `${TITLEBAR_HEIGHT}px` }}>
         <ThemeProviderWrapper>
           <CssBaseline />
           <NotificationProvider>{children}</NotificationProvider>

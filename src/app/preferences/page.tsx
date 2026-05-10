@@ -9,6 +9,8 @@ import {
   ThemeToggle,
 } from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
+import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
 import { CheatSheetAPI } from '@/types/api/CheatSheet'
@@ -267,67 +269,81 @@ export default function Page() {
   }
 
   return (
-    <Stack padding={1} spacing={1}>
-      <Typography variant='body1'>CheetSheet Json File</Typography>
-      <Stack direction='row' padding={1} spacing={1}>
-        <FileOpenButton callback={fileOpenCallback} size='small' />
-        <Box
-          padding={0.5}
-          border={1}
-          borderRadius={1}
-          maxWidth='85%'
-          width='fit-content'
-        >
-          <Typography
-            noWrap={true}
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+    <>
+      <Box
+        data-tauri-drag-region
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: `${TITLEBAR_HEIGHT}px`,
+          zIndex: 999,
+        }}
+      />
+      <WindowTitleBar title='Preferences' />
+      <Stack padding={1} spacing={1}>
+        <Typography variant='body1'>CheatSheet Json File</Typography>
+        <Stack direction='row' padding={1} spacing={1}>
+          <FileOpenButton callback={fileOpenCallback} size='small' />
+          <Box
+            padding={0.5}
+            border={1}
+            borderRadius={1}
+            maxWidth='85%'
+            width='fit-content'
           >
-            {settedInputFilePath}
-          </Typography>
-        </Box>
-        <FileEditButton onClick={openFileByEditor} size='small' />
-      </Stack>
-      <Divider />
-      <Stack direction='row' spacing={1} alignItems='center'>
-        <Typography variant='body1'>Global Shortcut</Typography>
-        {shortcutValidationError && (
-          <Typography variant='caption' color={theme.palette.alert.main}>
-            ^ ⌥ ⌘ のいずれか1つはチェックしてください。
-          </Typography>
-        )}
-      </Stack>
-      <Stack padding={1}>
-        {toggleVisibleShortcut && (
-          <ShortcutEditField
-            shortcutName='Toggle Visible'
-            shortcut={toggleVisibleShortcut}
-            callback={shortcutEditCallback}
-            onValidationChange={setShortcutValidationError}
+            <Typography
+              noWrap={true}
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {settedInputFilePath}
+            </Typography>
+          </Box>
+          <FileEditButton onClick={openFileByEditor} size='small' />
+        </Stack>
+        <Divider />
+        <Stack direction='row' spacing={1} alignItems='center'>
+          <Typography variant='body1'>Global Shortcut</Typography>
+          {shortcutValidationError && (
+            <Typography variant='caption' color={theme.palette.alert.main}>
+              ^ ⌥ ⌘ のいずれか1つはチェックしてください。
+            </Typography>
+          )}
+        </Stack>
+        <Stack padding={1}>
+          {toggleVisibleShortcut && (
+            <ShortcutEditField
+              shortcutName='Toggle Visible'
+              shortcut={toggleVisibleShortcut}
+              callback={shortcutEditCallback}
+              onValidationChange={setShortcutValidationError}
+            />
+          )}
+        </Stack>
+        <Divider />
+        <Typography variant='body1'>Theme</Typography>
+        <Stack padding={1}>
+          <ThemeToggle
+            themeMode={themeMode}
+            onChange={handleThemeChange}
+            disabled={isLoading}
           />
-        )}
+        </Stack>
+        <Divider />
+        <Typography variant='body1'>Other Settings</Typography>
+        <Stack direction='row' px={1} spacing={1} alignItems='center'>
+          <Typography variant='body1'>Visible on all workspaces</Typography>
+          <ThemedSwitch
+            checked={visibleOnAllWorkspaces}
+            onChange={handleVisibleOnAllWorkspacesChange}
+          />
+        </Stack>
       </Stack>
-      <Divider />
-      <Typography variant='body1'>Theme</Typography>
-      <Stack padding={1}>
-        <ThemeToggle
-          themeMode={themeMode}
-          onChange={handleThemeChange}
-          disabled={isLoading}
-        />
-      </Stack>
-      <Divider />
-      <Typography variant='body1'>Other Settings</Typography>
-      <Stack direction='row' px={1} spacing={1} alignItems='center'>
-        <Typography variant='body1'>Visible on all workspaces</Typography>
-        <ThemedSwitch
-          checked={visibleOnAllWorkspaces}
-          onChange={handleVisibleOnAllWorkspacesChange}
-        />
-      </Stack>
-    </Stack>
+    </>
   )
 }

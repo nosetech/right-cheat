@@ -19,18 +19,23 @@ import { WindowSizeAPI, WindowSizeSettings } from '@/types/api/WindowSize'
 // 3. blur() → focus() で WKWebView の native first responder を強制的に再取得する
 //    focus() 単独では document.activeElement がすでに対象要素の場合 no-op になり
 //    WKWebView の native first responder が復元されないため blur() が必要
-// 4. macOS WebKit では <button> クリックでは document.activeElement が変わらないため
-//    focused が document.body の場合は input[type="text"] をフォールバックとして使う
-const restoreFocusAfterWindowOp = async (
-  focused: HTMLElement | null,
-): Promise<void> => {
+// 4. document.activeElement は 50ms 待機後に読む。
+//    呼び出し側が事前に取得した値を渡すと、その後の DOM 変化（dropdown input
+//    アンマウントなど）で body に戻り target=null になる race condition が生じる。
+//    50ms 待機中に SheetSwitchButton の restoreFocusAfterClose（setTimeout=0）が
+//    先に完了してトリガーボタンにフォーカスを移すため、その後に読めば正しい要素が得られる。
+const restoreFocusAfterWindowOp = async (): Promise<void> => {
   // native イベントの後処理が完了するまで待ってから setFocus を呼ぶ
   await new Promise<void>((resolve) => setTimeout(resolve, 50))
   await getCurrentWindow().setFocus()
 
+  // 50ms 後の document.activeElement を使う（race condition 回避）
+  const currentActive = document.activeElement as HTMLElement | null
   const target =
-    focused && focused !== document.body && document.body.contains(focused)
-      ? focused
+    currentActive &&
+    currentActive !== document.body &&
+    document.body.contains(currentActive)
+      ? currentActive
       : null
 
   if (target) {
@@ -60,12 +65,11 @@ export const useWindowSize = (
       if (isResizableRef.current !== true) {
         // ピン留め状態（非リサイズ可）から選択解除（ESC など）に遷移する場合、
         // setResizable(true) で WKWebView が first responder を失うため復元が必要
-        const focused = document.activeElement as HTMLElement | null
         getCurrentWindow()
           .setResizable(true)
           .then(() => {
             isResizableRef.current = true
-            return restoreFocusAfterWindowOp(focused)
+            return restoreFocusAfterWindowOp()
           })
           .catch((e) => logError(`setResizable に失敗しました: ${e}`))
       }
@@ -80,9 +84,8 @@ export const useWindowSize = (
       // 失われることがあるため、処理完了後に復元する。
       // WebKit では button クリック時にフォーカスが document.body になることがあるが、
       // その場合も setFocus() だけは必ず呼んで WKWebView の first responder を復元する。
-      const focusedAtStart = document.activeElement as HTMLElement | null
       debug(
-        `[useWindowSize] loadAndApply 開始: title="${selectedTitle}", activeElement=${focusedAtStart?.tagName}`,
+        `[useWindowSize] loadAndApply 開始: title="${selectedTitle}", activeElement=${document.activeElement?.tagName}`,
       )
       try {
         const savedSize = await invoke<WindowSizeSettings | null>(
@@ -124,10 +127,14 @@ export const useWindowSize = (
           debug(
             `[useWindowSize] フォーカス復元開始: activeElement=${document.activeElement?.tagName}`,
           )
-          await restoreFocusAfterWindowOp(focusedAtStart)
+          await restoreFocusAfterWindowOp()
           debug(
             `[useWindowSize] フォーカス復元完了: activeElement=${document.activeElement?.tagName}`,
           )
+        } else {
+          // ウィンドウ操作がなくてもシート切り替えで SheetSwitchButton の input が
+          // アンマウントされると WKWebView が first responder を失うため setFocus が必要
+          await restoreFocusAfterWindowOp()
         }
         debug(`[useWindowSize] loadAndApply 完了: title="${selectedTitle}"`)
       } catch (e) {
@@ -151,13 +158,8 @@ export const useWindowSize = (
   const togglePin = useCallback(async () => {
     if (!selectedTitle || !inputPath) return
 
-    // await の前にフォーカスを取得する。setResizable で WKWebView が
-    // first responder を失うため、処理後に復元する。
-    // macOS WebKit では button クリックでは document.activeElement が変わらないため、
-    // focusedBeforePin が document.body になる場合も setFocus() は必ず呼ぶ。
-    const focusedBeforePin = document.activeElement as HTMLElement | null
     debug(
-      `[useWindowSize] togglePin 開始: activeElement=${focusedBeforePin?.tagName}`,
+      `[useWindowSize] togglePin 開始: activeElement=${document.activeElement?.tagName}`,
     )
     const win = getCurrentWindow()
 
@@ -193,7 +195,7 @@ export const useWindowSize = (
         return
       }
 
-      await restoreFocusAfterWindowOp(focusedBeforePin)
+      await restoreFocusAfterWindowOp()
       debug(`[useWindowSize] ピン留め解除完了: title="${selectedTitle}"`)
     } else {
       // 未ピン留め → ピン留め（現在のサイズを論理ピクセルで保存してリサイズ不可に）
@@ -246,7 +248,7 @@ export const useWindowSize = (
         return
       }
 
-      await restoreFocusAfterWindowOp(focusedBeforePin)
+      await restoreFocusAfterWindowOp()
       debug(`[useWindowSize] ピン留め完了: title="${selectedTitle}"`)
     }
   }, [selectedTitle, inputPath, showError])

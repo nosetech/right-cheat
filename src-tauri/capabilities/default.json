@@ -19,6 +19,7 @@
     "core:window:allow-inner-size",
     "core:window:allow-current-monitor",
     "core:window:allow-set-resizable",
+    "core:window:allow-start-dragging",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
@@ -29,7 +30,6 @@
     "dialog:allow-open",
     "core:event:default",
     "core:event:allow-listen",
-    "log:default",
     "log:default",
     {
       "identifier": "shell:allow-execute",
