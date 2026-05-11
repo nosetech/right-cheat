@@ -2,7 +2,6 @@ pub mod api;
 pub mod common;
 pub mod settings_store;
 
-use serde_json;
 use settings_store::{SettingsStore, TauriSettingsStore};
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
