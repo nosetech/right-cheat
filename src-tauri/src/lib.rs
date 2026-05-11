@@ -11,6 +11,16 @@ use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
+const TAURI_CONF: &str = include_str!("../tauri.conf.json");
+
+fn get_copyright() -> String {
+    let v: serde_json::Value = serde_json::from_str(TAURI_CONF).unwrap_or_default();
+    v["bundle"]["copyright"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string()
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -120,7 +130,7 @@ fn menu_configuration<R: tauri::Runtime>(
                             let mut metadata = AboutMetadataBuilder::new()
                                 .version(Some(format!("バージョン {}", app_version)))
                                 .short_version(Some(app_version))
-                                .copyright(Some("©︎ 2025 nosetech"));
+                                .copyright(Some(get_copyright()));
                             metadata = metadata.icon(Some(Image::from_bytes(include_bytes!(
                                 "../icons/icon.png"
                             ))?));
