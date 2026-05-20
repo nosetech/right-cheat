@@ -39,9 +39,16 @@ function ExportCheckbox({
     <Box
       role='checkbox'
       aria-checked={indeterminate ? 'mixed' : checked}
+      tabIndex={0}
       onClick={(e) => {
         e.stopPropagation()
         onChange?.()
+      }}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          onChange?.()
+        }
       }}
       sx={{
         width: size,

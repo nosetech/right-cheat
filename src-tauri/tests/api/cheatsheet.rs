@@ -1,7 +1,7 @@
 use app_lib::api::cheatsheet::{
     get_cheat_sheet, get_cheat_sheet_window_size, get_cheat_titles, import_from_json,
     reload_cheat_sheet, save_cheat_sheet_window_size, CheatSheet, Command, CommandGroup,
-    CommandItem, WindowSize,
+    CommandItem, ConflictResolution, WindowSize,
 };
 use app_lib::db::{schema, DbConnection};
 use rusqlite::Connection;
@@ -64,7 +64,7 @@ mod get_cheat_titles {
     fn empty_db_returns_empty_title_list() {
         let app = setup_mock_app_with_db();
         let result = get_cheat_titles(app.handle().clone());
-        assert_eq!(result, r#"{"title": []}"#);
+        assert_eq!(result, r#"{"title":[]}"#);
     }
 
     #[test]
@@ -324,7 +324,7 @@ mod import_from_json {
         let result = import_from_json(
             app.handle().clone(),
             "./tests/api/test-data.json".to_string(),
-            "skip".to_string(),
+            ConflictResolution::Skip,
         );
         assert!(result.is_ok());
         let summary = result.unwrap();
@@ -343,7 +343,7 @@ mod import_from_json {
         let result = import_from_json(
             app.handle().clone(),
             "./tests/api/notfound.json".to_string(),
-            "skip".to_string(),
+            ConflictResolution::Skip,
         );
         assert!(result.is_err());
     }
@@ -354,7 +354,7 @@ mod import_from_json {
         let result = import_from_json(
             app.handle().clone(),
             "./tests/api/invalid.json".to_string(),
-            "skip".to_string(),
+            ConflictResolution::Skip,
         );
         assert!(result.is_err());
     }
@@ -365,14 +365,14 @@ mod import_from_json {
         import_from_json(
             app.handle().clone(),
             "./tests/api/test-data.json".to_string(),
-            "skip".to_string(),
+            ConflictResolution::Skip,
         )
         .unwrap();
 
         let result = import_from_json(
             app.handle().clone(),
             "./tests/api/test-data.json".to_string(),
-            "skip".to_string(),
+            ConflictResolution::Skip,
         )
         .unwrap();
         assert_eq!(result.added, 0);
@@ -385,14 +385,14 @@ mod import_from_json {
         import_from_json(
             app.handle().clone(),
             "./tests/api/test-data.json".to_string(),
-            "skip".to_string(),
+            ConflictResolution::Skip,
         )
         .unwrap();
 
         let result = import_from_json(
             app.handle().clone(),
             "./tests/api/test-data.json".to_string(),
-            "overwrite".to_string(),
+            ConflictResolution::Overwrite,
         )
         .unwrap();
         assert_eq!(result.added, 0);
@@ -406,7 +406,7 @@ mod import_from_json {
         let result = import_from_json(
             app.handle().clone(),
             "./tests/api/test-data-with-group.json".to_string(),
-            "skip".to_string(),
+            ConflictResolution::Skip,
         );
         assert!(result.is_ok());
         let summary = result.unwrap();
@@ -422,12 +422,85 @@ mod import_from_json {
         import_from_json(
             app.handle().clone(),
             "./tests/api/test-data-with-types.json".to_string(),
-            "skip".to_string(),
+            ConflictResolution::Skip,
         )
         .unwrap();
 
         let sheet = get_cheat_sheet(app.handle().clone(), "Terraform");
         assert!(sheet.contains("\"type\":\"command\""));
+    }
+
+    #[test]
+    fn imports_json_with_window_size() {
+        let app = setup_mock_app_with_db();
+        let result = import_from_json(
+            app.handle().clone(),
+            "./tests/api/test-data-with-window-size.json".to_string(),
+            ConflictResolution::Skip,
+        );
+        assert!(result.is_ok());
+        let summary = result.unwrap();
+        assert_eq!(summary.added, 2);
+
+        let ws = get_cheat_sheet_window_size(app.handle().clone(), "SheetWithWindowSize")
+            .unwrap()
+            .unwrap();
+        assert_eq!(ws.width, 600);
+        assert_eq!(ws.height, 900);
+
+        let no_ws =
+            get_cheat_sheet_window_size(app.handle().clone(), "SheetWithoutWindowSize").unwrap();
+        assert!(no_ws.is_none());
+    }
+
+    #[test]
+    fn imports_single_sheet_json() {
+        let app = setup_mock_app_with_db();
+        let result = import_from_json(
+            app.handle().clone(),
+            "./tests/api/test-data2.json".to_string(),
+            ConflictResolution::Skip,
+        );
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().added, 1);
+
+        let sheet = get_cheat_sheet(app.handle().clone(), "Test");
+        assert!(sheet.contains("\"title\":\"Test\""));
+    }
+
+    #[test]
+    fn imports_json_with_backslash_commands() {
+        let app = setup_mock_app_with_db();
+        let result = import_from_json(
+            app.handle().clone(),
+            "./tests/api/test-data-with-backslash.json".to_string(),
+            ConflictResolution::Skip,
+        );
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().added, 1);
+
+        let sheet = get_cheat_sheet(app.handle().clone(), "MultilineCommands");
+        assert!(sheet.contains("\"title\":\"MultilineCommands\""));
+        assert!(sheet.contains("commandlist"));
+    }
+
+    #[test]
+    fn imports_json_with_layout() {
+        let app = setup_mock_app_with_db();
+        let result = import_from_json(
+            app.handle().clone(),
+            "./tests/api/test-data-with-layout.json".to_string(),
+            ConflictResolution::Skip,
+        );
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().added, 2);
+
+        let sheet = get_cheat_sheet(app.handle().clone(), "SheetWithLayout");
+        assert!(sheet.contains("\"layout\":\"stacked\""));
+        assert!(sheet.contains("\"layout\":\"command_only\""));
+
+        let sheet_no_layout = get_cheat_sheet(app.handle().clone(), "SheetWithoutLayout");
+        assert!(sheet_no_layout.contains("\"title\":\"SheetWithoutLayout\""));
     }
 }
 

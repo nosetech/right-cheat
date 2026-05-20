@@ -274,7 +274,7 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                     match api::cheatsheet::import_from_json(
                         handle.clone(),
                         path_str,
-                        "skip".to_string(),
+                        api::cheatsheet::ConflictResolution::Skip,
                     ) {
                         Ok(summary) => {
                             let msg = format!(
@@ -282,9 +282,19 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                                 summary.added, summary.updated, summary.skipped
                             );
                             log::info!("[lib] {}", msg);
+                            handle
+                                .dialog()
+                                .message(&msg)
+                                .title("RightCheat")
+                                .blocking_show();
                         }
                         Err(e) => {
                             log::error!("[lib] import_from_json error: {}", e);
+                            handle
+                                .dialog()
+                                .message(format!("インポートに失敗しました。\n{}", e))
+                                .title("RightCheat")
+                                .blocking_show();
                         }
                     }
                 }

@@ -4,6 +4,13 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use tauri::{AppHandle, Emitter, EventTarget, Manager};
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConflictResolution {
+    Skip,
+    Overwrite,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WindowSize {
     pub width: u32,
@@ -120,12 +127,12 @@ where
 pub fn get_cheat_titles<R: tauri::Runtime>(app: AppHandle<R>) -> String {
     match with_db(&app, |conn| repository::get_all_titles(conn)) {
         Ok(titles) => {
-            let title_list = titles
-                .iter()
-                .map(|t| format!("\"{}\"", t))
-                .collect::<Vec<_>>()
-                .join(",");
-            format!("{{\"title\": [{}]}}", title_list)
+            #[derive(Serialize)]
+            struct TitleResponse {
+                title: Vec<String>,
+            }
+            serde_json::to_string(&TitleResponse { title: titles })
+                .unwrap_or_else(|_| r#"{"title":[]}"#.to_string())
         }
         Err(e) => {
             log::error!("[cheatsheet] get_cheat_titles error: {}", e);
@@ -163,8 +170,8 @@ pub fn get_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>, title: &str) -> Str
 #[tauri::command]
 pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
     match app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ()) {
-        Ok(_) => r#"{"status": success}"#.to_string(),
-        Err(_) => r#"{"status": fail}"#.to_string(),
+        Ok(_) => r#"{"status": "success"}"#.to_string(),
+        Err(_) => r#"{"status": "fail"}"#.to_string(),
     }
 }
 
@@ -201,7 +208,7 @@ pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
 pub fn import_from_json<R: tauri::Runtime>(
     app: AppHandle<R>,
     json_path: String,
-    on_conflict: String,
+    on_conflict: ConflictResolution,
 ) -> Result<ImportSummary, String> {
     use std::fs::File;
     use std::io::BufReader;
@@ -223,12 +230,12 @@ pub fn import_from_json<R: tauri::Runtime>(
         for (i, sheet) in sheets.iter().enumerate() {
             let exists = repository::title_exists(&tx, &sheet.title)?;
             if exists {
-                match on_conflict.as_str() {
-                    "overwrite" => {
+                match on_conflict {
+                    ConflictResolution::Overwrite => {
                         repository::update_cheatsheet(&tx, sheet)?;
                         updated += 1;
                     }
-                    _ => {
+                    ConflictResolution::Skip => {
                         skipped += 1;
                     }
                 }

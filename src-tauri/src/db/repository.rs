@@ -123,39 +123,55 @@ pub fn insert_cheatsheet(conn: &Connection, sheet: &CheatSheet, sort_order: i64)
 }
 
 pub fn update_cheatsheet(conn: &Connection, sheet: &CheatSheet) -> Result<()> {
-    let window_width = sheet.window_size.as_ref().map(|ws| ws.width as i64);
-    let window_height = sheet.window_size.as_ref().map(|ws| ws.height as i64);
+    // SAVEPOINTを使用することでトランザクション内外どちらからも安全に呼べる
+    conn.execute_batch("SAVEPOINT update_cheatsheet")?;
 
-    conn.execute(
-        "UPDATE cheatsheets SET sheet_type = ?1, layout = ?2,
-         window_width = ?3, window_height = ?4, updated_at = datetime('now')
-         WHERE title = ?5",
-        params![
-            sheet.sheet_type,
-            sheet.layout,
-            window_width,
-            window_height,
-            sheet.title,
-        ],
-    )?;
+    let result = (|| -> Result<()> {
+        let window_width = sheet.window_size.as_ref().map(|ws| ws.width as i64);
+        let window_height = sheet.window_size.as_ref().map(|ws| ws.height as i64);
 
-    let cheatsheet_id: i64 = conn.query_row(
-        "SELECT id FROM cheatsheets WHERE title = ?1",
-        params![sheet.title],
-        |r| r.get(0),
-    )?;
+        conn.execute(
+            "UPDATE cheatsheets SET sheet_type = ?1, layout = ?2,
+             window_width = ?3, window_height = ?4, updated_at = datetime('now')
+             WHERE title = ?5",
+            params![
+                sheet.sheet_type,
+                sheet.layout,
+                window_width,
+                window_height,
+                sheet.title,
+            ],
+        )?;
 
-    conn.execute(
-        "DELETE FROM commands WHERE cheatsheet_id = ?1 AND group_id IS NULL",
-        params![cheatsheet_id],
-    )?;
-    conn.execute(
-        "DELETE FROM command_groups WHERE cheatsheet_id = ?1",
-        params![cheatsheet_id],
-    )?;
+        let cheatsheet_id: i64 = conn.query_row(
+            "SELECT id FROM cheatsheets WHERE title = ?1",
+            params![sheet.title],
+            |r| r.get(0),
+        )?;
 
-    insert_commandlist(conn, cheatsheet_id, &sheet.commandlist)?;
-    Ok(())
+        conn.execute(
+            "DELETE FROM commands WHERE cheatsheet_id = ?1 AND group_id IS NULL",
+            params![cheatsheet_id],
+        )?;
+        conn.execute(
+            "DELETE FROM command_groups WHERE cheatsheet_id = ?1",
+            params![cheatsheet_id],
+        )?;
+
+        insert_commandlist(conn, cheatsheet_id, &sheet.commandlist)?;
+        Ok(())
+    })();
+
+    match result {
+        Ok(()) => {
+            conn.execute_batch("RELEASE update_cheatsheet")?;
+            Ok(())
+        }
+        Err(e) => {
+            let _ = conn.execute_batch("ROLLBACK TO update_cheatsheet");
+            Err(e)
+        }
+    }
 }
 
 pub fn delete_cheatsheet(conn: &Connection, title: &str) -> Result<()> {
@@ -228,13 +244,17 @@ pub fn insert_commandlist(
 
 fn load_commandlist(conn: &Connection, cheatsheet_id: i64) -> Result<Vec<CommandItem>> {
     let mut groups_stmt = conn.prepare(
-        "SELECT id, group_name FROM command_groups
+        "SELECT id, group_name, sort_order FROM command_groups
          WHERE cheatsheet_id = ?1 ORDER BY sort_order ASC, id ASC",
     )?;
 
-    let groups: Vec<(i64, String)> = groups_stmt
+    let groups: Vec<(i64, String, i64)> = groups_stmt
         .query_map(params![cheatsheet_id], |row| {
-            Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, i64>(2)?,
+            ))
         })?
         .collect::<Result<Vec<_>>>()?;
 
@@ -262,13 +282,7 @@ fn load_commandlist(conn: &Connection, cheatsheet_id: i64) -> Result<Vec<Command
     all_items.extend(singles);
 
     // グループ
-    for (group_id, group_name) in &groups {
-        let group_sort_order: i64 = conn.query_row(
-            "SELECT sort_order FROM command_groups WHERE id = ?1",
-            params![group_id],
-            |r| r.get(0),
-        )?;
-
+    for &(group_id, ref group_name, group_sort_order) in &groups {
         let mut cmd_stmt = conn.prepare(
             "SELECT description, command_text, layout
              FROM commands WHERE group_id = ?1 ORDER BY sort_order ASC, id ASC",
@@ -296,6 +310,8 @@ fn load_commandlist(conn: &Connection, cheatsheet_id: i64) -> Result<Vec<Command
     Ok(all_items.into_iter().map(|(_, item)| item).collect())
 }
 
+/// 全チートシートを取得する。将来のエクスポート拡張用。
+#[allow(dead_code)]
 pub fn get_all_cheatsheets(conn: &Connection) -> Result<Vec<CheatSheet>> {
     let titles = get_all_titles(conn)?;
     let mut sheets = Vec::new();
@@ -307,6 +323,8 @@ pub fn get_all_cheatsheets(conn: &Connection) -> Result<Vec<CheatSheet>> {
     Ok(sheets)
 }
 
+/// タイトルごとのコマンド数を返す。将来のエクスポートUI表示用。
+#[allow(dead_code)]
 pub fn count_commands_for_titles(
     conn: &Connection,
     titles: &[String],
