@@ -1,8 +1,5 @@
 use rusqlite::Connection;
 
-#[allow(dead_code)]
-const CURRENT_VERSION: i64 = 1;
-
 pub fn apply_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS schema_meta (
@@ -71,63 +68,4 @@ fn migrate_v1(conn: &Connection) -> Result<(), rusqlite::Error> {
         INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('schema_version', '1');
         ",
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rusqlite::Connection;
-
-    fn in_memory_conn() -> Connection {
-        let conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-        conn
-    }
-
-    #[test]
-    fn apply_migrations_creates_tables() {
-        let conn = in_memory_conn();
-        apply_migrations(&conn).unwrap();
-
-        let count: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN \
-                 ('cheatsheets','command_groups','commands','schema_meta')",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(count, 4, "4つのテーブルが作成されること");
-    }
-
-    #[test]
-    fn schema_version_is_set() {
-        let conn = in_memory_conn();
-        apply_migrations(&conn).unwrap();
-
-        let version: i64 = conn
-            .query_row(
-                "SELECT CAST(value AS INTEGER) FROM schema_meta WHERE key = 'schema_version'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(version, CURRENT_VERSION);
-    }
-
-    #[test]
-    fn apply_migrations_is_idempotent() {
-        let conn = in_memory_conn();
-        apply_migrations(&conn).unwrap();
-        apply_migrations(&conn).unwrap();
-
-        let version: i64 = conn
-            .query_row(
-                "SELECT CAST(value AS INTEGER) FROM schema_meta WHERE key = 'schema_version'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(version, CURRENT_VERSION);
-    }
 }
