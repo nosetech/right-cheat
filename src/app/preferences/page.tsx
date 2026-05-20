@@ -2,18 +2,12 @@
 
 import { useEffect, useState } from 'react'
 
-import {
-  FileEditButton,
-  FileOpenButton,
-  ThemedSwitch,
-  ThemeToggle,
-} from '@/components/atoms'
+import { ThemedSwitch, ThemeToggle } from '@/components/atoms'
 import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
-import { CheatSheetAPI } from '@/types/api/CheatSheet'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
@@ -23,22 +17,16 @@ import { invoke } from '@tauri-apps/api/core'
 import { ask, message } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
-import { Command } from '@tauri-apps/plugin-shell'
 
 export default function Page() {
   const theme = useTheme()
 
-  const [settedInputFilePath, setSettedInputFilePath] = useState<string>()
   const [shortcutValidationError, setShortcutValidationError] =
     useState<boolean>(false)
   const [visibleOnAllWorkspaces, setVisibleOnAllWorkspaces] =
     useState<boolean>(true)
 
-  const {
-    getCheatSheetFilePath,
-    setCheatSheetFilePath,
-    getVisibleOnAllWorkspacesSettings,
-  } = usePreferencesStore()
+  const { getVisibleOnAllWorkspacesSettings } = usePreferencesStore()
   const {
     themeMode,
     setThemeMode: setStoredThemeMode,
@@ -50,9 +38,6 @@ export default function Page() {
 
   useEffect(() => {
     ;(async () => {
-      const inputpath = await getCheatSheetFilePath()
-      setSettedInputFilePath(inputpath)
-
       const visibleOnAllWorkspacesValue =
         await getVisibleOnAllWorkspacesSettings()
       setVisibleOnAllWorkspaces(visibleOnAllWorkspacesValue)
@@ -91,45 +76,8 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const fileOpenCallback = (filepath: string) => {
-    ;(async () => {
-      debug(`[preferences] callback ${filepath}`)
-      setSettedInputFilePath(filepath)
-      await setCheatSheetFilePath(filepath)
-      await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
-        (response) => {
-          debug(
-            `[preferences] invoke '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
-          )
-        },
-      )
-    })()
-  }
-
-  const openFileByEditor = () => {
-    if (settedInputFilePath) {
-      ;(async () => {
-        let result = await Command.create('exec-open', [
-          '-t',
-          settedInputFilePath,
-        ]).execute()
-        if (result.code != 0) {
-          error(
-            `[preferences] Failed to open file: ${settedInputFilePath}, code: ${result.code}`,
-          )
-          await message('エディタでファイルを開けませんでした', {
-            title: 'RightCheat',
-            kind: 'error',
-          })
-        }
-      })()
-    }
-  }
-
   const showRestartConfirmationDialog = async () => {
-    // devモードでは正常にアプリの再起動が実行できないため、ログ出力だけにする。
     if (process.env.NODE_ENV === 'production') {
-      // 再起動確認ダイアログを表示
       const shouldRestart = await ask(
         '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
         {
@@ -144,7 +92,6 @@ export default function Page() {
         await relaunch()
       } else {
         debug('[preferences] User cancelled the restart.')
-        // キャンセル時にユーザーに設定が保存されたことを通知
         await message(
           '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
           {
@@ -219,7 +166,6 @@ export default function Page() {
       return
     }
 
-    // Notify all windows about theme change
     try {
       const response = await invoke<string>(WindowAPI.NOTIFY_THEME_CHANGED)
       debug(
@@ -283,30 +229,6 @@ export default function Page() {
       />
       <WindowTitleBar title='Preferences' />
       <Stack padding={1} spacing={1}>
-        <Typography variant='body1'>CheatSheet Json File</Typography>
-        <Stack direction='row' padding={1} spacing={1}>
-          <FileOpenButton callback={fileOpenCallback} size='small' />
-          <Box
-            padding={0.5}
-            border={1}
-            borderRadius={1}
-            maxWidth='85%'
-            width='fit-content'
-          >
-            <Typography
-              noWrap={true}
-              sx={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {settedInputFilePath}
-            </Typography>
-          </Box>
-          <FileEditButton onClick={openFileByEditor} size='small' />
-        </Stack>
-        <Divider />
         <Stack direction='row' spacing={1} alignItems='center'>
           <Typography variant='body1'>Global Shortcut</Typography>
           {shortcutValidationError && (

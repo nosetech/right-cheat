@@ -25,11 +25,9 @@ import { WindowSizeAPI, WindowSizeSettings } from '@/types/api/WindowSize'
 //    50ms 待機中に SheetSwitchButton の restoreFocusAfterClose（setTimeout=0）が
 //    先に完了してトリガーボタンにフォーカスを移すため、その後に読めば正しい要素が得られる。
 const restoreFocusAfterWindowOp = async (): Promise<void> => {
-  // native イベントの後処理が完了するまで待ってから setFocus を呼ぶ
   await new Promise<void>((resolve) => setTimeout(resolve, 50))
   await getCurrentWindow().setFocus()
 
-  // 50ms 後の document.activeElement を使う（race condition 回避）
   const currentActive = document.activeElement as HTMLElement | null
   const target =
     currentActive &&
@@ -44,27 +42,17 @@ const restoreFocusAfterWindowOp = async (): Promise<void> => {
   }
 }
 
-export const useWindowSize = (
-  selectedTitle: string,
-  inputPath: string | undefined,
-) => {
+export const useWindowSize = (selectedTitle: string) => {
   const [isPinned, setIsPinned] = useState(false)
   const { showError } = useNotificationContext() ?? {}
-  // 保存済みの論理ピクセルサイズ。null のときはピン留めなし
   const savedSizeRef = useRef<WindowSizeSettings | null>(null)
-  // ウィンドウの実際のリサイズ可否状態を追跡（null = 不明）
-  // 変化がある場合のみ setResizable を呼ぶことで副作用を最小化する。
   const isResizableRef = useRef<boolean | null>(null)
 
-  // チートシート切り替え時: 保存済みサイズを取得してウィンドウに適用し、
-  // ピン留め状態に応じてリサイズ可否を設定する
   useEffect(() => {
-    if (!selectedTitle || !inputPath) {
+    if (!selectedTitle) {
       setIsPinned(false)
       savedSizeRef.current = null
       if (isResizableRef.current !== true) {
-        // ピン留め状態（非リサイズ可）から選択解除（ESC など）に遷移する場合、
-        // setResizable(true) で WKWebView が first responder を失うため復元が必要
         getCurrentWindow()
           .setResizable(true)
           .then(() => {
@@ -79,18 +67,13 @@ export const useWindowSize = (
     let cancelled = false
 
     const loadAndApply = async () => {
-      // await の前にフォーカスを取得する。invoke 待機中の React 再レンダリングや
-      // setSize/setResizable による WKWebView first responder 消失でフォーカスが
-      // 失われることがあるため、処理完了後に復元する。
-      // WebKit では button クリック時にフォーカスが document.body になることがあるが、
-      // その場合も setFocus() だけは必ず呼んで WKWebView の first responder を復元する。
       debug(
         `[useWindowSize] loadAndApply 開始: title="${selectedTitle}", activeElement=${document.activeElement?.tagName}`,
       )
       try {
         const savedSize = await invoke<WindowSizeSettings | null>(
           WindowSizeAPI.GET_CHEAT_SHEET_WINDOW_SIZE,
-          { inputPath, title: selectedTitle },
+          { title: selectedTitle },
         )
         if (cancelled) return
 
@@ -132,8 +115,6 @@ export const useWindowSize = (
             `[useWindowSize] フォーカス復元完了: activeElement=${document.activeElement?.tagName}`,
           )
         } else {
-          // ウィンドウ操作がなくてもシート切り替えで SheetSwitchButton の input が
-          // アンマウントされると WKWebView が first responder を失うため setFocus が必要
           await restoreFocusAfterWindowOp()
         }
         debug(`[useWindowSize] loadAndApply 完了: title="${selectedTitle}"`)
@@ -152,11 +133,10 @@ export const useWindowSize = (
       savedSizeRef.current = null
       setIsPinned(false)
     }
-  }, [selectedTitle, inputPath, showError])
+  }, [selectedTitle, showError])
 
-  // ピン留めのトグル（PushPin クリック時）
   const togglePin = useCallback(async () => {
-    if (!selectedTitle || !inputPath) return
+    if (!selectedTitle) return
 
     debug(
       `[useWindowSize] togglePin 開始: activeElement=${document.activeElement?.tagName}`,
@@ -164,13 +144,10 @@ export const useWindowSize = (
     const win = getCurrentWindow()
 
     if (savedSizeRef.current) {
-      // ピン留め中 → 解除（保存済みサイズを削除してリサイズ可能に戻す）
       debug(`[useWindowSize] ピン留め解除: title="${selectedTitle}"`)
 
-      // Step 1: JSON から window_size を削除（失敗時は状態を変更せず早期リターン）
       try {
         await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
-          inputPath,
           title: selectedTitle,
           windowSize: null,
         })
@@ -180,7 +157,6 @@ export const useWindowSize = (
         return
       }
 
-      // Step 2: 状態を更新し、setResizable 失敗時はロールバック
       const prevSavedSize = savedSizeRef.current
       savedSizeRef.current = null
       setIsPinned(false)
@@ -198,10 +174,8 @@ export const useWindowSize = (
       await restoreFocusAfterWindowOp()
       debug(`[useWindowSize] ピン留め解除完了: title="${selectedTitle}"`)
     } else {
-      // 未ピン留め → ピン留め（現在のサイズを論理ピクセルで保存してリサイズ不可に）
       debug(`[useWindowSize] ピン留め: title="${selectedTitle}"`)
 
-      // Step 1: 現在のウィンドウサイズを取得
       let logicalWidth: number
       let logicalHeight: number
       try {
@@ -221,10 +195,8 @@ export const useWindowSize = (
         return
       }
 
-      // Step 2: JSON に window_size を保存（失敗時は状態を変更せず早期リターン）
       try {
         await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
-          inputPath,
           title: selectedTitle,
           windowSize: { width: logicalWidth, height: logicalHeight },
         })
@@ -234,7 +206,6 @@ export const useWindowSize = (
         return
       }
 
-      // Step 3: 状態を更新し、setResizable 失敗時はロールバック
       savedSizeRef.current = { width: logicalWidth, height: logicalHeight }
       setIsPinned(true)
       try {
@@ -251,7 +222,7 @@ export const useWindowSize = (
       await restoreFocusAfterWindowOp()
       debug(`[useWindowSize] ピン留め完了: title="${selectedTitle}"`)
     }
-  }, [selectedTitle, inputPath, showError])
+  }, [selectedTitle, showError])
 
   return { isPinned, togglePin }
 }

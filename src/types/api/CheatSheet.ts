@@ -3,6 +3,14 @@ export class CheatSheetAPI {
   static readonly GET_CHEAT_SHEET = 'get_cheat_sheet'
   static readonly RELOAD_CHEAT_SHEET = 'reload_cheat_sheet'
   static readonly RUN_APPLICATION = 'run_application'
+  static readonly IMPORT_FROM_JSON = 'import_from_json'
+  static readonly EXPORT_TO_JSON = 'export_to_json'
+}
+
+export type ImportSummary = {
+  added: number
+  updated: number
+  skipped: number
 }
 
 export type CheatSheetTitleData = {
