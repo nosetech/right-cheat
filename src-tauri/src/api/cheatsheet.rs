@@ -123,6 +123,18 @@ pub struct CommandSearchResult {
     pub command_text: String,
 }
 
+impl From<repository::SearchRow> for CommandSearchResult {
+    fn from(r: repository::SearchRow) -> Self {
+        Self {
+            id: r.id,
+            cheatsheet_id: r.cheatsheet_id,
+            cheatsheet_title: r.cheatsheet_title,
+            description: r.description,
+            command_text: r.command_text,
+        }
+    }
+}
+
 fn with_db<R: tauri::Runtime, T, F>(app: &AppHandle<R>, f: F) -> Result<T, String>
 where
     F: FnOnce(&rusqlite::Connection) -> Result<T, rusqlite::Error>,
@@ -299,27 +311,19 @@ pub fn scan_import_conflicts<R: tauri::Runtime>(
     })
 }
 
+const DEFAULT_SEARCH_LIMIT: u32 = 100;
+
 #[tauri::command]
 pub fn search_commands<R: tauri::Runtime>(
     app: AppHandle<R>,
     query: String,
     limit: Option<u32>,
 ) -> Result<Vec<CommandSearchResult>, String> {
-    let limit = limit.unwrap_or(100);
+    let limit = limit.unwrap_or(DEFAULT_SEARCH_LIMIT);
     with_db(&app, |conn| {
         repository::search_commands(conn, &query, limit)
     })
-    .map(|rows| {
-        rows.into_iter()
-            .map(|r| CommandSearchResult {
-                id: r.id,
-                cheatsheet_id: r.cheatsheet_id,
-                cheatsheet_title: r.cheatsheet_title,
-                description: r.description,
-                command_text: r.command_text,
-            })
-            .collect::<Vec<CommandSearchResult>>()
-    })
+    .map(|rows| rows.into_iter().map(CommandSearchResult::from).collect())
 }
 
 #[tauri::command]

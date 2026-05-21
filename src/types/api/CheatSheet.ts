@@ -14,6 +14,14 @@ export type ImportSummary = {
   skipped: number
 }
 
+export type CommandSearchResult = {
+  id: number
+  cheatsheet_id: number
+  cheatsheet_title: string
+  description: string
+  command_text: string
+}
+
 export type CheatSheetTitleData = {
   title: string[]
 }

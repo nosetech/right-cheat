@@ -310,6 +310,7 @@ fn load_commandlist(conn: &Connection, cheatsheet_id: i64) -> Result<Vec<Command
     Ok(all_items.into_iter().map(|(_, item)| item).collect())
 }
 
+#[derive(Debug)]
 pub struct SearchRow {
     pub id: i64,
     pub cheatsheet_id: i64,
