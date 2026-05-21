@@ -27,6 +27,8 @@ RightCheat は Tauri 2 + Next.js + React + Material-UI で構築されたデス�
 
 ### テスト
 - `cargo test` - Rust テストを実行（src-tauri ディレクトリから）
+- **重要**: Rust のユニットテストは必ず `src-tauri/tests/` 配下に配置すること
+- ソースファイル（`src-tauri/src/`）内への `#[cfg(test)]` インラインテストは使用しない
 
 ### Rust コードフォーマット
 - **重要**: Rust コードを修正した後は必ず `cargo fmt` を実行して一貫したフォーマットを維持する
@@ -252,7 +254,10 @@ if (saved) {
 ### ファイル構造
 - `src/`: Next.js フロントエンドコード
 - `src-tauri/`: Rust バックエンドコードと Tauri 設定
-- `src-tauri/tests/`: テストデータファイル付き Rust ユニットテスト
+- `src-tauri/tests/`: Rust ユニットテスト（全テストはここに配置。ソースファイル内インラインテスト禁止）
+  - `tests/api/`: API レイヤーのテスト
+  - `tests/db/`: DB レイヤー（schema / repository）のテスト
+  - `tests/common.rs`: 共通定数のテスト
 - JSON 設定でチートシートのカテゴリとコマンドを定義
 
 ## 重要な注意事項
