@@ -104,6 +104,7 @@ pub fn run() {
             api::cheatsheet::save_cheat_sheet_window_size,
             api::cheatsheet::import_from_json,
             api::cheatsheet::export_to_json,
+            api::cheatsheet::search_commands,
             api::global_shortcut::get_toggle_visible_shortcut_settings,
             api::global_shortcut::set_toggle_visible_shortcut_settings,
             api::window::notify_theme_changed,
@@ -262,7 +263,7 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
         "id_import_json" => {
             let handle = handle.clone();
             tauri::async_runtime::spawn(async move {
-                use tauri_plugin_dialog::DialogExt;
+                use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
                 let path = handle
                     .dialog()
                     .file()
@@ -271,11 +272,62 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
 
                 if let Some(path) = path {
                     let path_str = path.to_string();
-                    match api::cheatsheet::import_from_json(
-                        handle.clone(),
-                        path_str,
-                        api::cheatsheet::ConflictResolution::Skip,
-                    ) {
+
+                    // 重複タイトルを事前チェック
+                    let conflicts = match api::cheatsheet::scan_import_conflicts(&handle, &path_str)
+                    {
+                        Ok(c) => c,
+                        Err(e) => {
+                            log::error!("[lib] scan_import_conflicts error: {}", e);
+                            handle
+                                .dialog()
+                                .message(format!("インポートに失敗しました。\n{}", e))
+                                .title("RightCheat")
+                                .blocking_show();
+                            return;
+                        }
+                    };
+
+                    // 重複がある場合は3択ダイアログ（2段階）
+                    let on_conflict = if conflicts.is_empty() {
+                        api::cheatsheet::ConflictResolution::Skip
+                    } else {
+                        let continue_import = handle
+                            .dialog()
+                            .message(format!(
+                                "重複するタイトルが {} 件あります。\nインポートを続けますか？",
+                                conflicts.len()
+                            ))
+                            .title("RightCheat")
+                            .buttons(MessageDialogButtons::OkCancelCustom(
+                                "続ける".to_string(),
+                                "キャンセル".to_string(),
+                            ))
+                            .blocking_show();
+
+                        if !continue_import {
+                            log::info!("[lib] import cancelled by user");
+                            return;
+                        }
+
+                        let overwrite = handle
+                            .dialog()
+                            .message("重複タイトルをどうしますか？")
+                            .title("RightCheat")
+                            .buttons(MessageDialogButtons::OkCancelCustom(
+                                "上書き".to_string(),
+                                "スキップ".to_string(),
+                            ))
+                            .blocking_show();
+
+                        if overwrite {
+                            api::cheatsheet::ConflictResolution::Overwrite
+                        } else {
+                            api::cheatsheet::ConflictResolution::Skip
+                        }
+                    };
+
+                    match api::cheatsheet::import_from_json(handle.clone(), path_str, on_conflict) {
                         Ok(summary) => {
                             let msg = format!(
                                 "インポート完了\n追加: {} 件 / 上書き: {} 件 / スキップ: {} 件",

@@ -114,6 +114,15 @@ pub struct ImportSummary {
     pub skipped: usize,
 }
 
+#[derive(Debug, Serialize)]
+pub struct CommandSearchResult {
+    pub id: i64,
+    pub cheatsheet_id: i64,
+    pub cheatsheet_title: String,
+    pub description: String,
+    pub command_text: String,
+}
+
 fn with_db<R: tauri::Runtime, T, F>(app: &AppHandle<R>, f: F) -> Result<T, String>
 where
     F: FnOnce(&rusqlite::Connection) -> Result<T, rusqlite::Error>,
@@ -264,6 +273,52 @@ pub fn import_from_json<R: tauri::Runtime>(
         added,
         updated,
         skipped,
+    })
+}
+
+pub fn scan_import_conflicts<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    json_path: &str,
+) -> Result<Vec<String>, String> {
+    use std::fs::File;
+    use std::io::BufReader;
+
+    let file = File::open(json_path).map_err(|e| format!("ファイルを開けません: {}", e))?;
+    let reader = BufReader::new(file);
+    let sheets: Vec<CheatSheet> =
+        serde_json::from_reader(reader).map_err(|e| format!("JSONパースエラー: {}", e))?;
+
+    with_db(app, |conn| {
+        let mut conflicts = Vec::new();
+        for sheet in &sheets {
+            if repository::title_exists(conn, &sheet.title)? {
+                conflicts.push(sheet.title.clone());
+            }
+        }
+        Ok(conflicts)
+    })
+}
+
+#[tauri::command]
+pub fn search_commands<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    query: String,
+    limit: Option<u32>,
+) -> Result<Vec<CommandSearchResult>, String> {
+    let limit = limit.unwrap_or(100);
+    with_db(&app, |conn| {
+        repository::search_commands(conn, &query, limit)
+    })
+    .map(|rows| {
+        rows.into_iter()
+            .map(|r| CommandSearchResult {
+                id: r.id,
+                cheatsheet_id: r.cheatsheet_id,
+                cheatsheet_title: r.cheatsheet_title,
+                description: r.description,
+                command_text: r.command_text,
+            })
+            .collect::<Vec<CommandSearchResult>>()
     })
 }
 

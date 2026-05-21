@@ -12,15 +12,32 @@ fn apply_migrations_creates_tables() {
     let conn = in_memory_conn();
     apply_migrations(&conn).unwrap();
 
+    // 通常テーブル 4 つ + FTS5 仮想テーブル 1 つ
     let count: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN \
-             ('cheatsheets','command_groups','commands','schema_meta')",
+            "SELECT COUNT(*) FROM sqlite_master WHERE type IN ('table') AND name IN \
+             ('cheatsheets','command_groups','commands','schema_meta','commands_fts')",
             [],
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(count, 4, "4つのテーブルが作成されること");
+    assert_eq!(count, 5, "5つのテーブル（FTS含む）が作成されること");
+}
+
+#[test]
+fn apply_migrations_creates_fts_triggers() {
+    let conn = in_memory_conn();
+    apply_migrations(&conn).unwrap();
+
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name IN \
+             ('commands_ai','commands_au','commands_ad')",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(count, 3, "FTS同期トリガーが3つ作成されること");
 }
 
 #[test]
@@ -35,7 +52,7 @@ fn schema_version_is_set() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(version, 1);
+    assert_eq!(version, 2);
 }
 
 #[test]
@@ -51,5 +68,5 @@ fn apply_migrations_is_idempotent() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(version, 1);
+    assert_eq!(version, 2);
 }

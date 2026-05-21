@@ -5,6 +5,7 @@ export class CheatSheetAPI {
   static readonly RUN_APPLICATION = 'run_application'
   static readonly IMPORT_FROM_JSON = 'import_from_json'
   static readonly EXPORT_TO_JSON = 'export_to_json'
+  static readonly SEARCH_COMMANDS = 'search_commands'
 }
 
 export type ImportSummary = {

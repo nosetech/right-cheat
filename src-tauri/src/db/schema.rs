@@ -19,8 +19,44 @@ pub fn apply_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     if version < 1 {
         migrate_v1(conn)?;
     }
+    if version < 2 {
+        migrate_v2(conn)?;
+    }
 
     Ok(())
+}
+
+fn migrate_v2(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(
+        "
+        CREATE VIRTUAL TABLE IF NOT EXISTS commands_fts USING fts5(
+            description,
+            command_text,
+            tokenize = 'trigram'
+        );
+
+        CREATE TRIGGER IF NOT EXISTS commands_ai AFTER INSERT ON commands BEGIN
+            INSERT INTO commands_fts(rowid, description, command_text)
+            VALUES (new.id, new.description, new.command_text);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS commands_au AFTER UPDATE ON commands BEGIN
+            UPDATE commands_fts
+            SET description = new.description,
+                command_text = new.command_text
+            WHERE rowid = old.id;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS commands_ad AFTER DELETE ON commands BEGIN
+            DELETE FROM commands_fts WHERE rowid = old.id;
+        END;
+
+        INSERT INTO commands_fts(rowid, description, command_text)
+        SELECT id, description, command_text FROM commands;
+
+        INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('schema_version', '2');
+        ",
+    )
 }
 
 fn migrate_v1(conn: &Connection) -> Result<(), rusqlite::Error> {

@@ -310,6 +310,82 @@ fn load_commandlist(conn: &Connection, cheatsheet_id: i64) -> Result<Vec<Command
     Ok(all_items.into_iter().map(|(_, item)| item).collect())
 }
 
+pub struct SearchRow {
+    pub id: i64,
+    pub cheatsheet_id: i64,
+    pub cheatsheet_title: String,
+    pub description: String,
+    pub command_text: String,
+}
+
+fn escape_like_query(query: &str) -> String {
+    let escaped = query
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    format!("%{}%", escaped)
+}
+
+pub fn search_by_like(conn: &Connection, query: &str, limit: u32) -> Result<Vec<SearchRow>> {
+    let pattern = escape_like_query(query);
+    let mut stmt = conn.prepare(
+        "SELECT c.id, c.cheatsheet_id, cs.title, COALESCE(c.description, ''), c.command_text
+         FROM commands c
+         JOIN cheatsheets cs ON c.cheatsheet_id = cs.id
+         WHERE c.description LIKE ?1 ESCAPE '\\' OR c.command_text LIKE ?1 ESCAPE '\\'
+         ORDER BY c.cheatsheet_id, c.sort_order
+         LIMIT ?2",
+    )?;
+    let results = stmt
+        .query_map(params![pattern, limit], |row| {
+            Ok(SearchRow {
+                id: row.get(0)?,
+                cheatsheet_id: row.get(1)?,
+                cheatsheet_title: row.get(2)?,
+                description: row.get(3)?,
+                command_text: row.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>>>()?;
+    Ok(results)
+}
+
+pub fn search_by_fts(conn: &Connection, query: &str, limit: u32) -> Result<Vec<SearchRow>> {
+    // Double-quote wrap for FTS5 phrase match; escape internal double quotes
+    let fts_query = format!("\"{}\"", query.replace('"', "\"\""));
+    let mut stmt = conn.prepare(
+        "SELECT c.id, c.cheatsheet_id, cs.title, COALESCE(c.description, ''), c.command_text
+         FROM commands c
+         JOIN cheatsheets cs ON c.cheatsheet_id = cs.id
+         WHERE c.id IN (SELECT rowid FROM commands_fts WHERE commands_fts MATCH ?1)
+         ORDER BY c.cheatsheet_id, c.sort_order
+         LIMIT ?2",
+    )?;
+    let results = stmt
+        .query_map(params![fts_query, limit], |row| {
+            Ok(SearchRow {
+                id: row.get(0)?,
+                cheatsheet_id: row.get(1)?,
+                cheatsheet_title: row.get(2)?,
+                description: row.get(3)?,
+                command_text: row.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>>>()?;
+    Ok(results)
+}
+
+pub fn search_commands(conn: &Connection, query: &str, limit: u32) -> Result<Vec<SearchRow>> {
+    if query.is_empty() {
+        return Ok(vec![]);
+    }
+    if query.chars().count() >= 3 {
+        search_by_fts(conn, query, limit)
+    } else {
+        search_by_like(conn, query, limit)
+    }
+}
+
 /// 全チートシートを取得する。将来のエクスポート拡張用。
 #[allow(dead_code)]
 pub fn get_all_cheatsheets(conn: &Connection) -> Result<Vec<CheatSheet>> {

@@ -1,7 +1,8 @@
 use app_lib::api::cheatsheet::{CheatSheet, Command, CommandGroup, CommandItem, WindowSize};
 use app_lib::db::repository::{
     delete_cheatsheet, get_all_titles, get_cheatsheet_by_title, get_window_size, insert_cheatsheet,
-    insert_commandlist, save_window_size, title_exists, update_cheatsheet,
+    insert_commandlist, save_window_size, search_by_fts, search_by_like, search_commands,
+    title_exists, update_cheatsheet,
 };
 use app_lib::db::schema::apply_migrations;
 use rusqlite::Connection;
@@ -232,4 +233,167 @@ fn sort_order_is_preserved() {
 
     let titles = get_all_titles(&conn).unwrap();
     assert_eq!(titles, vec!["B", "A", "C"]);
+}
+
+// ── FTS5 検索テスト ──────────────────────────────────────
+
+fn make_sheet_with_commands(
+    title: &str,
+    commands: &[(&str, &str)],
+) -> (CheatSheet, Vec<CommandItem>) {
+    let items: Vec<CommandItem> = commands
+        .iter()
+        .map(|(desc, cmd)| {
+            CommandItem::Single(Command {
+                description: Some(desc.to_string()),
+                command: cmd.to_string(),
+                layout: None,
+            })
+        })
+        .collect();
+    let sheet = CheatSheet {
+        sheet_type: None,
+        title: title.to_string(),
+        window_size: None,
+        layout: None,
+        commandlist: items.clone(),
+    };
+    (sheet, items)
+}
+
+fn insert_sheet_with_commands(conn: &Connection, title: &str, commands: &[(&str, &str)]) {
+    let (sheet, items) = make_sheet_with_commands(title, commands);
+    let id = insert_cheatsheet(conn, &sheet, 0).unwrap();
+    insert_commandlist(conn, id, &items).unwrap();
+}
+
+#[test]
+fn fts_search_matches_3_or_more_chars() {
+    let conn = setup();
+    insert_sheet_with_commands(&conn, "Sheet1", &[("Git status check", "git status")]);
+
+    // 3文字以上 → FTS MATCH を使用
+    let results = search_by_fts(&conn, "status", 100).unwrap();
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].command_text, "git status");
+    assert_eq!(results[0].cheatsheet_title, "Sheet1");
+}
+
+#[test]
+fn like_search_matches_1_2_chars() {
+    let conn = setup();
+    insert_sheet_with_commands(&conn, "Sheet2", &[("List files", "ls")]);
+
+    // 1〜2文字 → LIKE フォールバック
+    let results = search_by_like(&conn, "ls", 100).unwrap();
+    assert!(results.iter().any(|r| r.command_text == "ls"));
+}
+
+#[test]
+fn search_commands_dispatches_by_length() {
+    let conn = setup();
+    insert_sheet_with_commands(&conn, "Sheet3", &[("describe docker", "docker ps")]);
+
+    // 0文字 → 空配列
+    let empty = search_commands(&conn, "", 100).unwrap();
+    assert!(empty.is_empty());
+
+    // 2文字 → LIKE
+    let two = search_commands(&conn, "ps", 100).unwrap();
+    assert!(two.iter().any(|r| r.command_text == "docker ps"));
+
+    // 6文字 → FTS
+    let six = search_commands(&conn, "docker", 100).unwrap();
+    assert!(six.iter().any(|r| r.command_text == "docker ps"));
+}
+
+#[test]
+fn fts_search_is_case_insensitive() {
+    let conn = setup();
+    insert_sheet_with_commands(&conn, "Sheet4", &[("Push branch", "git PUSH origin main")]);
+
+    // 小文字で大文字混じりコマンドを検索
+    let results = search_by_fts(&conn, "push", 100).unwrap();
+    assert!(results
+        .iter()
+        .any(|r| r.command_text == "git PUSH origin main"));
+}
+
+#[test]
+fn fts_search_japanese() {
+    let conn = setup();
+    insert_sheet_with_commands(
+        &conn,
+        "日本語シート",
+        &[("日本語のコマンド説明", "echo 日本語")],
+    );
+
+    // 日本語の3文字部分一致
+    let results = search_by_fts(&conn, "語のコ", 100).unwrap();
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].description, "日本語のコマンド説明");
+}
+
+#[test]
+fn search_syncs_after_update_and_delete() {
+    let conn = setup();
+    insert_sheet_with_commands(
+        &conn,
+        "SyncSheet",
+        &[("Original description", "original_cmd")],
+    );
+
+    // 初期状態で検索できる
+    let before = search_by_fts(&conn, "original", 100).unwrap();
+    assert_eq!(before.len(), 1);
+
+    // update_cheatsheet で commandlist を置き換え → FTS が同期される
+    let updated_sheet = CheatSheet {
+        sheet_type: None,
+        title: "SyncSheet".to_string(),
+        window_size: None,
+        layout: None,
+        commandlist: vec![CommandItem::Single(Command {
+            description: Some("Updated description".to_string()),
+            command: "updated_cmd".to_string(),
+            layout: None,
+        })],
+    };
+    update_cheatsheet(&conn, &updated_sheet).unwrap();
+
+    let after_update = search_by_fts(&conn, "updated", 100).unwrap();
+    assert_eq!(after_update.len(), 1);
+    assert_eq!(after_update[0].command_text, "updated_cmd");
+
+    // 古いコマンドは検索されなくなる
+    let old = search_by_fts(&conn, "original", 100).unwrap();
+    assert!(old.is_empty());
+
+    // delete_cheatsheet 後は検索結果が消える
+    delete_cheatsheet(&conn, "SyncSheet").unwrap();
+    let after_delete = search_by_fts(&conn, "updated", 100).unwrap();
+    assert!(after_delete.is_empty());
+}
+
+#[test]
+fn like_search_escapes_special_chars() {
+    let conn = setup();
+    insert_sheet_with_commands(
+        &conn,
+        "SpecialSheet",
+        &[
+            ("Wildcard percent", "echo 100%done"),
+            ("Wildcard underscore", "echo file_name"),
+        ],
+    );
+
+    // % はリテラルとして検索される（ワイルドカードにならない）
+    let percent_results = search_by_like(&conn, "100%done", 100).unwrap();
+    assert_eq!(percent_results.len(), 1);
+    assert_eq!(percent_results[0].command_text, "echo 100%done");
+
+    // _ もリテラルとして検索される
+    let underscore_results = search_by_like(&conn, "file_name", 100).unwrap();
+    assert_eq!(underscore_results.len(), 1);
+    assert_eq!(underscore_results[0].command_text, "echo file_name");
 }
