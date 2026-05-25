@@ -22,7 +22,8 @@
       "Bash(yarn fix:prettier:*)",
       "Bash(git checkout *)",
       "WebFetch(domain:api.anthropic.com)",
-      "Bash(cargo check *)"
+      "Bash(cargo check *)",
+      "Bash(sqlite3 :memory: *)"
     ],
     "deny": [],
     "ask": []
