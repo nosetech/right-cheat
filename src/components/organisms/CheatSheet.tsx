@@ -23,7 +23,6 @@ import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useWindowSize } from '@/hooks/useWindowSize'
 import {
   CheatSheetAPI,
@@ -34,8 +33,6 @@ import {
 } from '@/types/api/CheatSheet'
 
 export const CheatSheet = () => {
-  const [jsonInputPath, setJsonInputPath] = useState<string>()
-
   const [cheatSheetTitles, setCheatSheetTitles] = useState<
     CheatSheetTitleData | undefined
   >()
@@ -47,9 +44,8 @@ export const CheatSheet = () => {
   const [reloading, setReloading] = useState<boolean>(false)
 
   const theme = useTheme()
-  const { getCheatSheetFilePath } = usePreferencesStore()
 
-  const { isPinned, togglePin } = useWindowSize(selectCheatSheet, jsonInputPath)
+  const { isPinned, togglePin } = useWindowSize(selectCheatSheet)
 
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
   const pinButtonRef = useRef<HTMLButtonElement>(null)
@@ -59,7 +55,6 @@ export const CheatSheet = () => {
     setCheatSheetTitles,
     setCheatSheet,
     setErrorMessage,
-    setJsonInputPath,
   })
 
   useEffect(() => {
@@ -68,13 +63,10 @@ export const CheatSheet = () => {
     ;(async () => {
       unlisten = await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
         ;(async () => {
-          const inputpath = await getCheatSheetFilePath()
-          if (inputpath) {
-            setReloading(true)
-            setCheatSheet('')
-            await loadCheatSheetTitles(inputpath)
-            setReloading(false)
-          }
+          setReloading(true)
+          setCheatSheet('')
+          await loadCheatSheetTitles()
+          setReloading(false)
         })()
       })
       if (cancelled) {
@@ -86,15 +78,12 @@ export const CheatSheet = () => {
       await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
         (response) => {
           debug(
-            `[CheatSheet] チートシートをリロード: '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' レスポンス=${response}`,
+            `[CheatSheet] Reload cheat sheet: '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
           )
         },
       )
 
-      const inputpath = await getCheatSheetFilePath()
-      if (inputpath) {
-        await loadCheatSheetTitles(inputpath)
-      }
+      await loadCheatSheetTitles()
     })()
 
     return () => {
@@ -106,8 +95,8 @@ export const CheatSheet = () => {
 
   useEffect(() => {
     ;(async () => {
-      if (selectCheatSheet !== '' && jsonInputPath) {
-        const data = await loadCheatSheetData(jsonInputPath, selectCheatSheet)
+      if (selectCheatSheet !== '') {
+        const data = await loadCheatSheetData(selectCheatSheet)
         setCheatSheetData(data)
       } else {
         setCheatSheetData(undefined)
@@ -159,7 +148,7 @@ export const CheatSheet = () => {
     },
     onZeroKey: () => {
       sheetSwitchRef.current?.open()
-      debug('[CheatSheet] 0キー: シートスイッチドロップダウンを開きました')
+      debug('[CheatSheet] 0 key: opened sheet switch dropdown')
     },
   })
 
@@ -193,7 +182,7 @@ export const CheatSheet = () => {
               onClick={selectCheatSheet ? togglePin : undefined}
               size='small'
               disabled={!selectCheatSheet}
-              title={isPinned ? 'ピン留め解除 (p)' : 'ピン留め (p)'}
+              title={isPinned ? 'Unpin (p)' : 'Pin (p)'}
               sx={{
                 opacity: selectCheatSheet ? 1 : 0.3,
                 color: isPinned
@@ -213,28 +202,20 @@ export const CheatSheet = () => {
       />
       {/* メインコンテンツ */}
       <Stack padding={1} sx={{ position: 'relative' }}>
-        {jsonInputPath == undefined ? (
-          <Alert severity='error'>
-            入力ファイルのパスが指定されていません。
-            <br />
-            [メニュー] - [Preference]で入力ファイルパスを設定してください。
-          </Alert>
-        ) : errorMessage ? (
+        {errorMessage ? (
           <Alert
             severity='error'
             style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
           >
             {errorMessage}
-            <br />
-            <br />
-            [メニュー] -
-            [Preference]で指定されている入力ファイルの内容を見直してください。
           </Alert>
-        ) : reloading == false && cheatSheetTitles == undefined ? (
-          <Alert severity='error'>
-            正しい内容の入力ファイルが指定されていないようです。
-            <br /> [メニュー] -
-            [Preference]で指定されている入力ファイルの内容を見直してください。
+        ) : reloading === false &&
+          cheatSheetTitles !== undefined &&
+          cheatSheetTitles.title.length === 0 ? (
+          <Alert severity='info'>
+            No cheat sheets registered.
+            <br />
+            Use [File] - [Import from JSON...] to import a cheat sheet.
           </Alert>
         ) : (
           <>

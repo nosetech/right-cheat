@@ -12,63 +12,52 @@ interface UseCheatSheetLoaderProps {
   setCheatSheetTitles: (titles: CheatSheetTitleData | undefined) => void
   setCheatSheet: (title: string) => void
   setErrorMessage: (message: string | undefined) => void
-  setJsonInputPath: (path: string) => void
 }
 
 export const useCheatSheetLoader = ({
   setCheatSheetTitles,
   setCheatSheet,
   setErrorMessage,
-  setJsonInputPath,
 }: UseCheatSheetLoaderProps) => {
-  const loadCheatSheetTitles = useCallback(
-    async (inputpath: string) => {
-      try {
-        setErrorMessage(undefined)
-        const response = await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES, {
-          inputPath: inputpath,
-        })
-        debug(
-          `[useCheatSheetLoader] チートシートタイトルを取得: '${CheatSheetAPI.GET_CHEAT_TITLES}' レスポンス=${response}`,
-        )
+  const loadCheatSheetTitles = useCallback(async () => {
+    try {
+      setErrorMessage(undefined)
+      const response = await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES)
+      debug(
+        `[useCheatSheetLoader] Fetched cheat sheet titles: '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`,
+      )
 
-        const parsedResponse = JSON.parse(response)
+      const parsedResponse = JSON.parse(response)
 
-        if (parsedResponse.success === false && parsedResponse.error) {
-          setErrorMessage(parsedResponse.error)
-          setCheatSheetTitles(undefined)
-        } else {
-          const titles: CheatSheetTitleData = parsedResponse
-          setCheatSheetTitles(titles)
-          setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
-          setErrorMessage(undefined)
-        }
-        setJsonInputPath(inputpath)
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : 'チートシートの読み込みに失敗しました'
-        logError(
-          `[useCheatSheetLoader] チートシートタイトル読み込みエラー: ${errorMessage}`,
-        )
-        setErrorMessage(errorMessage)
+      if (parsedResponse.success === false && parsedResponse.error) {
+        setErrorMessage(parsedResponse.error)
         setCheatSheetTitles(undefined)
+      } else {
+        const titles: CheatSheetTitleData = parsedResponse
+        setCheatSheetTitles(titles)
+        setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+        setErrorMessage(undefined)
       }
-    },
-    [setCheatSheetTitles, setCheatSheet, setErrorMessage, setJsonInputPath],
-  )
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to load cheat sheets'
+      logError(
+        `[useCheatSheetLoader] Error loading cheat sheet titles: ${errorMessage}`,
+      )
+      setErrorMessage(errorMessage)
+      setCheatSheetTitles(undefined)
+    }
+  }, [setCheatSheetTitles, setCheatSheet, setErrorMessage])
 
   const loadCheatSheetData = useCallback(
-    async (inputpath: string, title: string) => {
+    async (title: string) => {
       try {
         setErrorMessage(undefined)
         const response = await invoke<string>(CheatSheetAPI.GET_CHEAT_SHEET, {
-          inputPath: inputpath,
           title: title,
         })
         debug(
-          `[useCheatSheetLoader] チートシートデータを取得: '${CheatSheetAPI.GET_CHEAT_SHEET}' レスポンス=${response}`,
+          `[useCheatSheetLoader] Fetched cheat sheet data: '${CheatSheetAPI.GET_CHEAT_SHEET}' response=${response}`,
         )
 
         const parsedResponse = JSON.parse(response)
@@ -85,9 +74,9 @@ export const useCheatSheetLoader = ({
         const errorMessage =
           error instanceof Error
             ? error.message
-            : 'チートシートデータの読み込みに失敗しました'
+            : 'Failed to load cheat sheet data'
         logError(
-          `[useCheatSheetLoader] チートシートデータ読み込みエラー: ${errorMessage}`,
+          `[useCheatSheetLoader] Error loading cheat sheet data: ${errorMessage}`,
         )
         setErrorMessage(errorMessage)
         return undefined

@@ -4,7 +4,7 @@
 
 ## プロジェクト概要
 
-RightCheat は Tauri 2 + Next.js + React + Material-UI で構築されたデスクトップチートシートアプリケーションです。頻繁に使用するコマンドやショートカットを表示し、クリックやキーボードナビゲーションでクリップボードにコピーできます。ウィンドウ切り替えのグローバルショートカットをサポートし、JSONファイルからコマンドデータを読み込みます。
+RightCheat は Tauri 2 + Next.js + React + Material-UI で構築されたデスクトップチートシートアプリケーションです。頻繁に使用するコマンドやショートカットを表示し、クリックやキーボードナビゲーションでクリップボードにコピーできます。ウィンドウ切り替えのグローバルショートカットをサポートし、SQLite データベースでチートシートデータを管理します。JSON ファイルからのインポート・エクスポートはメニューから実行できます。
 
 ## 開発コマンド
 
@@ -27,6 +27,8 @@ RightCheat は Tauri 2 + Next.js + React + Material-UI で構築されたデス�
 
 ### テスト
 - `cargo test` - Rust テストを実行（src-tauri ディレクトリから）
+- **重要**: Rust のユニットテストは必ず `src-tauri/tests/` 配下に配置すること
+- ソースファイル（`src-tauri/src/`）内への `#[cfg(test)]` インラインテストは使用しない
 
 ### Rust コードフォーマット
 - **重要**: Rust コードを修正した後は必ず `cargo fmt` を実行して一貫したフォーマットを維持する
@@ -60,16 +62,30 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `cargo build` / `cargo check` は警告なしで通過する
 - crates.io への公開予定はないため命名規則逸脱による実害はない
 
+#### DB レイヤー
+- **DB レイヤー**: `src-tauri/src/db/` のモジュラー DB 構造
+  - `mod.rs`: SQLite 接続管理（`DbConnection(Mutex<Connection>)` を Tauri State として登録）
+  - `schema.rs`: `CREATE TABLE` / マイグレーション（`schema_version` で順次適用）
+  - `repository.rs`: チートシート・コマンド・グループの CRUD、全文検索（`search_commands`）
+- **DB ファイルパス**: `~/Library/Application Support/biz.nosetech.rightcheat/cheatsheet.db`
+- **スキーマバージョン**: v1 = 基本テーブル群、v2 = FTS5 全文検索テーブル + 同期トリガー
+
 #### API レイヤー
-- **API レイヤー**: src-tauri/src/api/ のモジュラー API 構造
-  - `cheatsheet.rs`: JSON ファイル読み込み、キャッシュ、コマンド管理
+- **API レイヤー**: `src-tauri/src/api/` のモジュラー API 構造
+  - `cheatsheet.rs`: SQLite DB からのデータ取得、インポート/エクスポート、全文検索コマンド
   - `global_shortcut.rs`: キーボードショートカットの設定と処理（再起動確認ダイアログ対応）
   - `application.rs`: アプリケーション起動コマンド（`run_application`）
-- **データフロー**: JSON ファイル → キャッシュ → Tauri コマンド経由でフロントエンド
+- **データフロー**: SQLite DB → リポジトリ層 → Tauri コマンド経由でフロントエンド
 - **設定**: tauri-plugin-store を使用した永続化ストレージ
-- **メニューシステム**: 設定とヘルプオプション付きのネイティブ macOS メニュー
+- **メニューシステム**: File（Import/Export）・View・Help を含むネイティブ macOS メニュー
 - **マルチディスプレイ対応**: ウィンドウの表示位置がマルチディスプレイ環境に対応
 - **ロギング**: @tauri-apps/plugin-log を使用した構造化ログ
+
+#### チートシートデータの操作
+- **インポート**: File メニュー → "Import from JSON..." → `.json` ファイルを選択
+  - 重複タイトルがある場合: 「続ける/キャンセル」→「上書き/スキップ」の2段階ダイアログ
+  - 完了後に追加/上書き/スキップ件数をダイアログで通知
+- **エクスポート**: File メニュー → "Export to JSON..." → エクスポートウィンドウ（`/export`）を開き、対象チートシートをチェックして書き出し先を指定
 
 ### アプリケーションランチャー機能
 
@@ -178,6 +194,7 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[global_shortcut]` - `src-tauri/src/api/global_shortcut.rs`
 - `[visible_on_all_workspaces]` - `src-tauri/src/api/visible_on_all_workspaces.rs`
 - `[application]` - `src-tauri/src/api/application.rs`
+- `[db]` - `src-tauri/src/db/` 配下のモジュール
 
 #### ログレベルの使い分け
 
@@ -251,14 +268,19 @@ if (saved) {
 
 ### ファイル構造
 - `src/`: Next.js フロントエンドコード
+  - `src/app/export/`: チートシートエクスポート選択画面
 - `src-tauri/`: Rust バックエンドコードと Tauri 設定
-- `src-tauri/tests/`: テストデータファイル付き Rust ユニットテスト
-- JSON 設定でチートシートのカテゴリとコマンドを定義
+  - `src-tauri/src/db/`: SQLite DB 接続・スキーマ・リポジトリ層
+  - `src-tauri/src/api/`: Tauri コマンド（チートシート取得・インポート・エクスポート・検索）
+- `src-tauri/tests/`: Rust ユニットテスト（全テストはここに配置。ソースファイル内インラインテスト禁止）
+  - `tests/api/`: API レイヤーのテスト
+  - `tests/db/`: DB レイヤー（schema / repository / 全文検索）のテスト
+  - `tests/common.rs`: 共通定数のテスト
 
 ## 重要な注意事項
 
 - **プラットフォーム**: macOS 専用アプリケーション（macOS での動作に注力、他OSはサポート対象外）
-- 日本人ユーザーをターゲット（UI テキストは日本語）
+- 主なユーザーは日本人ユーザーをターゲットとして日本語は扱えるが、UI テキストは英語で統一する。
 - セキュリティ重視: インターネット通信なし、ローカルファイルアクセスのみ
 - Yarn パッケージマネージャーを使用
 - TypeScript strict モードを有効

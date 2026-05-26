@@ -4,7 +4,7 @@ GitHub issueを分析して実行してください: issue番号 $ARGUMENTS
 
 1. **Issue 詳細の取得**
 
-   - `gh issue view <issue-number>` で issue 詳細を取得
+   - `gh issue view <issue-number>` で issue 詳細を取得。issueに追加されているコメントもすべて取得する。
 
 2. **問題の理解**
 

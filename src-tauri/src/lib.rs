@@ -1,7 +1,9 @@
 pub mod api;
 pub mod common;
+pub mod db;
 pub mod settings_store;
 
+use db::DbConnection;
 use settings_store::{SettingsStore, TauriSettingsStore};
 use tauri::image::Image;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
@@ -41,6 +43,18 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .on_menu_event(|handle, event| on_menu_event_configuration(handle, event))
         .setup(|app| {
+            // DB を初期化して Tauri State に登録
+            let db_path = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app_data_dir")
+                .join("cheatsheet.db");
+            if let Some(parent) = db_path.parent() {
+                std::fs::create_dir_all(parent).ok();
+            }
+            let conn = db::open_connection(db_path).expect("Failed to initialize DB");
+            app.manage(DbConnection(std::sync::Mutex::new(conn)));
+
             #[cfg(target_os = "macos")]
             {
                 use objc2::AllocAnyThread;
@@ -53,9 +67,7 @@ pub fn run() {
                 let ns_app = NSApplication::sharedApplication(mtm);
                 let data = NSData::with_bytes(icon_bytes);
                 if let Some(icon) = NSImage::initWithData(NSImage::alloc(), &data) {
-                    // 実行中のDock・Aboutアイコンを設定
                     unsafe { ns_app.setApplicationIconImage(Some(&icon)) };
-                    // FinderおよびDock（停止時）のアイコンをアプリバンドルに書き込む
                     let bundle_path = unsafe { NSBundle::mainBundle().bundlePath() };
                     let workspace = unsafe { NSWorkspace::sharedWorkspace() };
                     unsafe {
@@ -70,9 +82,6 @@ pub fn run() {
             global_shortcut_configuration(app)?;
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
 
-            // Command+Tab でアプリがアクティブになった際、WKWebView が
-            // キーボードの first responder を取得できない場合がある。
-            // WindowEvent::Focused(true) を検知してフロントエンドへ通知する。
             if let Some(main_window) = app.get_webview_window("main") {
                 let main_window_clone = main_window.clone();
                 main_window.on_window_event(move |event| {
@@ -91,6 +100,11 @@ pub fn run() {
             api::cheatsheet::get_cheat_titles,
             api::cheatsheet::get_cheat_sheet,
             api::cheatsheet::reload_cheat_sheet,
+            api::cheatsheet::get_cheat_sheet_window_size,
+            api::cheatsheet::save_cheat_sheet_window_size,
+            api::cheatsheet::import_from_json,
+            api::cheatsheet::export_to_json,
+            api::cheatsheet::search_commands,
             api::global_shortcut::get_toggle_visible_shortcut_settings,
             api::global_shortcut::set_toggle_visible_shortcut_settings,
             api::window::notify_theme_changed,
@@ -101,8 +115,6 @@ pub fn run() {
             api::font_size::reset_font_size,
             api::visible_on_all_workspaces::get_visible_on_all_workspaces_setting,
             api::visible_on_all_workspaces::set_visible_on_all_workspaces_setting,
-            api::cheatsheet::get_cheat_sheet_window_size,
-            api::cheatsheet::save_cheat_sheet_window_size,
             api::application::run_application,
         ])
         .run(tauri::generate_context!())
@@ -127,7 +139,7 @@ fn menu_configuration<R: tauri::Runtime>(
                         Some({
                             let app_version = handle.package_info().version.to_string();
                             let mut metadata = AboutMetadataBuilder::new()
-                                .version(Some(format!("バージョン {}", app_version)))
+                                .version(Some(format!("Version {}", app_version)))
                                 .short_version(Some(app_version))
                                 .copyright(Some(get_copyright()));
                             metadata = metadata.icon(Some(Image::from_bytes(include_bytes!(
@@ -146,6 +158,27 @@ fn menu_configuration<R: tauri::Runtime>(
                     )?,
                     &PredefinedMenuItem::separator(handle)?,
                     &PredefinedMenuItem::quit(handle, Some("Quit"))?,
+                ],
+            )?,
+            &Submenu::with_items(
+                handle,
+                "File",
+                true,
+                &[
+                    &MenuItem::with_id(
+                        handle,
+                        "id_import_json",
+                        "Import from JSON...",
+                        true,
+                        Some("Cmd+I"),
+                    )?,
+                    &MenuItem::with_id(
+                        handle,
+                        "id_export_json",
+                        "Export to JSON...",
+                        true,
+                        Some("Cmd+E"),
+                    )?,
                 ],
             )?,
             &Submenu::with_items(
@@ -223,6 +256,111 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             .inner_size(520.0, 420.0)
             .max_inner_size(800.0, 420.0)
             .min_inner_size(520.0, 420.0)
+            .title_bar_style(tauri::TitleBarStyle::Overlay)
+            .hidden_title(true)
+            .build();
+        }
+        "id_import_json" => {
+            let handle = handle.clone();
+            tauri::async_runtime::spawn(async move {
+                use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+                let path = handle
+                    .dialog()
+                    .file()
+                    .add_filter("JSON", &["json"])
+                    .blocking_pick_file();
+
+                if let Some(path) = path {
+                    let path_str = path.to_string();
+
+                    // 重複タイトルを事前チェック
+                    let conflicts = match api::cheatsheet::scan_import_conflicts(&handle, &path_str)
+                    {
+                        Ok(c) => c,
+                        Err(e) => {
+                            log::error!("[lib] scan_import_conflicts error: {}", e);
+                            handle
+                                .dialog()
+                                .message(format!("Import failed.\n{}", e))
+                                .title("Import Result")
+                                .blocking_show();
+                            return;
+                        }
+                    };
+
+                    // 重複がある場合は3択ダイアログ（2段階）
+                    let on_conflict = if conflicts.is_empty() {
+                        api::cheatsheet::ConflictResolution::Skip
+                    } else {
+                        let continue_import = handle
+                            .dialog()
+                            .message(format!(
+                                "{} duplicate title(s) found.\nDo you want to continue importing?",
+                                conflicts.len()
+                            ))
+                            .title("Import")
+                            .buttons(MessageDialogButtons::OkCancelCustom(
+                                "Continue".to_string(),
+                                "Cancel".to_string(),
+                            ))
+                            .blocking_show();
+
+                        if !continue_import {
+                            log::info!("[lib] import cancelled by user");
+                            return;
+                        }
+
+                        let overwrite = handle
+                            .dialog()
+                            .message("How do you want to handle duplicates?")
+                            .title("Import")
+                            .buttons(MessageDialogButtons::OkCancelCustom(
+                                "Overwrite".to_string(),
+                                "Skip".to_string(),
+                            ))
+                            .blocking_show();
+
+                        if overwrite {
+                            api::cheatsheet::ConflictResolution::Overwrite
+                        } else {
+                            api::cheatsheet::ConflictResolution::Skip
+                        }
+                    };
+
+                    match api::cheatsheet::import_from_json(handle.clone(), path_str, on_conflict) {
+                        Ok(summary) => {
+                            let msg = format!(
+                                "Import complete\nAdded: {} / Overwritten: {} / Skipped: {}",
+                                summary.added, summary.updated, summary.skipped
+                            );
+                            log::info!("[lib] {}", msg);
+                            handle
+                                .dialog()
+                                .message(&msg)
+                                .title("Import Result")
+                                .blocking_show();
+                        }
+                        Err(e) => {
+                            log::error!("[lib] import_from_json error: {}", e);
+                            handle
+                                .dialog()
+                                .message(format!("Import failed.\n{}", e))
+                                .title("Import Result")
+                                .blocking_show();
+                        }
+                    }
+                }
+            });
+        }
+        "id_export_json" => {
+            let _ = tauri::webview::WebviewWindowBuilder::new(
+                handle,
+                "export",
+                tauri::WebviewUrl::App("/export".into()),
+            )
+            .title("Export Cheatsheets")
+            .inner_size(480.0, 480.0)
+            .min_inner_size(360.0, 320.0)
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
             .build();

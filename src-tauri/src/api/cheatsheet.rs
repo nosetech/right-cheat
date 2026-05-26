@@ -1,17 +1,14 @@
 use crate::common;
-use lazy_static::lazy_static;
+use crate::db::{repository, DbConnection};
 use serde::{Deserialize, Serialize};
-use serde_json;
-use std::error::Error;
 use std::fmt;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::PathBuf;
-use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, EventTarget};
+use tauri::{AppHandle, Emitter, EventTarget, Manager};
 
-lazy_static! {
-    static ref CACHE: Mutex<Option<Vec<CheatSheet>>> = Mutex::new(None);
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConflictResolution {
+    Skip,
+    Overwrite,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,22 +36,23 @@ fn window_size_defaults_from_config<R: tauri::Runtime>(app: &AppHandle<R>) -> (u
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    success: bool,
-    error: String,
+    pub success: bool,
+    pub error: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CheatSheet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[serde(rename = "type")]
-    sheet_type: Option<String>,
-    title: String,
+    pub sheet_type: Option<String>,
+    pub title: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    window_size: Option<WindowSize>,
+    pub window_size: Option<WindowSize>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    layout: Option<String>,
-    commandlist: Vec<CommandItem>,
+    pub layout: Option<String>,
+    pub commandlist: Vec<CommandItem>,
 }
+
 impl fmt::Display for CheatSheet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "title = {}, commandlist = ", self.title)?;
@@ -67,14 +65,13 @@ impl fmt::Display for CheatSheet {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum CommandItem {
-    // Group を Single より先に定義する: untagged enum は上から順にマッチを試みるため、
-    // Single が先だと `group` フィールドを持つオブジェクトが Command としてパースされ失敗する
     Group(CommandGroup),
     Single(Command),
 }
+
 impl fmt::Display for CommandItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -84,20 +81,21 @@ impl fmt::Display for CommandItem {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CommandGroup {
     pub group: String,
     pub commandlist: Vec<Command>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Command {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    description: Option<String>,
-    command: String,
+    pub description: Option<String>,
+    pub command: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    layout: Option<String>,
+    pub layout: Option<String>,
 }
+
 impl fmt::Display for Command {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -109,129 +107,106 @@ impl fmt::Display for Command {
     }
 }
 
-#[tauri::command]
-pub fn get_cheat_titles(input_path: &str) -> String {
-    let mut cache = CACHE.lock().unwrap();
+#[derive(Debug, Serialize)]
+pub struct ImportSummary {
+    pub added: usize,
+    pub updated: usize,
+    pub skipped: usize,
+}
 
-    // キャッシュが空ならファイルから読み込む
-    if cache.is_none() {
-        log::debug!(
-            "[cheatsheet] Cache is empty, reading from file: {}",
-            input_path
-        );
-        match read_json_from_file(PathBuf::from(input_path)) {
-            Ok(data) => *cache = Some(data),
-            Err(e) => {
-                let error_msg = format_json_error(e.as_ref());
-                log::error!("[cheatsheet] Failed to read JSON file: {}", error_msg);
-                let error_response = ErrorResponse {
-                    success: false,
-                    error: error_msg,
-                };
-                return serde_json::to_string(&error_response).unwrap_or_else(|_| {
-                    r#"{"success":false,"error":"JSONレスポンス生成エラー"}"#.to_string()
-                });
-            }
+#[derive(Debug, Serialize)]
+pub struct CommandSearchResult {
+    pub id: i64,
+    pub cheatsheet_id: i64,
+    pub cheatsheet_title: String,
+    pub description: String,
+    pub command_text: String,
+}
+
+impl From<repository::SearchRow> for CommandSearchResult {
+    fn from(r: repository::SearchRow) -> Self {
+        Self {
+            id: r.id,
+            cheatsheet_id: r.cheatsheet_id,
+            cheatsheet_title: r.cheatsheet_title,
+            description: r.description,
+            command_text: r.command_text,
         }
     }
+}
 
-    let titlelist = cache
-        .as_ref()
-        .unwrap_or(&vec![])
-        .iter()
-        .map(|sheet| format!("\"{}\"", sheet.title))
-        .collect::<Vec<String>>()
-        .join(",");
-
-    format!("{{\"title\": [{}]}}", titlelist)
+fn with_db<R: tauri::Runtime, T, F>(app: &AppHandle<R>, f: F) -> Result<T, String>
+where
+    F: FnOnce(&rusqlite::Connection) -> Result<T, rusqlite::Error>,
+{
+    let state = app.state::<DbConnection>();
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    f(&conn).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_cheat_sheet(input_path: &str, title: &str) -> String {
-    let mut cache = CACHE.lock().unwrap();
-
-    // キャッシュが空ならファイルから読み込む
-    if cache.is_none() {
-        log::debug!(
-            "[cheatsheet] Cache is empty, reading from file: {}",
-            input_path
-        );
-        match read_json_from_file(PathBuf::from(input_path)) {
-            Ok(data) => *cache = Some(data),
-            Err(e) => {
-                let error_msg = format_json_error(e.as_ref());
-                log::error!("[cheatsheet] Failed to read JSON file: {}", error_msg);
-                let error_response = ErrorResponse {
-                    success: false,
-                    error: error_msg,
-                };
-                return serde_json::to_string(&error_response).unwrap_or_else(|_| {
-                    r#"{"success":false,"error":"JSONレスポンス生成エラー"}"#.to_string()
-                });
+pub fn get_cheat_titles<R: tauri::Runtime>(app: AppHandle<R>) -> String {
+    match with_db(&app, |conn| repository::get_all_titles(conn)) {
+        Ok(titles) => {
+            #[derive(Serialize)]
+            struct TitleResponse {
+                title: Vec<String>,
             }
+            serde_json::to_string(&TitleResponse { title: titles })
+                .unwrap_or_else(|_| r#"{"title":[]}"#.to_string())
+        }
+        Err(e) => {
+            log::error!("[cheatsheet] get_cheat_titles error: {}", e);
+            let err = ErrorResponse {
+                success: false,
+                error: e,
+            };
+            serde_json::to_string(&err).unwrap_or_else(|_| {
+                r#"{"success":false,"error":"JSON response generation error"}"#.to_string()
+            })
         }
     }
+}
 
-    let binding = vec![];
-    let cheatsheet = cache
-        .as_ref()
-        .unwrap_or(&binding)
-        .iter()
-        .find(|sheet| sheet.title == title);
-    let response = cheatsheet.map_or("{}".to_string(), |sheet| {
-        serde_json::to_string(&sheet).unwrap_or("{}".to_string())
-    });
-
-    response
+#[tauri::command]
+pub fn get_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>, title: &str) -> String {
+    match with_db(&app, |conn| {
+        repository::get_cheatsheet_by_title(conn, title)
+    }) {
+        Ok(Some(sheet)) => serde_json::to_string(&sheet).unwrap_or_else(|_| "{}".to_string()),
+        Ok(None) => "{}".to_string(),
+        Err(e) => {
+            log::error!("[cheatsheet] get_cheat_sheet error: {}", e);
+            let err = ErrorResponse {
+                success: false,
+                error: e,
+            };
+            serde_json::to_string(&err).unwrap_or_else(|_| {
+                r#"{"success":false,"error":"JSON response generation error"}"#.to_string()
+            })
+        }
+    }
 }
 
 #[tauri::command]
 pub fn reload_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>) -> String {
-    let mut cache = CACHE.lock().unwrap();
-    *cache = None; // キャッシュをクリア
-
-    let response;
     match app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ()) {
-        Ok(_) => response = "success",
-        Err(_) => response = "fail",
+        Ok(_) => r#"{"status": "success"}"#.to_string(),
+        Err(_) => r#"{"status": "fail"}"#.to_string(),
     }
-
-    format!("{{\"status\": {}}}", response)
 }
 
 #[tauri::command]
-pub fn get_cheat_sheet_window_size(
-    input_path: &str,
+pub fn get_cheat_sheet_window_size<R: tauri::Runtime>(
+    app: AppHandle<R>,
     title: &str,
 ) -> Result<Option<WindowSize>, String> {
-    let mut cache = CACHE.lock().unwrap();
-
-    if cache.is_none() {
-        log::debug!(
-            "[cheatsheet] Cache is empty, reading from file: {}",
-            input_path
-        );
-        match read_json_from_file(PathBuf::from(input_path)) {
-            Ok(data) => *cache = Some(data),
-            Err(e) => return Err(e.to_string()),
-        }
-    }
-
-    let binding = vec![];
-    let window_size = cache
-        .as_ref()
-        .unwrap_or(&binding)
-        .iter()
-        .find(|s| s.title == title)
-        .and_then(|s| s.window_size.clone());
-
-    Ok(window_size)
+    with_db(&app, |conn| repository::get_window_size(conn, title))
 }
 
 #[tauri::command]
 pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
     app: AppHandle<R>,
-    input_path: &str,
     title: &str,
     window_size: Option<WindowSize>,
 ) -> Result<(), String> {
@@ -239,63 +214,148 @@ pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
         let (min_width, min_height) = window_size_defaults_from_config(&app);
         ws.clamp_to_min(min_width, min_height)
     });
-    let file_path = PathBuf::from(input_path);
 
-    // ファイルから最新データを読み込む（キャッシュを経由しない）
-    let mut sheets: Vec<CheatSheet> = {
-        let file = File::open(&file_path).map_err(|e| e.to_string())?;
-        let reader = BufReader::new(file);
-        serde_json::from_reader(reader).map_err(|e| e.to_string())?
-    };
+    let found = with_db(&app, |conn| {
+        repository::save_window_size(conn, title, window_size.as_ref())
+    })?;
 
-    // 対象チートシートのウィンドウサイズを更新
-    match sheets.iter_mut().find(|s| s.title == title) {
-        Some(sheet) => {
-            sheet.window_size = window_size;
-        }
-        None => {
-            return Err(format!("チートシート '{}' が見つかりません", title));
-        }
+    if !found {
+        return Err(format!("Cheat sheet '{}' not found", title));
     }
-
-    // ファイルに書き戻す
-    let json = serde_json::to_string_pretty(&sheets).map_err(|e| e.to_string())?;
-    std::fs::write(&file_path, format!("{}\n", json)).map_err(|e| e.to_string())?;
-
-    // キャッシュを更新
-    let mut cache = CACHE.lock().unwrap();
-    *cache = Some(sheets);
-
     Ok(())
 }
 
-fn read_json_from_file(file_path: PathBuf) -> Result<Vec<CheatSheet>, Box<dyn Error>> {
-    let file = File::open(file_path)?;
+#[tauri::command]
+pub fn import_from_json<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    json_path: String,
+    on_conflict: ConflictResolution,
+) -> Result<ImportSummary, String> {
+    use std::fs::File;
+    use std::io::BufReader;
+
+    let file = File::open(&json_path).map_err(|e| format!("Failed to open file: {}", e))?;
     let reader = BufReader::new(file);
-    let cheatsheet: Vec<CheatSheet> = serde_json::from_reader(reader)?;
-    Ok(cheatsheet)
+    let sheets: Vec<CheatSheet> =
+        serde_json::from_reader(reader).map_err(|e| format!("JSON parse error: {}", e))?;
+
+    let mut added = 0;
+    let mut updated = 0;
+    let mut skipped = 0;
+
+    with_db(&app, |conn| {
+        let tx = conn.unchecked_transaction()?;
+
+        let max_order = repository::get_max_sort_order(&tx)?;
+
+        for (i, sheet) in sheets.iter().enumerate() {
+            let exists = repository::title_exists(&tx, &sheet.title)?;
+            if exists {
+                match on_conflict {
+                    ConflictResolution::Overwrite => {
+                        repository::update_cheatsheet(&tx, sheet)?;
+                        updated += 1;
+                    }
+                    ConflictResolution::Skip => {
+                        skipped += 1;
+                    }
+                }
+            } else {
+                let sort_order = max_order + 1 + i as i64;
+                let cheatsheet_id = repository::insert_cheatsheet(&tx, sheet, sort_order)?;
+                repository::insert_commandlist(&tx, cheatsheet_id, &sheet.commandlist)?;
+                added += 1;
+            }
+        }
+
+        tx.commit()?;
+        Ok(())
+    })?;
+
+    log::info!(
+        "[cheatsheet] import_from_json: added={}, updated={}, skipped={}",
+        added,
+        updated,
+        skipped
+    );
+
+    let _ = app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ());
+
+    Ok(ImportSummary {
+        added,
+        updated,
+        skipped,
+    })
 }
 
-fn format_json_error(error: &dyn std::error::Error) -> String {
-    let error_msg = error.to_string();
+pub fn scan_import_conflicts<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    json_path: &str,
+) -> Result<Vec<String>, String> {
+    use std::fs::File;
+    use std::io::BufReader;
 
-    // serde_json エラーはメッセージに行とカラムの情報を含む
-    // 例: "expected value at line 5 column 10"
-    // このメッセージをそのままユーザーに返す
-    if error_msg.contains("line") && error_msg.contains("column") {
-        format!(
-            "JSONファイルのパースに失敗しました。\nエラー: {}",
-            error_msg
-        )
-    } else if error_msg.contains("No such file") || error_msg.contains("not found") {
-        format!(
-            "指定されたJSONファイルが見つかりません。\nエラー: {}",
-            error_msg
-        )
-    } else {
-        format!(
-            "JSONファイルの読み込みに失敗しました。\nエラー: {}",
-            error_msg
-        )
+    let file = File::open(json_path).map_err(|e| format!("Failed to open file: {}", e))?;
+    let reader = BufReader::new(file);
+    let sheets: Vec<CheatSheet> =
+        serde_json::from_reader(reader).map_err(|e| format!("JSON parse error: {}", e))?;
+
+    with_db(app, |conn| {
+        let mut conflicts = Vec::new();
+        for sheet in &sheets {
+            if repository::title_exists(conn, &sheet.title)? {
+                conflicts.push(sheet.title.clone());
+            }
+        }
+        Ok(conflicts)
+    })
+}
+
+const DEFAULT_SEARCH_LIMIT: u32 = 100;
+
+#[tauri::command]
+pub fn search_commands<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    query: String,
+    limit: Option<u32>,
+) -> Result<Vec<CommandSearchResult>, String> {
+    let limit = limit.unwrap_or(DEFAULT_SEARCH_LIMIT);
+    with_db(&app, |conn| {
+        repository::search_commands(conn, &query, limit)
+    })
+    .map(|rows| rows.into_iter().map(CommandSearchResult::from).collect())
+}
+
+#[tauri::command]
+pub fn export_to_json<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    json_path: String,
+    titles: Vec<String>,
+) -> Result<(), String> {
+    if titles.is_empty() {
+        return Err("No items selected for export".to_string());
     }
+
+    let sheets = with_db(&app, |conn| {
+        let mut result = Vec::new();
+        for title in &titles {
+            if let Some(sheet) = repository::get_cheatsheet_by_title(conn, title)? {
+                result.push(sheet);
+            }
+        }
+        Ok(result)
+    })?;
+
+    let json = serde_json::to_string_pretty(&sheets)
+        .map_err(|e| format!("JSON serialization error: {}", e))?;
+    std::fs::write(&json_path, format!("{}\n", json))
+        .map_err(|e| format!("File write error: {}", e))?;
+
+    log::info!(
+        "[cheatsheet] export_to_json: exported {} cheatsheets to {}",
+        sheets.len(),
+        json_path
+    );
+
+    Ok(())
 }

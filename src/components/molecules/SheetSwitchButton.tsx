@@ -65,7 +65,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
     // setFocus() でウィンドウをキーウィンドウに戻し、トリガーボタンを focus() する。
     const restoreFocusAfterClose = useCallback(() => {
       setTimeout(async () => {
-        debug('[SheetSwitchButton] first responder をトリガーボタンに復元')
+        debug('[SheetSwitchButton] restore first responder to trigger button')
         await getCurrentWindow().setFocus()
         const btn = containerRef.current?.querySelector<HTMLElement>('button')
         btn?.focus()
@@ -91,7 +91,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
     }, [open, restoreFocusAfterClose])
 
     const commit = (sheet: string) => {
-      debug(`[SheetSwitchButton] シート選択: "${sheet}"`)
+      debug(`[SheetSwitchButton] sheet selected: "${sheet}"`)
       onSelect(sheet)
       setOpen(false)
       setQuery('')
@@ -123,7 +123,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
         <Box
           component='button'
           onClick={() => setOpen((o) => !o)}
-          title='チートシートを切替'
+          title='Switch cheat sheet'
           aria-haspopup='listbox'
           aria-expanded={open}
           sx={{
@@ -236,7 +236,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder='絞り込む...'
+                  placeholder='Filter...'
                   style={{
                     flex: 1,
                     background: 'none',
@@ -297,7 +297,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                     textAlign: 'center',
                   }}
                 >
-                  見つかりません
+                  Not found
                 </Typography>
               ) : (
                 filtered.map((title, i) => (

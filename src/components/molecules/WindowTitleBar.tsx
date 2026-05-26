@@ -51,7 +51,7 @@ export const WindowTitleBar = ({ title, rightControls }: Props) => {
           sx={{
             position: 'absolute',
             left: TRAFFIC_LIGHTS_WIDTH,
-            right: rightControls ? TRAFFIC_LIGHTS_WIDTH : 16,
+            right: TRAFFIC_LIGHTS_WIDTH,
             textAlign: 'center',
             pointerEvents: 'none',
           }}

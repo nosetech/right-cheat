@@ -20,6 +20,7 @@
     "core:window:allow-current-monitor",
     "core:window:allow-set-resizable",
     "core:window:allow-start-dragging",
+    "core:window:allow-close",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",

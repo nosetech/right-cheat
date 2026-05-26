@@ -29,6 +29,7 @@ tauri-plugin-store = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 lazy_static = "1.4.0"
+rusqlite = { version = "0.31", features = ["bundled"] }
 tauri-plugin-shell = "2"
 tauri-plugin-process = "2"
 
