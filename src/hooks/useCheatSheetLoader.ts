@@ -24,7 +24,7 @@ export const useCheatSheetLoader = ({
       setErrorMessage(undefined)
       const response = await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES)
       debug(
-        `[useCheatSheetLoader] チートシートタイトルを取得: '${CheatSheetAPI.GET_CHEAT_TITLES}' レスポンス=${response}`,
+        `[useCheatSheetLoader] Fetched cheat sheet titles: '${CheatSheetAPI.GET_CHEAT_TITLES}' response=${response}`,
       )
 
       const parsedResponse = JSON.parse(response)
@@ -40,11 +40,9 @@ export const useCheatSheetLoader = ({
       }
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'チートシートの読み込みに失敗しました'
+        error instanceof Error ? error.message : 'Failed to load cheat sheets'
       logError(
-        `[useCheatSheetLoader] チートシートタイトル読み込みエラー: ${errorMessage}`,
+        `[useCheatSheetLoader] Error loading cheat sheet titles: ${errorMessage}`,
       )
       setErrorMessage(errorMessage)
       setCheatSheetTitles(undefined)
@@ -59,7 +57,7 @@ export const useCheatSheetLoader = ({
           title: title,
         })
         debug(
-          `[useCheatSheetLoader] チートシートデータを取得: '${CheatSheetAPI.GET_CHEAT_SHEET}' レスポンス=${response}`,
+          `[useCheatSheetLoader] Fetched cheat sheet data: '${CheatSheetAPI.GET_CHEAT_SHEET}' response=${response}`,
         )
 
         const parsedResponse = JSON.parse(response)
@@ -76,9 +74,9 @@ export const useCheatSheetLoader = ({
         const errorMessage =
           error instanceof Error
             ? error.message
-            : 'チートシートデータの読み込みに失敗しました'
+            : 'Failed to load cheat sheet data'
         logError(
-          `[useCheatSheetLoader] チートシートデータ読み込みエラー: ${errorMessage}`,
+          `[useCheatSheetLoader] Error loading cheat sheet data: ${errorMessage}`,
         )
         setErrorMessage(errorMessage)
         return undefined

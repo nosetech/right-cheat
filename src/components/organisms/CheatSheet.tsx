@@ -78,7 +78,7 @@ export const CheatSheet = () => {
       await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
         (response) => {
           debug(
-            `[CheatSheet] チートシートをリロード: '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' レスポンス=${response}`,
+            `[CheatSheet] Reload cheat sheet: '${CheatSheetAPI.RELOAD_CHEAT_SHEET}' response=${response}`,
           )
         },
       )
@@ -148,7 +148,7 @@ export const CheatSheet = () => {
     },
     onZeroKey: () => {
       sheetSwitchRef.current?.open()
-      debug('[CheatSheet] 0キー: シートスイッチドロップダウンを開きました')
+      debug('[CheatSheet] 0 key: opened sheet switch dropdown')
     },
   })
 
@@ -182,7 +182,7 @@ export const CheatSheet = () => {
               onClick={selectCheatSheet ? togglePin : undefined}
               size='small'
               disabled={!selectCheatSheet}
-              title={isPinned ? 'ピン留め解除 (p)' : 'ピン留め (p)'}
+              title={isPinned ? 'Unpin (p)' : 'Pin (p)'}
               sx={{
                 opacity: selectCheatSheet ? 1 : 0.3,
                 color: isPinned
@@ -213,10 +213,9 @@ export const CheatSheet = () => {
           cheatSheetTitles !== undefined &&
           cheatSheetTitles.title.length === 0 ? (
           <Alert severity='info'>
-            チートシートが登録されていません。
+            No cheat sheets registered.
             <br />
-            メニューの [File] - [Import from JSON...]
-            でチートシートをインポートしてください。
+            Use [File] - [Import from JSON...] to import a cheat sheet.
           </Alert>
         ) : (
           <>

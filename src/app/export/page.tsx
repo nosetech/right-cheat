@@ -508,8 +508,7 @@ export default function ExportPage() {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          paddingTop: `${TITLEBAR_HEIGHT}px`,
-          height: '100vh',
+          height: `calc(100vh - ${TITLEBAR_HEIGHT}px)`,
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -602,7 +601,8 @@ export default function ExportPage() {
         <Box
           sx={{
             margin: '10px 14px 0',
-            maxHeight: '260px',
+            flex: 1,
+            minHeight: 0,
             overflowY: 'auto',
             scrollbarWidth: 'thin',
             scrollbarColor: isDark
@@ -632,7 +632,7 @@ export default function ExportPage() {
                 color: theme.palette.text.secondary,
               }}
             >
-              チートシートがありません
+              No cheat sheets
             </Typography>
           ) : (
             sheets.map((s, i) => (
@@ -649,7 +649,7 @@ export default function ExportPage() {
         {/* Footer */}
         <Box
           sx={{
-            marginTop: 'auto',
+            flexShrink: 0,
             borderTop: `0.5px solid ${divider}`,
             padding: '10px 16px 14px',
             display: 'flex',

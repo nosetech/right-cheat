@@ -56,7 +56,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         setExecuteError(true)
         setTimeout(() => setExecuteError(false), 2000)
         showError?.(
-          `アプリケーションの起動に失敗しました: ${e instanceof Error ? e.message : String(e)}`,
+          `Failed to launch application: ${e instanceof Error ? e.message : String(e)}`,
         )
       }
     }

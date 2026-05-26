@@ -57,8 +57,8 @@ export default function Page() {
           error(
             `[preferences] Failed to get toggle visible shortcut settings: ${res_json.message}`,
           )
-          await message('グローバルショートカット設定の取得に失敗しました', {
-            title: 'RightCheat',
+          await message('Failed to get global shortcut settings', {
+            title: 'Preferences',
             kind: 'error',
           })
         }
@@ -66,8 +66,8 @@ export default function Page() {
         error(
           `[preferences] Error getting toggle visible shortcut settings: ${err}`,
         )
-        await message('グローバルショートカット設定の取得に失敗しました', {
-          title: 'RightCheat',
+        await message('Failed to get global shortcut settings', {
+          title: 'Preferences',
           kind: 'error',
         })
       }
@@ -79,12 +79,12 @@ export default function Page() {
   const showRestartConfirmationDialog = async () => {
     if (process.env.NODE_ENV === 'production') {
       const shouldRestart = await ask(
-        '設定を反映するには、アプリケーションの再起動が必要です。\n今すぐ再起動しますか?',
+        'A restart is required to apply the settings.\nDo you want to restart now?',
         {
-          title: 'RightCheat - 再起動の確認',
+          title: 'Restart Confirmation',
           kind: 'info',
-          okLabel: 'はい',
-          cancelLabel: 'いいえ',
+          okLabel: 'Yes',
+          cancelLabel: 'No',
         },
       )
 
@@ -93,9 +93,9 @@ export default function Page() {
       } else {
         debug('[preferences] User cancelled the restart.')
         await message(
-          '設定は保存されました。\n次回アプリケーション起動時に反映されます。',
+          'Settings saved.\nThey will take effect on the next launch.',
           {
-            title: 'RightCheat',
+            title: 'Preferences',
             kind: 'info',
           },
         )
@@ -135,15 +135,15 @@ export default function Page() {
           error(
             `[preferences] Failed to set toggle visible shortcut settings: ${res_json.message}`,
           )
-          await message('グローバルショートカット設定の保存に失敗しました', {
-            title: 'RightCheat',
+          await message('Failed to save global shortcut settings', {
+            title: 'Preferences',
             kind: 'error',
           })
         }
       } catch (err) {
         error(`[preferences] Error setting shortcut: ${err}`)
-        await message('グローバルショートカット設定の保存に失敗しました', {
-          title: 'RightCheat',
+        await message('Failed to save global shortcut settings', {
+          title: 'Preferences',
           kind: 'error',
         })
       }
@@ -159,8 +159,8 @@ export default function Page() {
     try {
       await setStoredThemeMode(mode)
     } catch {
-      await message('テーマ設定の保存に失敗しました', {
-        title: 'RightCheat',
+      await message('Failed to save theme settings', {
+        title: 'Preferences',
         kind: 'error',
       })
       return
@@ -173,8 +173,8 @@ export default function Page() {
       )
     } catch (err) {
       error(`[preferences] Error notifying theme change: ${err}`)
-      await message('テーマ変更の反映に失敗しました', {
-        title: 'RightCheat',
+      await message('Failed to apply theme change', {
+        title: 'Preferences',
         kind: 'error',
       })
     }
@@ -202,8 +202,8 @@ export default function Page() {
         saved = true
       } catch (err) {
         error(`[preferences] Error setting visible on all workspaces: ${err}`)
-        await message('全ワークスペース表示設定の保存に失敗しました', {
-          title: 'RightCheat',
+        await message('Failed to save visible on all workspaces settings', {
+          title: 'Preferences',
           kind: 'error',
         })
       }
@@ -233,7 +233,7 @@ export default function Page() {
           <Typography variant='body1'>Global Shortcut</Typography>
           {shortcutValidationError && (
             <Typography variant='caption' color={theme.palette.alert.main}>
-              ^ ⌥ ⌘ のいずれか1つはチェックしてください。
+              Please check at least one of ^ ⌥ ⌘.
             </Typography>
           )}
         </Stack>

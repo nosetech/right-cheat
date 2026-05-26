@@ -162,7 +162,7 @@ pub fn get_cheat_titles<R: tauri::Runtime>(app: AppHandle<R>) -> String {
                 error: e,
             };
             serde_json::to_string(&err).unwrap_or_else(|_| {
-                r#"{"success":false,"error":"JSONレスポンス生成エラー"}"#.to_string()
+                r#"{"success":false,"error":"JSON response generation error"}"#.to_string()
             })
         }
     }
@@ -182,7 +182,7 @@ pub fn get_cheat_sheet<R: tauri::Runtime>(app: AppHandle<R>, title: &str) -> Str
                 error: e,
             };
             serde_json::to_string(&err).unwrap_or_else(|_| {
-                r#"{"success":false,"error":"JSONレスポンス生成エラー"}"#.to_string()
+                r#"{"success":false,"error":"JSON response generation error"}"#.to_string()
             })
         }
     }
@@ -220,7 +220,7 @@ pub fn save_cheat_sheet_window_size<R: tauri::Runtime>(
     })?;
 
     if !found {
-        return Err(format!("チートシート '{}' が見つかりません", title));
+        return Err(format!("Cheat sheet '{}' not found", title));
     }
     Ok(())
 }
@@ -234,10 +234,10 @@ pub fn import_from_json<R: tauri::Runtime>(
     use std::fs::File;
     use std::io::BufReader;
 
-    let file = File::open(&json_path).map_err(|e| format!("ファイルを開けません: {}", e))?;
+    let file = File::open(&json_path).map_err(|e| format!("Failed to open file: {}", e))?;
     let reader = BufReader::new(file);
     let sheets: Vec<CheatSheet> =
-        serde_json::from_reader(reader).map_err(|e| format!("JSONパースエラー: {}", e))?;
+        serde_json::from_reader(reader).map_err(|e| format!("JSON parse error: {}", e))?;
 
     let mut added = 0;
     let mut updated = 0;
@@ -295,10 +295,10 @@ pub fn scan_import_conflicts<R: tauri::Runtime>(
     use std::fs::File;
     use std::io::BufReader;
 
-    let file = File::open(json_path).map_err(|e| format!("ファイルを開けません: {}", e))?;
+    let file = File::open(json_path).map_err(|e| format!("Failed to open file: {}", e))?;
     let reader = BufReader::new(file);
     let sheets: Vec<CheatSheet> =
-        serde_json::from_reader(reader).map_err(|e| format!("JSONパースエラー: {}", e))?;
+        serde_json::from_reader(reader).map_err(|e| format!("JSON parse error: {}", e))?;
 
     with_db(app, |conn| {
         let mut conflicts = Vec::new();
@@ -333,7 +333,7 @@ pub fn export_to_json<R: tauri::Runtime>(
     titles: Vec<String>,
 ) -> Result<(), String> {
     if titles.is_empty() {
-        return Err("エクスポート対象が選択されていません".to_string());
+        return Err("No items selected for export".to_string());
     }
 
     let sheets = with_db(&app, |conn| {
@@ -347,9 +347,9 @@ pub fn export_to_json<R: tauri::Runtime>(
     })?;
 
     let json = serde_json::to_string_pretty(&sheets)
-        .map_err(|e| format!("JSONシリアライズエラー: {}", e))?;
+        .map_err(|e| format!("JSON serialization error: {}", e))?;
     std::fs::write(&json_path, format!("{}\n", json))
-        .map_err(|e| format!("ファイル書き込みエラー: {}", e))?;
+        .map_err(|e| format!("File write error: {}", e))?;
 
     log::info!(
         "[cheatsheet] export_to_json: exported {} cheatsheets to {}",

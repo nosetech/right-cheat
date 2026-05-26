@@ -47,12 +47,12 @@ pub fn run() {
             let db_path = app
                 .path()
                 .app_data_dir()
-                .expect("app_data_dir の取得に失敗")
+                .expect("Failed to get app_data_dir")
                 .join("cheatsheet.db");
             if let Some(parent) = db_path.parent() {
                 std::fs::create_dir_all(parent).ok();
             }
-            let conn = db::open_connection(db_path).expect("DB の初期化に失敗");
+            let conn = db::open_connection(db_path).expect("Failed to initialize DB");
             app.manage(DbConnection(std::sync::Mutex::new(conn)));
 
             #[cfg(target_os = "macos")]
@@ -139,7 +139,7 @@ fn menu_configuration<R: tauri::Runtime>(
                         Some({
                             let app_version = handle.package_info().version.to_string();
                             let mut metadata = AboutMetadataBuilder::new()
-                                .version(Some(format!("バージョン {}", app_version)))
+                                .version(Some(format!("Version {}", app_version)))
                                 .short_version(Some(app_version))
                                 .copyright(Some(get_copyright()));
                             metadata = metadata.icon(Some(Image::from_bytes(include_bytes!(
@@ -281,8 +281,8 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                             log::error!("[lib] scan_import_conflicts error: {}", e);
                             handle
                                 .dialog()
-                                .message(format!("インポートに失敗しました。\n{}", e))
-                                .title("RightCheat")
+                                .message(format!("Import failed.\n{}", e))
+                                .title("Import Result")
                                 .blocking_show();
                             return;
                         }
@@ -295,13 +295,13 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                         let continue_import = handle
                             .dialog()
                             .message(format!(
-                                "重複するタイトルが {} 件あります。\nインポートを続けますか？",
+                                "{} duplicate title(s) found.\nDo you want to continue importing?",
                                 conflicts.len()
                             ))
-                            .title("RightCheat")
+                            .title("Import")
                             .buttons(MessageDialogButtons::OkCancelCustom(
-                                "続ける".to_string(),
-                                "キャンセル".to_string(),
+                                "Continue".to_string(),
+                                "Cancel".to_string(),
                             ))
                             .blocking_show();
 
@@ -312,11 +312,11 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
 
                         let overwrite = handle
                             .dialog()
-                            .message("重複タイトルをどうしますか？")
-                            .title("RightCheat")
+                            .message("How do you want to handle duplicates?")
+                            .title("Import")
                             .buttons(MessageDialogButtons::OkCancelCustom(
-                                "上書き".to_string(),
-                                "スキップ".to_string(),
+                                "Overwrite".to_string(),
+                                "Skip".to_string(),
                             ))
                             .blocking_show();
 
@@ -330,22 +330,22 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                     match api::cheatsheet::import_from_json(handle.clone(), path_str, on_conflict) {
                         Ok(summary) => {
                             let msg = format!(
-                                "インポート完了\n追加: {} 件 / 上書き: {} 件 / スキップ: {} 件",
+                                "Import complete\nAdded: {} / Overwritten: {} / Skipped: {}",
                                 summary.added, summary.updated, summary.skipped
                             );
                             log::info!("[lib] {}", msg);
                             handle
                                 .dialog()
                                 .message(&msg)
-                                .title("RightCheat")
+                                .title("Import Result")
                                 .blocking_show();
                         }
                         Err(e) => {
                             log::error!("[lib] import_from_json error: {}", e);
                             handle
                                 .dialog()
-                                .message(format!("インポートに失敗しました。\n{}", e))
-                                .title("RightCheat")
+                                .message(format!("Import failed.\n{}", e))
+                                .title("Import Result")
                                 .blocking_show();
                         }
                     }

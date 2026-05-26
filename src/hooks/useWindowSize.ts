@@ -59,7 +59,7 @@ export const useWindowSize = (selectedTitle: string) => {
             isResizableRef.current = true
             return restoreFocusAfterWindowOp()
           })
-          .catch((e) => logError(`setResizable に失敗しました: ${e}`))
+          .catch((e) => logError(`Failed to call setResizable: ${e}`))
       }
       return
     }
@@ -68,7 +68,7 @@ export const useWindowSize = (selectedTitle: string) => {
 
     const loadAndApply = async () => {
       debug(
-        `[useWindowSize] loadAndApply 開始: title="${selectedTitle}", activeElement=${document.activeElement?.tagName}`,
+        `[useWindowSize] loadAndApply started: title="${selectedTitle}", activeElement=${document.activeElement?.tagName}`,
       )
       try {
         const savedSize = await invoke<WindowSizeSettings | null>(
@@ -90,7 +90,7 @@ export const useWindowSize = (selectedTitle: string) => {
           windowOpPerformed = true
           if (isResizableRef.current !== false) {
             debug(
-              `[useWindowSize] ウィンドウをリサイズ不可に設定: "${selectedTitle}"`,
+              `[useWindowSize] Setting window non-resizable: "${selectedTitle}"`,
             )
             await win.setResizable(false)
             isResizableRef.current = false
@@ -98,7 +98,7 @@ export const useWindowSize = (selectedTitle: string) => {
         } else {
           if (isResizableRef.current !== true) {
             debug(
-              `[useWindowSize] ウィンドウをリサイズ可能に設定: "${selectedTitle}"`,
+              `[useWindowSize] Setting window resizable: "${selectedTitle}"`,
             )
             await win.setResizable(true)
             isResizableRef.current = true
@@ -108,20 +108,20 @@ export const useWindowSize = (selectedTitle: string) => {
 
         if (windowOpPerformed) {
           debug(
-            `[useWindowSize] フォーカス復元開始: activeElement=${document.activeElement?.tagName}`,
+            `[useWindowSize] Restoring focus, starting: activeElement=${document.activeElement?.tagName}`,
           )
           await restoreFocusAfterWindowOp()
           debug(
-            `[useWindowSize] フォーカス復元完了: activeElement=${document.activeElement?.tagName}`,
+            `[useWindowSize] Focus restored: activeElement=${document.activeElement?.tagName}`,
           )
         } else {
           await restoreFocusAfterWindowOp()
         }
-        debug(`[useWindowSize] loadAndApply 完了: title="${selectedTitle}"`)
+        debug(`[useWindowSize] loadAndApply complete: title="${selectedTitle}"`)
       } catch (e) {
         if (!cancelled) {
-          logError(`ウィンドウサイズの読み込みに失敗しました: ${e}`)
-          showError?.('ウィンドウサイズの読み込みに失敗しました')
+          logError(`Failed to load window size: ${e}`)
+          showError?.('Failed to load window size')
         }
       }
     }
@@ -139,12 +139,12 @@ export const useWindowSize = (selectedTitle: string) => {
     if (!selectedTitle) return
 
     debug(
-      `[useWindowSize] togglePin 開始: activeElement=${document.activeElement?.tagName}`,
+      `[useWindowSize] togglePin started: activeElement=${document.activeElement?.tagName}`,
     )
     const win = getCurrentWindow()
 
     if (savedSizeRef.current) {
-      debug(`[useWindowSize] ピン留め解除: title="${selectedTitle}"`)
+      debug(`[useWindowSize] Unpinning: title="${selectedTitle}"`)
 
       try {
         await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
@@ -152,8 +152,8 @@ export const useWindowSize = (selectedTitle: string) => {
           windowSize: null,
         })
       } catch (e) {
-        logError(`ウィンドウサイズの削除に失敗しました: ${e}`)
-        showError?.('ピン留めの解除に失敗しました')
+        logError(`Failed to delete window size: ${e}`)
+        showError?.('Failed to unpin')
         return
       }
 
@@ -166,15 +166,15 @@ export const useWindowSize = (selectedTitle: string) => {
       } catch (e) {
         savedSizeRef.current = prevSavedSize
         setIsPinned(true)
-        logError(`setResizable に失敗しました: ${e}`)
-        showError?.('ピン留めの解除に失敗しました')
+        logError(`Failed to call setResizable: ${e}`)
+        showError?.('Failed to unpin')
         return
       }
 
       await restoreFocusAfterWindowOp()
-      debug(`[useWindowSize] ピン留め解除完了: title="${selectedTitle}"`)
+      debug(`[useWindowSize] Unpin complete: title="${selectedTitle}"`)
     } else {
-      debug(`[useWindowSize] ピン留め: title="${selectedTitle}"`)
+      debug(`[useWindowSize] Pinning: title="${selectedTitle}"`)
 
       let logicalWidth: number
       let logicalHeight: number
@@ -187,11 +187,11 @@ export const useWindowSize = (selectedTitle: string) => {
         logicalWidth = Math.round(size.width / scaleFactor)
         logicalHeight = Math.round(size.height / scaleFactor)
         debug(
-          `[useWindowSize] ピン留めサイズ: ${logicalWidth}x${logicalHeight} (物理: ${size.width}x${size.height}, scaleFactor: ${scaleFactor})`,
+          `[useWindowSize] Pin size: ${logicalWidth}x${logicalHeight} (physical: ${size.width}x${size.height}, scaleFactor: ${scaleFactor})`,
         )
       } catch (e) {
-        logError(`ウィンドウサイズの取得に失敗しました: ${e}`)
-        showError?.('ウィンドウサイズの取得に失敗しました')
+        logError(`Failed to get window size: ${e}`)
+        showError?.('Failed to get window size')
         return
       }
 
@@ -201,8 +201,8 @@ export const useWindowSize = (selectedTitle: string) => {
           windowSize: { width: logicalWidth, height: logicalHeight },
         })
       } catch (e) {
-        logError(`ウィンドウサイズの保存に失敗しました: ${e}`)
-        showError?.('ウィンドウサイズの保存に失敗しました')
+        logError(`Failed to save window size: ${e}`)
+        showError?.('Failed to save window size')
         return
       }
 
@@ -214,13 +214,13 @@ export const useWindowSize = (selectedTitle: string) => {
       } catch (e) {
         savedSizeRef.current = null
         setIsPinned(false)
-        logError(`setResizable に失敗しました: ${e}`)
-        showError?.('ピン留めの保存に失敗しました')
+        logError(`Failed to call setResizable: ${e}`)
+        showError?.('Failed to save pin')
         return
       }
 
       await restoreFocusAfterWindowOp()
-      debug(`[useWindowSize] ピン留め完了: title="${selectedTitle}"`)
+      debug(`[useWindowSize] Pin complete: title="${selectedTitle}"`)
     }
   }, [selectedTitle, showError])
 

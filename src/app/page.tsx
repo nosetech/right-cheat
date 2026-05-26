@@ -41,7 +41,7 @@ export default function Home() {
         if (cancelled) return
         const errorMessage = err instanceof Error ? err.message : String(err)
         error(`[page] Failed to set visible on all workspaces: ${errorMessage}`)
-        showError?.('全ワークスペース表示設定の初期化に失敗しました')
+        showError?.('Failed to initialize visible on all workspaces settings')
       }
 
       if (cancelled) return
