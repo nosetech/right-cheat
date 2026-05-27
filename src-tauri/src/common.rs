@@ -1,6 +1,7 @@
 pub mod config {
     pub const SETTING_FILENAME: &str = "rightcheat-settings.json";
     pub const TOGGLE_VISIBLE_SHORTCUT: &str = "toggle_visibe_shortcut_settings";
+    pub const LOG_SETTINGS: &str = "log_settings";
 }
 
 pub mod event {
