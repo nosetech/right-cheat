@@ -57,8 +57,9 @@ export default function Page() {
     rotation_count: DEFAULT_ROTATION_COUNT,
   })
   const [effectiveLogDir, setEffectiveLogDir] = useState<string>('')
-  const [logMaxFileSizeMBInput, setLogMaxFileSizeMBInput] =
-    useState<string>('1')
+  const [logMaxFileSizeMBInput, setLogMaxFileSizeMBInput] = useState<string>(
+    String(DEFAULT_MAX_FILE_SIZE_BYTES / (1024 * 1024)),
+  )
   const [logRotationCountInput, setLogRotationCountInput] = useState<string>(
     String(DEFAULT_ROTATION_COUNT),
   )
@@ -296,10 +297,10 @@ export default function Page() {
 
   const handleLogDirPick = async () => {
     const dir = await open({ directory: true, multiple: false })
-    if (dir != null) {
+    if (typeof dir === 'string') {
       const newSettings: LogSettings = {
         ...logSettings,
-        output_dir: dir as string,
+        output_dir: dir,
       }
       await saveLogSettings(newSettings)
     }

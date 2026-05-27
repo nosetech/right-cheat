@@ -34,7 +34,7 @@ pub fn read_log_settings_from_file() -> LogSettings {
         return LogSettings::default();
     };
     let settings_path = data_dir
-        .join("biz.nosetech.rightcheat")
+        .join(common::bundle::identifier())
         .join(common::config::SETTING_FILENAME);
 
     let Ok(content) = std::fs::read_to_string(&settings_path) else {
@@ -102,7 +102,13 @@ pub fn get_log_dir<R: Runtime>(app: AppHandle<R>) -> Result<String, String> {
 fn get_effective_log_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
     let settings_store = TauriSettingsStore;
     let settings = match settings_store.get_setting(app, common::config::LOG_SETTINGS) {
-        Ok(Some(json)) => serde_json::from_value(json).unwrap_or_default(),
+        Ok(Some(json)) => serde_json::from_value(json).unwrap_or_else(|e| {
+            log::warn!(
+                "[log_settings] Failed to deserialize log settings, using default: {}",
+                e
+            );
+            LogSettings::default()
+        }),
         _ => LogSettings::default(),
     };
     match settings.output_dir {

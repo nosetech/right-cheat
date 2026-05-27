@@ -39,6 +39,9 @@ pub fn run() {
                 logger = logger.level(log::LevelFilter::Info)
             }
             if let Some(ref dir) = log_settings.output_dir {
+                // When a custom output directory is configured, explicitly set targets so
+                // that logs go only to the specified folder (and stdout in dev mode).
+                // Calling .target() replaces the plugin's default targets (app_log_dir).
                 logger = logger.target(tauri_plugin_log::Target::new(
                     tauri_plugin_log::TargetKind::Folder {
                         path: std::path::PathBuf::from(dir),
