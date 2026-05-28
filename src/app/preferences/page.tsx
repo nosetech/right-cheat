@@ -717,7 +717,7 @@ function NumberInputField({
         <Typography
           sx={{
             fontSize: 10.5,
-            color: 'text.disabled',
+            color: 'error.main',
             mt: '4px',
             lineHeight: 1.4,
           }}
@@ -939,7 +939,6 @@ function LogSettingsDialog({
                   // part of the path is always visible. dir='ltr' ensures
                   // screen readers announce it left-to-right.
                   direction: 'rtl',
-                  unicodeBidi: 'bidi-override',
                   textAlign: 'left',
                 }}
               >
