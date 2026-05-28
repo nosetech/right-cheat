@@ -26,9 +26,6 @@ import {
   DialogTitle,
   Divider,
   IconButton,
-  InputAdornment,
-  Stack,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material'
@@ -327,161 +324,236 @@ export default function Page() {
         }}
       />
       <WindowTitleBar title='Preferences' />
-      <Stack padding={1} spacing={1}>
-        <Stack direction='row' spacing={1} alignItems='center'>
-          <Typography variant='body1'>Global Shortcut</Typography>
-          {shortcutValidationError && (
-            <Typography variant='caption' color={theme.palette.alert.main}>
-              Please check at least one of ^ ⌥ ⌘.
-            </Typography>
-          )}
-        </Stack>
-        <Stack padding={1}>
-          {toggleVisibleShortcut && (
-            <ShortcutEditField
-              shortcutName='Toggle Visible'
-              shortcut={toggleVisibleShortcut}
-              callback={shortcutEditCallback}
-              onValidationChange={setShortcutValidationError}
-            />
-          )}
-        </Stack>
-        <Divider />
-        <Typography variant='body1'>Theme</Typography>
-        <Stack padding={1}>
-          <ThemeToggle
-            themeMode={themeMode}
-            onChange={handleThemeChange}
-            disabled={isLoading}
-          />
-        </Stack>
-        <Divider />
-        <Typography variant='body1'>Other Settings</Typography>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-            p: '12px 14px',
-            backgroundColor: isDark
-              ? 'rgba(255,255,255,0.025)'
-              : 'rgba(255,255,255,0.35)',
-            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)'}`,
-            borderRadius: '10px',
-            boxShadow: isDark ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.5)',
-          }}
-        >
-          {/* Visible on all workspaces */}
-          <Box
+      <Box
+        sx={{ p: '4px 20px 16px', display: 'flex', flexDirection: 'column' }}
+      >
+        {/* Global Shortcut */}
+        <Box sx={{ py: '13px' }}>
+          <Typography
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+              mb: '10px',
+              color: 'text.primary',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <RowDot />
-              <Typography variant='body2'>Visible on all workspaces</Typography>
-            </Box>
-            <ThemedSwitch
-              checked={visibleOnAllWorkspaces}
-              onChange={handleVisibleOnAllWorkspacesChange}
+            Global Shortcut
+          </Typography>
+          <Box sx={{ pl: '14px' }}>
+            {shortcutValidationError && (
+              <Typography
+                variant='caption'
+                color={theme.palette.alert.main}
+                sx={{ display: 'block', mb: 1 }}
+              >
+                Please check at least one of ^ ⌥ ⌘.
+              </Typography>
+            )}
+            {toggleVisibleShortcut && (
+              <ShortcutEditField
+                shortcutName='Toggle Visible'
+                shortcut={toggleVisibleShortcut}
+                callback={shortcutEditCallback}
+                onValidationChange={setShortcutValidationError}
+              />
+            )}
+          </Box>
+        </Box>
+
+        <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
+
+        {/* Theme */}
+        <Box sx={{ py: '13px' }}>
+          <Typography
+            sx={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+              mb: '10px',
+              color: 'text.primary',
+            }}
+          >
+            Theme
+          </Typography>
+          <Box sx={{ pl: '14px' }}>
+            <ThemeToggle
+              themeMode={themeMode}
+              onChange={handleThemeChange}
+              disabled={isLoading}
             />
           </Box>
+        </Box>
 
-          <Divider sx={{ borderBottomWidth: '0.5px' }} />
+        <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
 
-          {/* Log section */}
-          <Box>
-            {/* Header row */}
+        {/* Other Settings */}
+        <Box sx={{ py: '13px' }}>
+          <Typography
+            sx={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+              mb: '10px',
+              color: 'text.primary',
+            }}
+          >
+            Other Settings
+          </Typography>
+          <Box sx={{ pl: '14px' }}>
             <Box
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '8px',
-                mb: '6px',
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <RowDot />
-                <Typography variant='body2'>Log</Typography>
-                <Chip
-                  label='Restart Required'
-                  size='small'
-                  sx={{
-                    height: 18,
-                    fontSize: '9.5px',
-                    fontFamily: 'monospace',
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    backgroundColor: isDark
-                      ? 'rgba(255,180,80,0.10)'
-                      : 'rgba(180,120,0,0.07)',
-                    border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.28)' : 'rgba(180,120,0,0.22)'}`,
-                    color: isDark ? '#f5c46b' : '#8a6300',
-                    '& .MuiChip-label': { px: '6px' },
-                  }}
-                />
-              </Box>
-              <Box sx={{ display: 'flex', gap: '4px' }}>
-                <Tooltip title='Open latest log file'>
-                  <IconButton
-                    size='small'
-                    onClick={handleOpenLatestLog}
-                    sx={{ color: 'text.secondary' }}
-                  >
-                    <ArticleOutlinedIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title='Edit log settings'>
-                  <IconButton
-                    size='small'
-                    onClick={() => setLogDialogOpen(true)}
-                    sx={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '7px',
-                      border: `0.5px solid ${theme.palette.divider}`,
-                      backgroundColor: isDark
-                        ? 'rgba(255,255,255,0.055)'
-                        : theme.palette.background.paper,
-                      color: 'text.secondary',
-                      '&:hover': {
-                        borderColor: theme.palette.primary.main,
-                        color: 'primary.main',
-                      },
-                    }}
-                  >
-                    <EditOutlinedIcon sx={{ fontSize: 13 }} />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-
-            {/* Summary rows */}
-            <Box
-              sx={{
-                pl: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '4px',
+                gap: '14px',
+                p: '12px 14px',
+                backgroundColor: isDark
+                  ? 'rgba(255,255,255,0.025)'
+                  : 'rgba(255,255,255,0.35)',
+                border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)'}`,
+                borderRadius: '10px',
+                boxShadow: isDark
+                  ? 'none'
+                  : 'inset 0 1px 0 rgba(255,255,255,0.5)',
               }}
             >
-              <LogSummaryRow label='Output Directory' value={effectiveLogDir} />
-              <LogSummaryRow
-                label='Max File Size'
-                // Rounding is safe because validation enforces integer-MB values.
-                value={`${Math.round(logSettings.max_file_size / (1024 * 1024))} MB`}
-              />
-              <LogSummaryRow
-                label='Rotation Count'
-                value={`${logSettings.rotation_count} files`}
-              />
+              {/* Visible on all workspaces */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RowDot />
+                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                    Visible on all workspaces
+                  </Typography>
+                </Box>
+                <ThemedSwitch
+                  checked={visibleOnAllWorkspaces}
+                  onChange={handleVisibleOnAllWorkspacesChange}
+                />
+              </Box>
+
+              <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+              {/* Log section */}
+              <Box>
+                {/* Header row */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                    mb: '6px',
+                  }}
+                >
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <RowDot />
+                    <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                      Log
+                    </Typography>
+                    <Chip
+                      label='Restart Required'
+                      size='small'
+                      sx={{
+                        height: 'auto',
+                        py: '2px',
+                        fontSize: '9.5px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        borderRadius: '4px',
+                        backgroundColor: isDark
+                          ? 'rgba(255,180,80,0.10)'
+                          : 'rgba(180,120,0,0.07)',
+                        border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.28)' : 'rgba(180,120,0,0.22)'}`,
+                        color: isDark ? '#f5c46b' : '#8a6300',
+                        '& .MuiChip-label': { px: '6px' },
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: '4px' }}>
+                    <Tooltip title='Open latest log file'>
+                      <IconButton
+                        size='small'
+                        onClick={handleOpenLatestLog}
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '7px',
+                          border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
+                          backgroundColor: isDark
+                            ? 'rgba(100,180,255,0.10)'
+                            : 'rgba(0,113,227,0.07)',
+                          color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                          '&:hover': {
+                            borderColor: theme.palette.primary.main,
+                            color: 'primary.main',
+                          },
+                        }}
+                      >
+                        <ArticleOutlinedIcon sx={{ fontSize: 13 }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title='Edit log settings'>
+                      <IconButton
+                        size='small'
+                        onClick={() => setLogDialogOpen(true)}
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '7px',
+                          border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
+                          backgroundColor: isDark
+                            ? 'rgba(100,180,255,0.10)'
+                            : 'rgba(0,113,227,0.07)',
+                          color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                          '&:hover': {
+                            borderColor: theme.palette.primary.main,
+                            color: 'primary.main',
+                          },
+                        }}
+                      >
+                        <EditOutlinedIcon sx={{ fontSize: 13 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
+
+                {/* Summary rows */}
+                <Box
+                  sx={{
+                    pl: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  <LogSummaryRow
+                    label='Output Directory'
+                    value={effectiveLogDir}
+                  />
+                  <LogSummaryRow
+                    label='Max File Size'
+                    // Rounding is safe because validation enforces integer-MB values.
+                    value={`${Math.round(logSettings.max_file_size / (1024 * 1024))} MB`}
+                  />
+                  <LogSummaryRow
+                    label='Rotation Count'
+                    value={`${logSettings.rotation_count} files`}
+                  />
+                </Box>
+              </Box>
             </Box>
           </Box>
         </Box>
-      </Stack>
+      </Box>
 
       <LogSettingsDialog
         open={logDialogOpen}
@@ -518,8 +590,8 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
       sx={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}
     >
       <Typography
-        variant='caption'
         sx={{
+          fontSize: 11,
           flexShrink: 0,
           width: 110,
           fontWeight: 500,
@@ -529,9 +601,9 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
         {label}
       </Typography>
       <Typography
-        variant='caption'
         title={value}
         sx={{
+          fontSize: 11,
           fontFamily: 'monospace',
           color: 'text.primary',
           overflow: 'hidden',
@@ -543,6 +615,116 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
       >
         {value}
       </Typography>
+    </Box>
+  )
+}
+
+type NumberInputFieldProps = {
+  label: string
+  suffix: string
+  value: string
+  onChange: (value: string) => void
+  error?: boolean
+  hint?: string
+}
+
+function NumberInputField({
+  label,
+  suffix,
+  value,
+  onChange,
+  error,
+  hint,
+}: NumberInputFieldProps) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const [focused, setFocused] = useState(false)
+
+  const borderColor = focused
+    ? theme.palette.primary.main
+    : error
+      ? theme.palette.error.main
+      : isDark
+        ? 'rgba(255,255,255,0.10)'
+        : 'rgba(255,255,255,0.75)'
+
+  return (
+    <Box>
+      <Typography
+        sx={{
+          fontSize: 11,
+          fontWeight: 500,
+          mb: '6px',
+          color: 'text.secondary',
+          display: 'block',
+        }}
+      >
+        {label}
+      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: isDark
+            ? 'rgba(255,255,255,0.055)'
+            : 'rgba(255,255,255,0.55)',
+          border: `0.5px solid ${borderColor}`,
+          borderRadius: '7px',
+          padding: '4px 8px',
+          boxShadow: isDark ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.8)',
+        }}
+      >
+        <Box
+          component='input'
+          type='number'
+          value={value}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            onChange(e.target.value)
+          }
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            background: 'none',
+            border: 'none',
+            outline: 'none',
+            fontFamily: 'monospace',
+            fontSize: 12,
+            color: 'text.primary',
+            caretColor: theme.palette.primary.main,
+            padding: '2px 0',
+            MozAppearance: 'textfield',
+            '&::-webkit-inner-spin-button': { display: 'none' },
+            '&::-webkit-outer-spin-button': { display: 'none' },
+          }}
+        />
+        <Typography
+          component='span'
+          sx={{
+            fontFamily: 'monospace',
+            fontSize: 10,
+            color: 'text.disabled',
+            ml: '6px',
+            flexShrink: 0,
+            letterSpacing: '0.04em',
+          }}
+        >
+          {suffix}
+        </Typography>
+      </Box>
+      {hint && (
+        <Typography
+          sx={{
+            fontSize: 10.5,
+            color: 'text.disabled',
+            mt: '4px',
+            lineHeight: 1.4,
+          }}
+        >
+          {hint}
+        </Typography>
+      )}
     </Box>
   )
 }
@@ -626,9 +808,41 @@ function LogSettingsDialog({
   }
 
   return (
-    <Dialog open={dialogOpen} onClose={onCancel} maxWidth='xs' fullWidth>
-      <DialogTitle sx={{ pb: 1 }}>Log Settings</DialogTitle>
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Dialog
+      open={dialogOpen}
+      onClose={onCancel}
+      maxWidth='xs'
+      fullWidth
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: '14px',
+            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
+            boxShadow: isDark
+              ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
+              : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
+          },
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          padding: '14px 18px 12px',
+          fontSize: 14,
+          fontWeight: 600,
+          borderBottom: `0.5px solid ${theme.palette.divider}`,
+        }}
+      >
+        Log Settings
+      </DialogTitle>
+      <DialogContent
+        sx={{
+          padding: '14px 18px 6px !important',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px',
+        }}
+      >
         {/* Restart-required notice */}
         <Box
           sx={{
@@ -652,7 +866,6 @@ function LogSettingsDialog({
             }}
           />
           <Typography
-            variant='caption'
             sx={{
               lineHeight: 1.5,
               color: isDark ? '#f5c46b' : '#8a6300',
@@ -664,10 +877,15 @@ function LogSettingsDialog({
         </Box>
 
         {/* Output Directory */}
-        <Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
-            variant='caption'
-            sx={{ display: 'block', mb: '6px', fontWeight: 500 }}
+            sx={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+              color: 'text.secondary',
+              display: 'block',
+            }}
           >
             Output Directory
           </Typography>
@@ -681,10 +899,11 @@ function LogSettingsDialog({
                   height: 30,
                   borderRadius: '7px',
                   flexShrink: 0,
-                  border: `0.5px solid ${theme.palette.divider}`,
+                  border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
                   backgroundColor: isDark
-                    ? 'rgba(255,255,255,0.055)'
-                    : theme.palette.background.paper,
+                    ? 'rgba(100,180,255,0.10)'
+                    : 'rgba(0,113,227,0.07)',
+                  color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
                   '&:hover': { borderColor: theme.palette.primary.main },
                 }}
               >
@@ -703,12 +922,12 @@ function LogSettingsDialog({
                 borderRadius: '7px',
                 px: '10px',
                 py: '6px',
+                boxShadow: isDark ? 'none' : 'inset 0 1px 2px rgba(0,0,0,0.04)',
               }}
             >
               <Typography
                 component='span'
                 dir='ltr'
-                variant='caption'
                 sx={{
                   fontFamily: 'monospace',
                   fontSize: '11.5px',
@@ -734,69 +953,91 @@ function LogSettingsDialog({
         <Box
           sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}
         >
-          <TextField
-            size='small'
-            type='number'
+          <NumberInputField
             label='Max File Size'
+            suffix='MB'
             value={maxSizeMBInput}
-            onChange={(e) => setMaxSizeMBInput(e.target.value)}
+            onChange={setMaxSizeMBInput}
             error={maxSizeMBInput !== '' && !isMaxSizeValid}
-            helperText={
-              maxSizeMBInput !== '' && !isMaxSizeValid ? '1 to 100 MB' : ' '
+            hint={
+              maxSizeMBInput !== '' && !isMaxSizeValid
+                ? '1 to 100 MB'
+                : undefined
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position='end'>
-                    <Typography variant='caption' color='text.secondary'>
-                      MB
-                    </Typography>
-                  </InputAdornment>
-                ),
-              },
-              htmlInput: { min: 1, max: 100 },
-            }}
-            sx={{
-              '& .MuiInputBase-root': {
-                fontFamily: 'monospace',
-                fontSize: '12px',
-              },
-            }}
           />
-          <TextField
-            size='small'
-            type='number'
+          <NumberInputField
             label='Rotation Count'
+            suffix='files'
             value={rotationInput}
-            onChange={(e) => setRotationInput(e.target.value)}
+            onChange={setRotationInput}
             error={rotationInput !== '' && !isRotationValid}
-            helperText={
-              rotationInput !== '' && !isRotationValid ? '1 to 20 files' : ' '
+            hint={
+              rotationInput !== '' && !isRotationValid
+                ? '1 to 20 files'
+                : undefined
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position='end'>
-                    <Typography variant='caption' color='text.secondary'>
-                      files
-                    </Typography>
-                  </InputAdornment>
-                ),
-              },
-              htmlInput: { min: 1, max: 20 },
-            }}
-            sx={{
-              '& .MuiInputBase-root': {
-                fontFamily: 'monospace',
-                fontSize: '12px',
-              },
-            }}
           />
         </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button onClick={handleSave} disabled={!dirty} variant='contained'>
+      <DialogActions
+        sx={{
+          padding: '12px 16px 14px',
+          backgroundColor: isDark
+            ? 'rgba(255,255,255,0.018)'
+            : 'rgba(255,255,255,0.30)',
+          borderTop: `0.5px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Button
+          onClick={onCancel}
+          sx={{
+            borderRadius: '7px',
+            padding: '5px 16px',
+            fontSize: 12,
+            fontWeight: 600,
+            minWidth: 78,
+            textTransform: 'none',
+            backgroundColor: isDark
+              ? 'rgba(255,255,255,0.06)'
+              : 'rgba(255,255,255,0.75)',
+            border: `0.5px solid ${theme.palette.divider}`,
+            color: 'text.primary',
+            '&:hover': {
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.10)'
+                : 'rgba(255,255,255,0.95)',
+            },
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={!dirty}
+          sx={{
+            borderRadius: '7px',
+            padding: '5px 16px',
+            fontSize: 12,
+            fontWeight: 600,
+            minWidth: 78,
+            textTransform: 'none',
+            backgroundColor: isDark ? '#64b4ff' : '#0071e3',
+            border: '0.5px solid transparent',
+            color: '#fff',
+            boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
+            '&:hover': {
+              backgroundColor: isDark ? '#7cc0ff' : '#1a82eb',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.05)'
+                : 'rgba(0,0,0,0.04)',
+              border: `0.5px solid ${theme.palette.divider}`,
+              color: 'text.disabled',
+              boxShadow: 'none',
+            },
+          }}
+        >
           Save
         </Button>
       </DialogActions>
