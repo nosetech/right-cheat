@@ -131,31 +131,31 @@ export default function Page() {
   }, [])
 
   const showRestartConfirmationDialog = async () => {
-    if (process.env.NODE_ENV === 'production') {
-      const shouldRestart = await ask(
-        'A restart is required to apply the settings.\nDo you want to restart now?',
-        {
-          title: 'Restart Confirmation',
-          kind: 'info',
-          okLabel: 'Yes',
-          cancelLabel: 'No',
-        },
-      )
+    const shouldRestart = await ask(
+      'A restart is required to apply the settings.\nDo you want to restart now?',
+      {
+        title: 'Restart Confirmation',
+        kind: 'info',
+        okLabel: 'Yes',
+        cancelLabel: 'No',
+      },
+    )
 
-      if (shouldRestart) {
+    if (shouldRestart) {
+      if (process.env.NODE_ENV === 'production') {
         await relaunch()
       } else {
-        debug('[preferences] User cancelled the restart.')
-        await message(
-          'Settings saved.\nThey will take effect on the next launch.',
-          {
-            title: 'Preferences',
-            kind: 'info',
-          },
-        )
+        debug('[preferences] Relaunch skipped in development mode.')
       }
     } else {
-      debug('[preferences] Relaunch is not execute in development mode.')
+      debug('[preferences] User cancelled the restart.')
+      await message(
+        'Settings saved.\nThey will take effect on the next launch.',
+        {
+          title: 'Preferences',
+          kind: 'info',
+        },
+      )
     }
   }
 
@@ -268,30 +268,32 @@ export default function Page() {
     })()
   }
 
-  const handleLogSettingsSave = async (
+  const handleLogSettingsSave = (
     newSettings: LogSettings,
     newEffectiveDir: string,
   ) => {
     setLogDialogOpen(false)
-    let saved = false
-    try {
-      await invoke(LogSettingsAPI.SET_LOG_SETTINGS, { settings: newSettings })
-      debug(
-        `[preferences] invoke '${LogSettingsAPI.SET_LOG_SETTINGS}' succeeded`,
-      )
-      setLogSettings(newSettings)
-      setEffectiveLogDir(newEffectiveDir)
-      saved = true
-    } catch (err) {
-      error(`[preferences] Error setting log settings: ${err}`)
-      await message('Failed to save log settings', {
-        title: 'Preferences',
-        kind: 'error',
-      })
-    }
-    if (saved) {
-      await showRestartConfirmationDialog()
-    }
+    ;(async () => {
+      let saved = false
+      try {
+        await invoke(LogSettingsAPI.SET_LOG_SETTINGS, { settings: newSettings })
+        debug(
+          `[preferences] invoke '${LogSettingsAPI.SET_LOG_SETTINGS}' succeeded`,
+        )
+        setLogSettings(newSettings)
+        setEffectiveLogDir(newEffectiveDir)
+        saved = true
+      } catch (err) {
+        error(`[preferences] Error setting log settings: ${err}`)
+        await message('Failed to save log settings', {
+          title: 'Preferences',
+          kind: 'error',
+        })
+      }
+      if (saved) {
+        await showRestartConfirmationDialog()
+      }
+    })()
   }
 
   const handleOpenLatestLog = async () => {
