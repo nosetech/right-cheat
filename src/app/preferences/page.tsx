@@ -38,6 +38,8 @@ import { ask, message, open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 
+// Fallback values matching backend defaults (log_settings.rs).
+// Overwritten immediately by GET_LOG_SETTINGS on mount.
 const DEFAULT_MAX_FILE_SIZE_BYTES = 1_048_576
 const DEFAULT_ROTATION_COUNT = 3
 
@@ -104,29 +106,24 @@ export default function Page() {
       }
 
       try {
-        const settings = await invoke<LogSettings>(
-          LogSettingsAPI.GET_LOG_SETTINGS,
-        )
+        const [settings, logDir] = await Promise.all([
+          invoke<LogSettings>(LogSettingsAPI.GET_LOG_SETTINGS),
+          invoke<string>(LogSettingsAPI.GET_LOG_DIR),
+        ])
         debug(
           `[preferences] invoke '${LogSettingsAPI.GET_LOG_SETTINGS}' response=${JSON.stringify(settings)}`,
         )
+        debug(
+          `[preferences] invoke '${LogSettingsAPI.GET_LOG_DIR}' response=${logDir}`,
+        )
         setLogSettings(settings)
+        setEffectiveLogDir(logDir)
       } catch (err) {
         error(`[preferences] Error getting log settings: ${err}`)
         await message('Failed to get log settings', {
           title: 'Preferences',
           kind: 'error',
         })
-      }
-
-      try {
-        const logDir = await invoke<string>(LogSettingsAPI.GET_LOG_DIR)
-        debug(
-          `[preferences] invoke '${LogSettingsAPI.GET_LOG_DIR}' response=${logDir}`,
-        )
-        setEffectiveLogDir(logDir)
-      } catch (err) {
-        error(`[preferences] Error getting log dir: ${err}`)
       }
     })()
 
@@ -390,7 +387,7 @@ export default function Page() {
             />
           </Box>
 
-          <Divider sx={{ height: '0.5px' }} />
+          <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
           {/* Log section */}
           <Box>
@@ -472,6 +469,7 @@ export default function Page() {
               <LogSummaryRow label='Output Directory' value={effectiveLogDir} />
               <LogSummaryRow
                 label='Max File Size'
+                // Rounding is safe because validation enforces integer-MB values.
                 value={`${Math.round(logSettings.max_file_size / (1024 * 1024))} MB`}
               />
               <LogSummaryRow
@@ -579,11 +577,15 @@ function LogSettingsDialog({
     if (dialogOpen) {
       setDirInput(settings.output_dir)
       setLocalEffectiveDir(effectiveDir)
+      // Rounding is safe because validation enforces integer-MB values.
       setMaxSizeMBInput(
         String(Math.round(settings.max_file_size / (1024 * 1024))),
       )
       setRotationInput(String(settings.rotation_count))
     }
+    // Reset to parent's values only when the dialog opens.
+    // Omitting settings/effectiveDir from deps is intentional: including them
+    // would overwrite in-progress edits whenever the parent re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialogOpen])
 
@@ -610,6 +612,7 @@ function LogSettingsDialog({
   }
 
   const handleSave = () => {
+    if (!dirty) return
     onSave(
       {
         output_dir: dirInput,
@@ -701,6 +704,8 @@ function LogSettingsDialog({
               }}
             >
               <Typography
+                component='span'
+                dir='ltr'
                 variant='caption'
                 sx={{
                   fontFamily: 'monospace',
@@ -709,7 +714,11 @@ function LogSettingsDialog({
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
+                  // rtl makes the path truncate from the left so the deepest
+                  // part of the path is always visible. dir='ltr' ensures
+                  // screen readers announce it left-to-right.
                   direction: 'rtl',
+                  unicodeBidi: 'bidi-override',
                   textAlign: 'left',
                 }}
               >
@@ -730,6 +739,9 @@ function LogSettingsDialog({
             value={maxSizeMBInput}
             onChange={(e) => setMaxSizeMBInput(e.target.value)}
             error={maxSizeMBInput !== '' && !isMaxSizeValid}
+            helperText={
+              maxSizeMBInput !== '' && !isMaxSizeValid ? '1 to 100 MB' : ' '
+            }
             slotProps={{
               input: {
                 endAdornment: (
@@ -756,6 +768,9 @@ function LogSettingsDialog({
             value={rotationInput}
             onChange={(e) => setRotationInput(e.target.value)}
             error={rotationInput !== '' && !isRotationValid}
+            helperText={
+              rotationInput !== '' && !isRotationValid ? '1 to 20 files' : ' '
+            }
             slotProps={{
               input: {
                 endAdornment: (
