@@ -13,9 +13,17 @@ import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
 import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import {
   Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
   InputAdornment,
@@ -26,7 +34,7 @@ import {
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
-import { ask, message, open } from '@tauri-apps/plugin-dialog'
+import { ask, message, open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 
@@ -57,12 +65,7 @@ export default function Page() {
     rotation_count: DEFAULT_ROTATION_COUNT,
   })
   const [effectiveLogDir, setEffectiveLogDir] = useState<string>('')
-  const [logMaxFileSizeMBInput, setLogMaxFileSizeMBInput] = useState<string>(
-    String(DEFAULT_MAX_FILE_SIZE_BYTES / (1024 * 1024)),
-  )
-  const [logRotationCountInput, setLogRotationCountInput] = useState<string>(
-    String(DEFAULT_ROTATION_COUNT),
-  )
+  const [logDialogOpen, setLogDialogOpen] = useState<boolean>(false)
 
   useEffect(() => {
     ;(async () => {
@@ -108,10 +111,6 @@ export default function Page() {
           `[preferences] invoke '${LogSettingsAPI.GET_LOG_SETTINGS}' response=${JSON.stringify(settings)}`,
         )
         setLogSettings(settings)
-        setLogMaxFileSizeMBInput(
-          String(Math.round(settings.max_file_size / (1024 * 1024))),
-        )
-        setLogRotationCountInput(String(settings.rotation_count))
       } catch (err) {
         error(`[preferences] Error getting log settings: ${err}`)
         await message('Failed to get log settings', {
@@ -272,7 +271,11 @@ export default function Page() {
     })()
   }
 
-  const saveLogSettings = async (newSettings: LogSettings) => {
+  const handleLogSettingsSave = async (
+    newSettings: LogSettings,
+    newEffectiveDir: string,
+  ) => {
+    setLogDialogOpen(false)
     let saved = false
     try {
       await invoke(LogSettingsAPI.SET_LOG_SETTINGS, { settings: newSettings })
@@ -280,8 +283,7 @@ export default function Page() {
         `[preferences] invoke '${LogSettingsAPI.SET_LOG_SETTINGS}' succeeded`,
       )
       setLogSettings(newSettings)
-      const logDir = await invoke<string>(LogSettingsAPI.GET_LOG_DIR)
-      setEffectiveLogDir(logDir)
+      setEffectiveLogDir(newEffectiveDir)
       saved = true
     } catch (err) {
       error(`[preferences] Error setting log settings: ${err}`)
@@ -293,45 +295,6 @@ export default function Page() {
     if (saved) {
       await showRestartConfirmationDialog()
     }
-  }
-
-  const handleLogDirPick = async () => {
-    const dir = await open({ directory: true, multiple: false })
-    if (typeof dir === 'string') {
-      const newSettings: LogSettings = {
-        ...logSettings,
-        output_dir: dir,
-      }
-      await saveLogSettings(newSettings)
-    }
-  }
-
-  const handleLogMaxFileSizeBlur = async () => {
-    const mb = parseInt(logMaxFileSizeMBInput, 10)
-    if (isNaN(mb) || mb < 1 || mb > 100) {
-      setLogMaxFileSizeMBInput(
-        String(Math.round(logSettings.max_file_size / (1024 * 1024))),
-      )
-      return
-    }
-    const newSettings: LogSettings = {
-      ...logSettings,
-      max_file_size: mb * 1024 * 1024,
-    }
-    await saveLogSettings(newSettings)
-  }
-
-  const handleLogRotationCountBlur = async () => {
-    const count = parseInt(logRotationCountInput, 10)
-    if (isNaN(count) || count < 1 || count > 20) {
-      setLogRotationCountInput(String(logSettings.rotation_count))
-      return
-    }
-    const newSettings: LogSettings = {
-      ...logSettings,
-      rotation_count: count,
-    }
-    await saveLogSettings(newSettings)
   }
 
   const handleOpenLatestLog = async () => {
@@ -431,187 +394,107 @@ export default function Page() {
 
           {/* Log section */}
           <Box>
+            {/* Header row */}
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'space-between',
                 gap: '8px',
-                mb: '8px',
+                mb: '6px',
               }}
             >
-              <RowDot />
-              <Typography variant='body2'>Log</Typography>
-            </Box>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 140px 110px',
-                gap: '10px',
-                pl: 2,
-              }}
-            >
-              {/* Output Directory */}
-              <Box>
-                <Typography
-                  variant='caption'
-                  sx={{ display: 'block', mb: '6px', fontWeight: 500 }}
-                >
-                  Output Directory
-                </Typography>
-                <Box
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <RowDot />
+                <Typography variant='body2'>Log</Typography>
+                <Chip
+                  label='Restart Required'
+                  size='small'
                   sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
+                    height: 18,
+                    fontSize: '9.5px',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    backgroundColor: isDark
+                      ? 'rgba(255,180,80,0.10)'
+                      : 'rgba(180,120,0,0.07)',
+                    border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.28)' : 'rgba(180,120,0,0.22)'}`,
+                    color: isDark ? '#f5c46b' : '#8a6300',
+                    '& .MuiChip-label': { px: '6px' },
                   }}
-                >
-                  <Tooltip title='Choose directory'>
-                    <IconButton
-                      size='small'
-                      onClick={handleLogDirPick}
-                      sx={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: '7px',
-                        flexShrink: 0,
-                        border: `0.5px solid ${theme.palette.divider}`,
-                        backgroundColor: isDark
-                          ? 'rgba(255,255,255,0.055)'
-                          : theme.palette.background.paper,
-                        '&:hover': {
-                          borderColor: theme.palette.primary.main,
-                          backgroundColor: isDark
-                            ? 'rgba(255,255,255,0.08)'
-                            : theme.palette.background.paper,
-                        },
-                      }}
-                    >
-                      <FolderOutlinedIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                  </Tooltip>
-                  <Box
-                    title={effectiveLogDir}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: '4px' }}>
+                <Tooltip title='Open latest log file'>
+                  <IconButton
+                    size='small'
+                    onClick={handleOpenLatestLog}
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    <ArticleOutlinedIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title='Edit log settings'>
+                  <IconButton
+                    size='small'
+                    onClick={() => setLogDialogOpen(true)}
                     sx={{
-                      flex: 1,
-                      minWidth: 0,
+                      width: 28,
+                      height: 28,
+                      borderRadius: '7px',
+                      border: `0.5px solid ${theme.palette.divider}`,
                       backgroundColor: isDark
                         ? 'rgba(255,255,255,0.055)'
-                        : 'rgba(255,255,255,0.7)',
-                      border: `0.5px solid ${theme.palette.divider}`,
-                      borderRadius: '7px',
-                      px: '9px',
-                      py: '5px',
+                        : theme.palette.background.paper,
+                      color: 'text.secondary',
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                        color: 'primary.main',
+                      },
                     }}
                   >
-                    <Typography
-                      variant='caption'
-                      sx={{
-                        fontFamily: 'monospace',
-                        display: 'block',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        direction: 'rtl',
-                        textAlign: 'left',
-                      }}
-                    >
-                      {effectiveLogDir}
-                    </Typography>
-                  </Box>
-                  <Tooltip title='Open latest log file'>
-                    <IconButton
-                      size='small'
-                      onClick={handleOpenLatestLog}
-                      sx={{
-                        flexShrink: 0,
-                        color: theme.palette.text.secondary,
-                        '&:hover': { color: theme.palette.text.primary },
-                      }}
-                    >
-                      <ArticleOutlinedIcon sx={{ fontSize: 15 }} />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
+                    <EditOutlinedIcon sx={{ fontSize: 13 }} />
+                  </IconButton>
+                </Tooltip>
               </Box>
+            </Box>
 
-              {/* Max File Size */}
-              <Box>
-                <Typography
-                  variant='caption'
-                  sx={{ display: 'block', mb: '6px', fontWeight: 500 }}
-                >
-                  Max File Size
-                </Typography>
-                <TextField
-                  size='small'
-                  type='number'
-                  value={logMaxFileSizeMBInput}
-                  onChange={(e) => setLogMaxFileSizeMBInput(e.target.value)}
-                  onBlur={handleLogMaxFileSizeBlur}
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <InputAdornment position='end'>
-                          <Typography variant='caption' color='text.secondary'>
-                            MB
-                          </Typography>
-                        </InputAdornment>
-                      ),
-                    },
-                    htmlInput: { min: 1, max: 100 },
-                  }}
-                  sx={{
-                    width: '100%',
-                    '& .MuiInputBase-root': {
-                      fontFamily: 'monospace',
-                      fontSize: '12px',
-                    },
-                  }}
-                />
-              </Box>
-
-              {/* Rotation Count */}
-              <Box>
-                <Typography
-                  variant='caption'
-                  sx={{ display: 'block', mb: '6px', fontWeight: 500 }}
-                >
-                  Rotation Count
-                </Typography>
-                <TextField
-                  size='small'
-                  type='number'
-                  value={logRotationCountInput}
-                  onChange={(e) => setLogRotationCountInput(e.target.value)}
-                  onBlur={handleLogRotationCountBlur}
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <InputAdornment position='end'>
-                          <Typography variant='caption' color='text.secondary'>
-                            files
-                          </Typography>
-                        </InputAdornment>
-                      ),
-                    },
-                    htmlInput: { min: 1, max: 20 },
-                  }}
-                  sx={{
-                    width: '100%',
-                    '& .MuiInputBase-root': {
-                      fontFamily: 'monospace',
-                      fontSize: '12px',
-                    },
-                  }}
-                />
-              </Box>
+            {/* Summary rows */}
+            <Box
+              sx={{
+                pl: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              <LogSummaryRow label='Output Directory' value={effectiveLogDir} />
+              <LogSummaryRow
+                label='Max File Size'
+                value={`${Math.round(logSettings.max_file_size / (1024 * 1024))} MB`}
+              />
+              <LogSummaryRow
+                label='Rotation Count'
+                value={`${logSettings.rotation_count} files`}
+              />
             </Box>
           </Box>
         </Box>
       </Stack>
+
+      <LogSettingsDialog
+        open={logDialogOpen}
+        settings={logSettings}
+        effectiveDir={effectiveLogDir}
+        onSave={handleLogSettingsSave}
+        onCancel={() => setLogDialogOpen(false)}
+      />
     </>
   )
 }
+
+// ─── Sub-components ───────────────────────────────────────────
 
 function RowDot() {
   const theme = useTheme()
@@ -626,5 +509,280 @@ function RowDot() {
         flexShrink: 0,
       }}
     />
+  )
+}
+
+function LogSummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Box
+      sx={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}
+    >
+      <Typography
+        variant='caption'
+        sx={{
+          flexShrink: 0,
+          width: 110,
+          fontWeight: 500,
+          color: 'text.secondary',
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        variant='caption'
+        title={value}
+        sx={{
+          fontFamily: 'monospace',
+          color: 'text.primary',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          minWidth: 0,
+          flex: 1,
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  )
+}
+
+type LogSettingsDialogProps = {
+  open: boolean
+  settings: LogSettings
+  effectiveDir: string
+  onSave: (newSettings: LogSettings, newEffectiveDir: string) => void
+  onCancel: () => void
+}
+
+function LogSettingsDialog({
+  open: dialogOpen,
+  settings,
+  effectiveDir,
+  onSave,
+  onCancel,
+}: LogSettingsDialogProps) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+
+  const [dirInput, setDirInput] = useState<string | null>(settings.output_dir)
+  const [localEffectiveDir, setLocalEffectiveDir] =
+    useState<string>(effectiveDir)
+  const [maxSizeMBInput, setMaxSizeMBInput] = useState<string>(
+    String(Math.round(settings.max_file_size / (1024 * 1024))),
+  )
+  const [rotationInput, setRotationInput] = useState<string>(
+    String(settings.rotation_count),
+  )
+
+  useEffect(() => {
+    if (dialogOpen) {
+      setDirInput(settings.output_dir)
+      setLocalEffectiveDir(effectiveDir)
+      setMaxSizeMBInput(
+        String(Math.round(settings.max_file_size / (1024 * 1024))),
+      )
+      setRotationInput(String(settings.rotation_count))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialogOpen])
+
+  const parsedMaxSize = parseInt(maxSizeMBInput, 10)
+  const parsedRotation = parseInt(rotationInput, 10)
+  const isMaxSizeValid =
+    !isNaN(parsedMaxSize) && parsedMaxSize >= 1 && parsedMaxSize <= 100
+  const isRotationValid =
+    !isNaN(parsedRotation) && parsedRotation >= 1 && parsedRotation <= 20
+
+  const dirty =
+    isMaxSizeValid &&
+    isRotationValid &&
+    (dirInput !== settings.output_dir ||
+      parsedMaxSize * 1024 * 1024 !== settings.max_file_size ||
+      parsedRotation !== settings.rotation_count)
+
+  const handleDirPick = async () => {
+    const picked = await openOsDialog({ directory: true, multiple: false })
+    if (typeof picked === 'string') {
+      setDirInput(picked)
+      setLocalEffectiveDir(picked)
+    }
+  }
+
+  const handleSave = () => {
+    onSave(
+      {
+        output_dir: dirInput,
+        max_file_size: parsedMaxSize * 1024 * 1024,
+        rotation_count: parsedRotation,
+      },
+      localEffectiveDir,
+    )
+  }
+
+  return (
+    <Dialog open={dialogOpen} onClose={onCancel} maxWidth='xs' fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>Log Settings</DialogTitle>
+      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {/* Restart-required notice */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '9px',
+            p: '9px 11px',
+            backgroundColor: isDark
+              ? 'rgba(255,180,80,0.08)'
+              : 'rgba(180,120,0,0.06)',
+            border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.30)' : 'rgba(180,120,0,0.22)'}`,
+            borderRadius: '8px',
+          }}
+        >
+          <InfoOutlinedIcon
+            sx={{
+              fontSize: 14,
+              mt: '1px',
+              flexShrink: 0,
+              color: isDark ? '#f5c46b' : '#a87a00',
+            }}
+          />
+          <Typography
+            variant='caption'
+            sx={{
+              lineHeight: 1.5,
+              color: isDark ? '#f5c46b' : '#8a6300',
+              fontSize: '11.5px',
+            }}
+          >
+            Log settings only take effect after restarting RightCheat.
+          </Typography>
+        </Box>
+
+        {/* Output Directory */}
+        <Box>
+          <Typography
+            variant='caption'
+            sx={{ display: 'block', mb: '6px', fontWeight: 500 }}
+          >
+            Output Directory
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Tooltip title='Choose directory'>
+              <IconButton
+                size='small'
+                onClick={handleDirPick}
+                sx={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '7px',
+                  flexShrink: 0,
+                  border: `0.5px solid ${theme.palette.divider}`,
+                  backgroundColor: isDark
+                    ? 'rgba(255,255,255,0.055)'
+                    : theme.palette.background.paper,
+                  '&:hover': { borderColor: theme.palette.primary.main },
+                }}
+              >
+                <FolderOutlinedIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+            <Box
+              title={localEffectiveDir}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                backgroundColor: isDark
+                  ? 'rgba(0,0,0,0.25)'
+                  : 'rgba(255,255,255,0.9)',
+                border: `0.5px solid ${theme.palette.divider}`,
+                borderRadius: '7px',
+                px: '10px',
+                py: '6px',
+              }}
+            >
+              <Typography
+                variant='caption'
+                sx={{
+                  fontFamily: 'monospace',
+                  fontSize: '11.5px',
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  direction: 'rtl',
+                  textAlign: 'left',
+                }}
+              >
+                {localEffectiveDir}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Max File Size + Rotation Count */}
+        <Box
+          sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}
+        >
+          <TextField
+            size='small'
+            type='number'
+            label='Max File Size'
+            value={maxSizeMBInput}
+            onChange={(e) => setMaxSizeMBInput(e.target.value)}
+            error={maxSizeMBInput !== '' && !isMaxSizeValid}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position='end'>
+                    <Typography variant='caption' color='text.secondary'>
+                      MB
+                    </Typography>
+                  </InputAdornment>
+                ),
+              },
+              htmlInput: { min: 1, max: 100 },
+            }}
+            sx={{
+              '& .MuiInputBase-root': {
+                fontFamily: 'monospace',
+                fontSize: '12px',
+              },
+            }}
+          />
+          <TextField
+            size='small'
+            type='number'
+            label='Rotation Count'
+            value={rotationInput}
+            onChange={(e) => setRotationInput(e.target.value)}
+            error={rotationInput !== '' && !isRotationValid}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position='end'>
+                    <Typography variant='caption' color='text.secondary'>
+                      files
+                    </Typography>
+                  </InputAdornment>
+                ),
+              },
+              htmlInput: { min: 1, max: 20 },
+            }}
+            sx={{
+              '& .MuiInputBase-root': {
+                fontFamily: 'monospace',
+                fontSize: '12px',
+              },
+            }}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel}>Cancel</Button>
+        <Button onClick={handleSave} disabled={!dirty} variant='contained'>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
