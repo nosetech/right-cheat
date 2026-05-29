@@ -1,6 +1,19 @@
 pub mod config {
     pub const SETTING_FILENAME: &str = "rightcheat-settings.json";
     pub const TOGGLE_VISIBLE_SHORTCUT: &str = "toggle_visibe_shortcut_settings";
+    pub const LOG_SETTINGS: &str = "log_settings";
+}
+
+pub mod bundle {
+    const TAURI_CONF: &str = include_str!("../tauri.conf.json");
+
+    pub fn identifier() -> String {
+        let v: serde_json::Value = serde_json::from_str(TAURI_CONF).unwrap_or_default();
+        v["identifier"]
+            .as_str()
+            .unwrap_or("biz.nosetech.rightcheat")
+            .to_string()
+    }
 }
 
 pub mod event {

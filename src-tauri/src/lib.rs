@@ -26,14 +26,33 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin({
+            let log_settings = api::log_settings::read_log_settings_from_file();
             let mut logger = tauri_plugin_log::Builder::new()
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
-                .max_file_size(1_048_576)
-                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(3));
+                .max_file_size(log_settings.max_file_size as u128)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(
+                    log_settings.rotation_count as usize,
+                ));
             if cfg!(dev) {
                 logger = logger.level(log::LevelFilter::Trace)
             } else {
                 logger = logger.level(log::LevelFilter::Info)
+            }
+            if let Some(ref dir) = log_settings.output_dir {
+                // When a custom output directory is configured, explicitly set targets so
+                // that logs go only to the specified folder (and stdout in dev mode).
+                // Calling .target() replaces the plugin's default targets (app_log_dir).
+                logger = logger.target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::Folder {
+                        path: std::path::PathBuf::from(dir),
+                        file_name: None,
+                    },
+                ));
+                if cfg!(dev) {
+                    logger = logger.target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::Stdout,
+                    ));
+                }
             }
             logger.build()
         })
@@ -81,6 +100,7 @@ pub fn run() {
             }
             global_shortcut_configuration(app)?;
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
+            api::log_settings::init_log_settings(app.handle())?;
 
             if let Some(main_window) = app.get_webview_window("main") {
                 let main_window_clone = main_window.clone();
@@ -116,6 +136,10 @@ pub fn run() {
             api::visible_on_all_workspaces::get_visible_on_all_workspaces_setting,
             api::visible_on_all_workspaces::set_visible_on_all_workspaces_setting,
             api::application::run_application,
+            api::log_settings::get_log_settings,
+            api::log_settings::set_log_settings,
+            api::log_settings::open_latest_log_file,
+            api::log_settings::get_log_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -253,9 +277,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(520.0, 420.0)
-            .max_inner_size(800.0, 420.0)
-            .min_inner_size(520.0, 420.0)
+            .inner_size(580.0, 560.0)
+            .max_inner_size(800.0, 560.0)
+            .min_inner_size(580.0, 560.0)
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
             .build();
