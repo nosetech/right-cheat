@@ -63,11 +63,16 @@ pub fn run() {
         .on_menu_event(|handle, event| on_menu_event_configuration(handle, event))
         .setup(|app| {
             // DB を初期化して Tauri State に登録
-            let db_path = app
-                .path()
-                .app_data_dir()
-                .expect("Failed to get app_data_dir")
-                .join("cheatsheet.db");
+            // 設定ファイルから DB パスを読み込む（Tauri store 初期化前のため直接読み込み）
+            let db_settings = api::db_settings::read_db_settings_from_file();
+            let db_path = match db_settings.output_path {
+                Some(path) => std::path::PathBuf::from(path),
+                None => app
+                    .path()
+                    .app_data_dir()
+                    .expect("Failed to get app_data_dir")
+                    .join("cheatsheet.db"),
+            };
             if let Some(parent) = db_path.parent() {
                 std::fs::create_dir_all(parent).ok();
             }
@@ -101,6 +106,7 @@ pub fn run() {
             global_shortcut_configuration(app)?;
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
             api::log_settings::init_log_settings(app.handle())?;
+            api::db_settings::init_db_settings(app.handle())?;
 
             if let Some(main_window) = app.get_webview_window("main") {
                 let main_window_clone = main_window.clone();
@@ -140,6 +146,9 @@ pub fn run() {
             api::log_settings::set_log_settings,
             api::log_settings::open_latest_log_file,
             api::log_settings::get_log_dir,
+            api::db_settings::get_db_settings,
+            api::db_settings::set_db_settings,
+            api::db_settings::get_db_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

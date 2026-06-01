@@ -1,5 +1,6 @@
 pub mod application;
 pub mod cheatsheet;
+pub mod db_settings;
 pub mod font_size;
 pub mod global_shortcut;
 pub mod log_settings;

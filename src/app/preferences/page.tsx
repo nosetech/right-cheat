@@ -8,6 +8,7 @@ import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
+import { DbSettings, DbSettingsAPI } from '@/types/api/DbSettings'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
 import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
@@ -16,6 +17,7 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined'
 import {
   Box,
   Button,
@@ -65,6 +67,11 @@ export default function Page() {
   })
   const [effectiveLogDir, setEffectiveLogDir] = useState<string>('')
   const [logDialogOpen, setLogDialogOpen] = useState<boolean>(false)
+
+  const [dbSettings, setDbSettings] = useState<DbSettings>({
+    output_path: null,
+  })
+  const [effectiveDbPath, setEffectiveDbPath] = useState<string>('')
 
   useEffect(() => {
     ;(async () => {
@@ -118,6 +125,27 @@ export default function Page() {
       } catch (err) {
         error(`[preferences] Error getting log settings: ${err}`)
         await message('Failed to get log settings', {
+          title: 'Preferences',
+          kind: 'error',
+        })
+      }
+
+      try {
+        const [dbSettingsResult, dbPath] = await Promise.all([
+          invoke<DbSettings>(DbSettingsAPI.GET_DB_SETTINGS),
+          invoke<string>(DbSettingsAPI.GET_DB_PATH),
+        ])
+        debug(
+          `[preferences] invoke '${DbSettingsAPI.GET_DB_SETTINGS}' response=${JSON.stringify(dbSettingsResult)}`,
+        )
+        debug(
+          `[preferences] invoke '${DbSettingsAPI.GET_DB_PATH}' response=${dbPath}`,
+        )
+        setDbSettings(dbSettingsResult)
+        setEffectiveDbPath(dbPath)
+      } catch (err) {
+        error(`[preferences] Error getting DB settings: ${err}`)
+        await message('Failed to get DB settings', {
           title: 'Preferences',
           kind: 'error',
         })
@@ -293,6 +321,39 @@ export default function Page() {
     })()
   }
 
+  const handleDbFilePick = async () => {
+    const picked = await openOsDialog({
+      multiple: false,
+      filters: [
+        { name: 'SQLite Database', extensions: ['sqlite', 'sqlite3', 'db'] },
+      ],
+    })
+    if (typeof picked !== 'string') return
+
+    const newSettings: DbSettings = { output_path: picked }
+    let saved = false
+    try {
+      await invoke(DbSettingsAPI.SET_DB_SETTINGS, { settings: newSettings })
+      debug(`[preferences] invoke '${DbSettingsAPI.SET_DB_SETTINGS}' succeeded`)
+      setDbSettings(newSettings)
+      setEffectiveDbPath(picked)
+      saved = true
+    } catch (err) {
+      error(`[preferences] Error setting DB settings: ${err}`)
+      await message(`Failed to save DB settings.\n${err}`, {
+        title: 'Preferences',
+        kind: 'error',
+      })
+    }
+    if (saved) {
+      await message(
+        'The existing DB file will not be moved automatically.\nPlease copy it to the new location manually before restarting.',
+        { title: 'Preferences', kind: 'info' },
+      )
+      await showRestartConfirmationDialog()
+    }
+  }
+
   const handleOpenLatestLog = async () => {
     try {
       await invoke(LogSettingsAPI.OPEN_LATEST_LOG_FILE)
@@ -435,6 +496,110 @@ export default function Page() {
                   checked={visibleOnAllWorkspaces}
                   onChange={handleVisibleOnAllWorkspacesChange}
                 />
+              </Box>
+
+              <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+              {/* CheatSheet DB section */}
+              <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    mb: '8px',
+                  }}
+                >
+                  <RowDot />
+                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                    CheatSheet DB
+                  </Typography>
+                  <Chip
+                    label='Restart Required'
+                    size='small'
+                    sx={{
+                      height: 'auto',
+                      py: '2px',
+                      fontSize: '9.5px',
+                      fontFamily: 'monospace',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      borderRadius: '4px',
+                      backgroundColor: isDark
+                        ? 'rgba(255,180,80,0.10)'
+                        : 'rgba(180,120,0,0.07)',
+                      border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.28)' : 'rgba(180,120,0,0.22)'}`,
+                      color: isDark ? '#f5c46b' : '#8a6300',
+                      '& .MuiChip-label': { px: '6px' },
+                    }}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    pl: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Tooltip title='Choose DB file'>
+                    <IconButton
+                      size='small'
+                      onClick={handleDbFilePick}
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '7px',
+                        flexShrink: 0,
+                        border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
+                        backgroundColor: isDark
+                          ? 'rgba(100,180,255,0.10)'
+                          : 'rgba(0,113,227,0.07)',
+                        color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                        },
+                      }}
+                    >
+                      <StorageOutlinedIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Box
+                    title={effectiveDbPath}
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      backgroundColor: isDark
+                        ? 'rgba(255,255,255,0.055)'
+                        : 'rgba(255,255,255,0.55)',
+                      border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
+                      borderRadius: '7px',
+                      px: '10px',
+                      py: '5px',
+                      boxShadow: isDark
+                        ? 'none'
+                        : 'inset 0 1px 0 rgba(255,255,255,0.8)',
+                    }}
+                  >
+                    <Typography
+                      component='span'
+                      dir='ltr'
+                      sx={{
+                        fontFamily: 'monospace',
+                        fontSize: '11px',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        direction: 'rtl',
+                        textAlign: 'left',
+                        color: 'text.primary',
+                      }}
+                    >
+                      {effectiveDbPath}
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
 
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
