@@ -33,7 +33,12 @@ import {
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
-import { ask, message, open as openOsDialog } from '@tauri-apps/plugin-dialog'
+import {
+  ask,
+  message,
+  open as openOsDialog,
+  save as saveOsDialog,
+} from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 
@@ -322,8 +327,7 @@ export default function Page() {
   }
 
   const handleDbFilePick = async () => {
-    const picked = await openOsDialog({
-      multiple: false,
+    const picked = await saveOsDialog({
       filters: [
         { name: 'SQLite Database', extensions: ['sqlite', 'sqlite3', 'db'] },
       ],
@@ -346,11 +350,31 @@ export default function Page() {
       })
     }
     if (saved) {
-      await message(
-        'The existing DB file will not be moved automatically.\nPlease copy it to the new location manually before restarting.',
-        { title: 'Preferences', kind: 'info' },
+      const shouldRestart = await ask(
+        'The existing DB file will not be moved automatically.\nPlease copy it to the new location manually before restarting.\n\nDo you want to restart now?',
+        {
+          title: 'Restart Confirmation',
+          kind: 'info',
+          okLabel: 'Yes',
+          cancelLabel: 'No',
+        },
       )
-      await showRestartConfirmationDialog()
+      if (shouldRestart) {
+        if (process.env.NODE_ENV === 'production') {
+          await relaunch()
+        } else {
+          debug('[preferences] Relaunch skipped in development mode.')
+        }
+      } else {
+        debug('[preferences] User cancelled the restart.')
+        await message(
+          'Settings saved.\nThey will take effect on the next launch.',
+          {
+            title: 'Preferences',
+            kind: 'info',
+          },
+        )
+      }
     }
   }
 

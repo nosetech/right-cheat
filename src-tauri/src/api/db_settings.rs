@@ -56,6 +56,9 @@ pub fn get_db_settings<R: Runtime>(app: AppHandle<R>) -> Result<DbSettings, Stri
 #[tauri::command]
 pub fn set_db_settings<R: Runtime>(app: AppHandle<R>, settings: DbSettings) -> Result<(), String> {
     if let Some(ref path_str) = settings.output_path {
+        if path_str.trim().is_empty() {
+            return Err("Path cannot be empty".to_string());
+        }
         let path = PathBuf::from(path_str);
         let parent = path
             .parent()
@@ -66,7 +69,9 @@ pub fn set_db_settings<R: Runtime>(app: AppHandle<R>, settings: DbSettings) -> R
         // 書き込み権限チェック: 一時ファイルを作成して確認
         let temp_path = parent.join(".rightcheat_write_test");
         std::fs::write(&temp_path, b"").map_err(|e| format!("Directory is not writable: {}", e))?;
-        let _ = std::fs::remove_file(&temp_path);
+        if let Err(e) = std::fs::remove_file(&temp_path) {
+            log::warn!("[db_settings] Failed to remove temp write-test file: {}", e);
+        }
     }
 
     let settings_store = TauriSettingsStore;
