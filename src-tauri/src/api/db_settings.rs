@@ -86,6 +86,51 @@ pub fn set_db_settings<R: Runtime>(app: AppHandle<R>, settings: DbSettings) -> R
     Ok(())
 }
 
+/// ファイル選択ダイアログを開き、選択されたパスを返す。
+/// macOS NSSavePanel を直接使用することで隠しディレクトリを表示できる。
+#[tauri::command]
+pub fn pick_db_file_path<R: Runtime>(app: AppHandle<R>) -> Result<Option<String>, String> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::sync::mpsc;
+        let (tx, rx) = mpsc::channel::<Option<String>>();
+        app.run_on_main_thread(move || {
+            let _ = tx.send(show_save_panel_with_hidden_files());
+        })
+        .map_err(|e| e.to_string())?;
+        return rx.recv().map_err(|e| e.to_string());
+    }
+    #[allow(unreachable_code)]
+    {
+        let _ = app;
+        Err("Unsupported platform".to_string())
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn show_save_panel_with_hidden_files() -> Option<String> {
+    use objc2_app_kit::NSSavePanel;
+    use objc2_foundation::MainThreadMarker;
+
+    // SAFETY: run_on_main_thread 経由でメインスレッドから呼ばれることが保証されている
+    let mtm = unsafe { MainThreadMarker::new_unchecked() };
+
+    unsafe {
+        let panel = NSSavePanel::savePanel(mtm);
+        panel.setShowsHiddenFiles(true);
+        panel.setCanCreateDirectories(true);
+        let response = panel.runModal();
+        // NSModalResponseOK = 1
+        if response == 1 {
+            let url = panel.URL()?;
+            let path = url.path()?;
+            Some(path.to_string())
+        } else {
+            None
+        }
+    }
+}
+
 #[tauri::command]
 pub fn get_db_path<R: Runtime>(app: AppHandle<R>) -> Result<String, String> {
     let path = get_effective_db_path(&app)?;

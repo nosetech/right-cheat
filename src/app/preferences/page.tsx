@@ -33,12 +33,7 @@ import {
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
-import {
-  ask,
-  message,
-  open as openOsDialog,
-  save as saveOsDialog,
-} from '@tauri-apps/plugin-dialog'
+import { ask, message, open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 
@@ -327,12 +322,8 @@ export default function Page() {
   }
 
   const handleDbFilePick = async () => {
-    const picked = await saveOsDialog({
-      filters: [
-        { name: 'SQLite Database', extensions: ['sqlite', 'sqlite3', 'db'] },
-      ],
-    })
-    if (typeof picked !== 'string') return
+    const picked = await invoke<string | null>(DbSettingsAPI.PICK_DB_FILE_PATH)
+    if (picked === null) return
 
     const newSettings: DbSettings = { output_path: picked }
     let saved = false

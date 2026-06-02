@@ -149,6 +149,7 @@ pub fn run() {
             api::db_settings::get_db_settings,
             api::db_settings::set_db_settings,
             api::db_settings::get_db_path,
+            api::db_settings::pick_db_file_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
