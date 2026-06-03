@@ -55,6 +55,11 @@ pub fn get_db_settings<R: Runtime>(app: AppHandle<R>) -> Result<DbSettings, Stri
 
 #[tauri::command]
 pub fn set_db_settings<R: Runtime>(app: AppHandle<R>, settings: DbSettings) -> Result<(), String> {
+    let settings = DbSettings {
+        output_path: settings
+            .output_path
+            .map(|p| p.trim_end_matches('/').to_string()),
+    };
     if let Some(ref path_str) = settings.output_path {
         if path_str.trim().is_empty() {
             return Err("Path cannot be empty".to_string());
@@ -124,7 +129,8 @@ fn show_save_panel_with_hidden_files() -> Option<String> {
         if response == 1 {
             let url = panel.URL()?;
             let path = url.path()?;
-            Some(path.to_string())
+            let path_str = path.to_string();
+            Some(path_str.trim_end_matches('/').to_string())
         } else {
             None
         }
@@ -150,7 +156,7 @@ pub fn get_effective_db_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, 
         _ => DbSettings::default(),
     };
     match settings.output_path {
-        Some(path) => Ok(PathBuf::from(path)),
+        Some(path) => Ok(PathBuf::from(path.trim_end_matches('/'))),
         None => app
             .path()
             .app_data_dir()

@@ -17,7 +17,6 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined'
 import {
   Box,
   Button,
@@ -576,7 +575,17 @@ export default function Page() {
                         },
                       }}
                     >
-                      <StorageOutlinedIcon sx={{ fontSize: 14 }} />
+                      <svg
+                        width='14'
+                        height='14'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                      >
+                        <path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' />
+                        <polyline points='14 2 14 8 20 8' />
+                      </svg>
                     </IconButton>
                   </Tooltip>
                   <Box
@@ -606,12 +615,16 @@ export default function Page() {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
+                        // direction:rtl makes long paths truncate from the left,
+                        // showing the filename at the right end. U+200E (LTR mark)
+                        // prevents the leading '/' of absolute paths from being
+                        // reclassified as RTL by the Unicode Bidi Algorithm, which
+                        // would otherwise make it appear as a visual trailing slash.
                         direction: 'rtl',
-                        textAlign: 'left',
                         color: 'text.primary',
                       }}
                     >
-                      {effectiveDbPath}
+                      {'‎' + effectiveDbPath}
                     </Typography>
                   </Box>
                 </Box>
@@ -1115,14 +1128,11 @@ function LogSettingsDialog({
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  // rtl makes the path truncate from the left so the deepest
-                  // part of the path is always visible. dir='ltr' ensures
-                  // screen readers announce it left-to-right.
+                  // direction:rtl + U+200E: see DB path display above for explanation.
                   direction: 'rtl',
-                  textAlign: 'left',
                 }}
               >
-                {localEffectiveDir}
+                {'‎' + localEffectiveDir}
               </Typography>
             </Box>
           </Box>
