@@ -8,6 +8,7 @@ import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
+import { DbSettings, DbSettingsAPI } from '@/types/api/DbSettings'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
 import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
@@ -66,6 +67,11 @@ export default function Page() {
   const [effectiveLogDir, setEffectiveLogDir] = useState<string>('')
   const [logDialogOpen, setLogDialogOpen] = useState<boolean>(false)
 
+  const [dbSettings, setDbSettings] = useState<DbSettings>({
+    output_path: null,
+  })
+  const [effectiveDbPath, setEffectiveDbPath] = useState<string>('')
+
   useEffect(() => {
     ;(async () => {
       const visibleOnAllWorkspacesValue =
@@ -118,6 +124,27 @@ export default function Page() {
       } catch (err) {
         error(`[preferences] Error getting log settings: ${err}`)
         await message('Failed to get log settings', {
+          title: 'Preferences',
+          kind: 'error',
+        })
+      }
+
+      try {
+        const [dbSettingsResult, dbPath] = await Promise.all([
+          invoke<DbSettings>(DbSettingsAPI.GET_DB_SETTINGS),
+          invoke<string>(DbSettingsAPI.GET_DB_PATH),
+        ])
+        debug(
+          `[preferences] invoke '${DbSettingsAPI.GET_DB_SETTINGS}' response=${JSON.stringify(dbSettingsResult)}`,
+        )
+        debug(
+          `[preferences] invoke '${DbSettingsAPI.GET_DB_PATH}' response=${dbPath}`,
+        )
+        setDbSettings(dbSettingsResult)
+        setEffectiveDbPath(dbPath)
+      } catch (err) {
+        error(`[preferences] Error getting DB settings: ${err}`)
+        await message('Failed to get DB settings', {
           title: 'Preferences',
           kind: 'error',
         })
@@ -293,6 +320,54 @@ export default function Page() {
     })()
   }
 
+  const handleDbFilePick = async () => {
+    const picked = await invoke<string | null>(DbSettingsAPI.PICK_DB_FILE_PATH)
+    if (picked === null) return
+
+    const newSettings: DbSettings = { output_path: picked }
+    let saved = false
+    try {
+      await invoke(DbSettingsAPI.SET_DB_SETTINGS, { settings: newSettings })
+      debug(`[preferences] invoke '${DbSettingsAPI.SET_DB_SETTINGS}' succeeded`)
+      setDbSettings(newSettings)
+      setEffectiveDbPath(picked)
+      saved = true
+    } catch (err) {
+      error(`[preferences] Error setting DB settings: ${err}`)
+      await message(`Failed to save DB settings.\n${err}`, {
+        title: 'Preferences',
+        kind: 'error',
+      })
+    }
+    if (saved) {
+      const shouldRestart = await ask(
+        'The existing DB file will not be moved automatically.\nPlease copy it to the new location manually before restarting.\n\nDo you want to restart now?',
+        {
+          title: 'Restart Confirmation',
+          kind: 'info',
+          okLabel: 'Yes',
+          cancelLabel: 'No',
+        },
+      )
+      if (shouldRestart) {
+        if (process.env.NODE_ENV === 'production') {
+          await relaunch()
+        } else {
+          debug('[preferences] Relaunch skipped in development mode.')
+        }
+      } else {
+        debug('[preferences] User cancelled the restart.')
+        await message(
+          'Settings saved.\nThey will take effect on the next launch.',
+          {
+            title: 'Preferences',
+            kind: 'info',
+          },
+        )
+      }
+    }
+  }
+
   const handleOpenLatestLog = async () => {
     try {
       await invoke(LogSettingsAPI.OPEN_LATEST_LOG_FILE)
@@ -435,6 +510,124 @@ export default function Page() {
                   checked={visibleOnAllWorkspaces}
                   onChange={handleVisibleOnAllWorkspacesChange}
                 />
+              </Box>
+
+              <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+              {/* CheatSheet DB section */}
+              <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    mb: '8px',
+                  }}
+                >
+                  <RowDot />
+                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                    CheatSheet DB
+                  </Typography>
+                  <Chip
+                    label='Restart Required'
+                    size='small'
+                    sx={{
+                      height: 'auto',
+                      py: '2px',
+                      fontSize: '9.5px',
+                      fontFamily: 'monospace',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      borderRadius: '4px',
+                      backgroundColor: isDark
+                        ? 'rgba(255,180,80,0.10)'
+                        : 'rgba(180,120,0,0.07)',
+                      border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.28)' : 'rgba(180,120,0,0.22)'}`,
+                      color: isDark ? '#f5c46b' : '#8a6300',
+                      '& .MuiChip-label': { px: '6px' },
+                    }}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    pl: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Tooltip title='Choose DB file'>
+                    <IconButton
+                      size='small'
+                      onClick={handleDbFilePick}
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '7px',
+                        flexShrink: 0,
+                        border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
+                        backgroundColor: isDark
+                          ? 'rgba(100,180,255,0.10)'
+                          : 'rgba(0,113,227,0.07)',
+                        color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                        },
+                      }}
+                    >
+                      <svg
+                        width='14'
+                        height='14'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                      >
+                        <path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' />
+                        <polyline points='14 2 14 8 20 8' />
+                      </svg>
+                    </IconButton>
+                  </Tooltip>
+                  <Box
+                    title={effectiveDbPath}
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      backgroundColor: isDark
+                        ? 'rgba(255,255,255,0.055)'
+                        : 'rgba(255,255,255,0.55)',
+                      border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
+                      borderRadius: '7px',
+                      px: '10px',
+                      py: '5px',
+                      boxShadow: isDark
+                        ? 'none'
+                        : 'inset 0 1px 0 rgba(255,255,255,0.8)',
+                    }}
+                  >
+                    <Typography
+                      component='span'
+                      dir='ltr'
+                      sx={{
+                        fontFamily: 'monospace',
+                        fontSize: '11px',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        // direction:rtl makes long paths truncate from the left,
+                        // showing the filename at the right end. U+200E (LTR mark)
+                        // prevents the leading '/' of absolute paths from being
+                        // reclassified as RTL by the Unicode Bidi Algorithm, which
+                        // would otherwise make it appear as a visual trailing slash.
+                        direction: 'rtl',
+                        color: 'text.primary',
+                      }}
+                    >
+                      {'‎' + effectiveDbPath}
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
 
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
@@ -935,14 +1128,11 @@ function LogSettingsDialog({
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  // rtl makes the path truncate from the left so the deepest
-                  // part of the path is always visible. dir='ltr' ensures
-                  // screen readers announce it left-to-right.
+                  // direction:rtl + U+200E: see DB path display above for explanation.
                   direction: 'rtl',
-                  textAlign: 'left',
                 }}
               >
-                {localEffectiveDir}
+                {'‎' + localEffectiveDir}
               </Typography>
             </Box>
           </Box>
