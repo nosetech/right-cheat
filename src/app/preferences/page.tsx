@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 
 import { ThemedSwitch, ThemeToggle } from '@/components/atoms'
-import { ShortcutEditField } from '@/components/molecules/ShortcutEditField'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
@@ -44,8 +43,7 @@ const DEFAULT_ROTATION_COUNT = 3
 export default function Page() {
   const theme = useTheme()
 
-  const [shortcutValidationError, setShortcutValidationError] =
-    useState<boolean>(false)
+  const [shortcutDialogOpen, setShortcutDialogOpen] = useState<boolean>(false)
   const [visibleOnAllWorkspaces, setVisibleOnAllWorkspaces] =
     useState<boolean>(true)
 
@@ -183,31 +181,21 @@ export default function Page() {
     }
   }
 
-  const shortcutEditCallback = (
-    ctrlKey: boolean,
-    optionKey: boolean,
-    commandKey: boolean,
-    hotKey: string,
-  ) => {
+  const handleShortcutSave = (shortcut: ShortcutDef) => {
+    setShortcutDialogOpen(false)
     ;(async () => {
       let saved = false
       try {
         const response = await invoke<string>(
           GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
-          {
-            shortcut: {
-              ctrl: ctrlKey,
-              option: optionKey,
-              command: commandKey,
-              hotkey: hotKey,
-            },
-          },
+          { shortcut },
         )
         debug(
           `[preferences] invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
         )
         const res_json = JSON.parse(response)
         if (res_json.status === 'success') {
+          setToggleVisibleShortcut(shortcut)
           saved = true
         } else {
           error(
@@ -416,22 +404,82 @@ export default function Page() {
             Global Shortcut
           </Typography>
           <Box sx={{ pl: '14px' }}>
-            {shortcutValidationError && (
-              <Typography
-                variant='caption'
-                color={theme.palette.alert.main}
-                sx={{ display: 'block', mb: 1 }}
-              >
-                Please check at least one of ^ ⌥ ⌘.
-              </Typography>
-            )}
             {toggleVisibleShortcut && (
-              <ShortcutEditField
-                shortcutName='Toggle Visible'
-                shortcut={toggleVisibleShortcut}
-                callback={shortcutEditCallback}
-                onValidationChange={setShortcutValidationError}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Typography
+                  sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}
+                >
+                  Toggle Visible
+                </Typography>
+                <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>
+                  :
+                </Typography>
+                <Box
+                  sx={{
+                    backgroundColor: isDark
+                      ? 'rgba(255,255,255,0.06)'
+                      : 'rgba(255,255,255,0.9)',
+                    backdropFilter: 'blur(12px)',
+                    border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                    borderRadius: '6px',
+                    padding: '4px 11px',
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    color: 'text.primary',
+                    boxShadow: !isDark
+                      ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
+                      : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {(
+                    [
+                      toggleVisibleShortcut.ctrl && '^',
+                      toggleVisibleShortcut.option && '⌥',
+                      toggleVisibleShortcut.command && '⌘',
+                      toggleVisibleShortcut.hotkey,
+                    ] as (string | false)[]
+                  )
+                    .filter(Boolean)
+                    .map((c, i) => (
+                      <span key={i}>{c}</span>
+                    ))}
+                </Box>
+                <Tooltip title='Edit global shortcut…'>
+                  <IconButton
+                    size='small'
+                    onClick={() => setShortcutDialogOpen(true)}
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '7px',
+                      border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
+                      backgroundColor: isDark
+                        ? 'rgba(100,180,255,0.10)'
+                        : 'rgba(0,113,227,0.07)',
+                      color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                        color: 'primary.main',
+                      },
+                    }}
+                  >
+                    <svg
+                      width='14'
+                      height='14'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                    >
+                      <circle cx='12' cy='12' r='3' />
+                      <path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' />
+                    </svg>
+                  </IconButton>
+                </Tooltip>
+              </Box>
             )}
           </Box>
         </Box>
@@ -755,6 +803,14 @@ export default function Page() {
         onSave={handleLogSettingsSave}
         onCancel={() => setLogDialogOpen(false)}
       />
+      {toggleVisibleShortcut && (
+        <ShortcutSettingsDialog
+          open={shortcutDialogOpen}
+          shortcut={toggleVisibleShortcut}
+          onSave={handleShortcutSave}
+          onCancel={() => setShortcutDialogOpen(false)}
+        />
+      )}
     </>
   )
 }
@@ -919,6 +975,560 @@ function NumberInputField({
         </Typography>
       )}
     </Box>
+  )
+}
+
+// ─── Keycap ───────────────────────────────────────────────────
+
+type KeycapProps = {
+  children: React.ReactNode
+  big?: boolean
+  active?: boolean
+}
+
+function Keycap({ children, big = false, active = true }: KeycapProps) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  return (
+    <Box
+      sx={{
+        flexShrink: 0,
+        minWidth: big ? 38 : 26,
+        padding: big ? '7px 11px' : '3px 8px',
+        borderRadius: '6px',
+        backgroundColor: active
+          ? isDark
+            ? 'rgba(255,255,255,0.06)'
+            : 'rgba(255,255,255,0.92)'
+          : isDark
+            ? 'rgba(255,255,255,0.02)'
+            : 'rgba(255,255,255,0.4)',
+        border: `0.5px solid ${
+          active
+            ? isDark
+              ? 'rgba(255,255,255,0.18)'
+              : 'rgba(0,0,0,0.14)'
+            : isDark
+              ? 'rgba(255,255,255,0.07)'
+              : 'rgba(0,0,0,0.06)'
+        }`,
+        boxShadow: active
+          ? isDark
+            ? '0 1px 0 rgba(0,0,0,0.4), inset 0 0.5px 0 rgba(255,255,255,0.08)'
+            : '0 1px 0 rgba(0,0,30,0.08), inset 0 0.5px 0 rgba(255,255,255,0.9)'
+          : 'none',
+        fontFamily: 'monospace',
+        fontSize: big ? 15 : 12,
+        fontWeight: 600,
+        color: active ? 'text.primary' : 'text.secondary',
+        textAlign: 'center',
+        lineHeight: 1.3,
+        userSelect: 'none',
+        transition: 'all 0.14s',
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+// ─── ShortcutCheckbox ─────────────────────────────────────────
+
+type ShortcutCheckboxProps = {
+  checked: boolean
+  onToggle: () => void
+  symbol: string
+  label: string
+}
+
+function ShortcutCheckbox({
+  checked,
+  onToggle,
+  symbol,
+  label,
+}: ShortcutCheckboxProps) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <Box
+      role='checkbox'
+      aria-checked={checked}
+      tabIndex={0}
+      onClick={onToggle}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          onToggle()
+        }
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        cursor: 'pointer',
+        p: '7px 10px',
+        borderRadius: '8px',
+        outline: 'none',
+        backgroundColor: checked
+          ? isDark
+            ? 'rgba(100,180,255,0.10)'
+            : 'rgba(0,113,227,0.06)'
+          : hovered
+            ? isDark
+              ? 'rgba(255,255,255,0.04)'
+              : 'rgba(255,255,255,0.55)'
+            : 'transparent',
+        border: `0.5px solid ${
+          checked
+            ? isDark
+              ? 'rgba(100,180,255,0.30)'
+              : 'rgba(0,113,227,0.22)'
+            : hovered
+              ? theme.palette.divider
+              : 'transparent'
+        }`,
+        transition: 'all 0.14s',
+        userSelect: 'none',
+      }}
+    >
+      <Box
+        sx={{
+          width: 18,
+          height: 18,
+          borderRadius: '5px',
+          flexShrink: 0,
+          backgroundColor: checked
+            ? theme.palette.primary.main
+            : isDark
+              ? 'rgba(0,0,0,0.25)'
+              : 'rgba(255,255,255,0.9)',
+          border: `0.5px solid ${checked ? theme.palette.primary.main : theme.palette.divider}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow:
+            !isDark && !checked ? 'inset 0 1px 2px rgba(0,0,0,0.05)' : 'none',
+          transition: 'all 0.14s',
+        }}
+      >
+        {checked && (
+          <svg
+            width='11'
+            height='11'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='#fff'
+            strokeWidth='3'
+          >
+            <polyline points='20 6 9 17 4 12' />
+          </svg>
+        )}
+      </Box>
+      <Keycap active={checked}>{symbol}</Keycap>
+      <Typography
+        sx={{
+          fontSize: 13,
+          color: checked ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {label}
+      </Typography>
+    </Box>
+  )
+}
+
+// ─── HotkeyInput ──────────────────────────────────────────────
+
+type HotkeyInputProps = {
+  value: string
+  onChange: (v: string) => void
+  invalid: boolean
+}
+
+function HotkeyInput({ value, onChange, invalid }: HotkeyInputProps) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const [focused, setFocused] = useState(false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value
+    if (raw === '') {
+      onChange('')
+      return
+    }
+    const ch = raw.slice(-1)
+    if (/^[a-zA-Z0-9]$/.test(ch)) onChange(ch.toUpperCase())
+  }
+
+  return (
+    <Box
+      component='input'
+      value={value}
+      onChange={handleChange}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      placeholder='–'
+      maxLength={1}
+      spellCheck={false}
+      autoComplete='off'
+      sx={{
+        width: 64,
+        textAlign: 'center',
+        backgroundColor: isDark ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.9)',
+        border: `0.5px solid ${invalid ? '#ff6b6b' : focused ? theme.palette.primary.main : theme.palette.divider}`,
+        borderRadius: '7px',
+        padding: '7px 8px',
+        fontFamily: 'monospace',
+        fontSize: 16,
+        fontWeight: 600,
+        color: 'text.primary',
+        caretColor: theme.palette.primary.main,
+        outline: 'none',
+        boxShadow: focused
+          ? `0 0 0 3px ${isDark ? 'rgba(100,180,255,0.13)' : 'rgba(0,113,227,0.10)'}`
+          : !isDark
+            ? 'inset 0 1px 2px rgba(0,0,0,0.04)'
+            : 'none',
+        transition: 'border-color 0.14s, box-shadow 0.14s',
+      }}
+    />
+  )
+}
+
+// ─── ShortcutSettingsDialog ───────────────────────────────────
+
+type ShortcutSettingsDialogProps = {
+  open: boolean
+  shortcut: ShortcutDef
+  onSave: (shortcut: ShortcutDef) => void
+  onCancel: () => void
+}
+
+function ShortcutSettingsDialog({
+  open: dialogOpen,
+  shortcut,
+  onSave,
+  onCancel,
+}: ShortcutSettingsDialogProps) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+
+  const [ctrl, setCtrl] = useState(shortcut.ctrl)
+  const [option, setOption] = useState(shortcut.option)
+  const [command, setCommand] = useState(shortcut.command)
+  const [hotkey, setHotkey] = useState(shortcut.hotkey)
+  const [showError, setShowError] = useState(false)
+
+  useEffect(() => {
+    if (dialogOpen) {
+      setCtrl(shortcut.ctrl)
+      setOption(shortcut.option)
+      setCommand(shortcut.command)
+      setHotkey(shortcut.hotkey)
+      setShowError(false)
+    }
+    // Reset only when dialog opens; omitting shortcut from deps is intentional.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialogOpen])
+
+  const hasModifier = ctrl || option || command
+  const hasHotkey = hotkey.trim().length > 0
+  const canSave = hasModifier && hasHotkey
+
+  const handleSave = () => {
+    if (!canSave) {
+      setShowError(true)
+      return
+    }
+    onSave({ ctrl, option, command, hotkey })
+  }
+
+  const previewCaps: string[] = []
+  if (ctrl) previewCaps.push('^')
+  if (option) previewCaps.push('⌥')
+  if (command) previewCaps.push('⌘')
+  if (hasHotkey) previewCaps.push(hotkey)
+
+  return (
+    <Dialog
+      open={dialogOpen}
+      onClose={onCancel}
+      maxWidth='xs'
+      fullWidth
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: '14px',
+            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
+            boxShadow: isDark
+              ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
+              : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
+          },
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          padding: '14px 18px 12px',
+          fontSize: 14,
+          fontWeight: 600,
+          borderBottom: `0.5px solid ${theme.palette.divider}`,
+        }}
+      >
+        Global Shortcut — Toggle Visible
+      </DialogTitle>
+      <DialogContent
+        sx={{
+          padding: '16px 18px 4px !important',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px',
+        }}
+      >
+        {/* Restart-required notice */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '9px',
+            p: '9px 11px',
+            backgroundColor: isDark
+              ? 'rgba(255,180,80,0.08)'
+              : 'rgba(180,120,0,0.06)',
+            border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.30)' : 'rgba(180,120,0,0.22)'}`,
+            borderRadius: '8px',
+          }}
+        >
+          <InfoOutlinedIcon
+            sx={{
+              fontSize: 14,
+              mt: '1px',
+              flexShrink: 0,
+              color: isDark ? '#f5c46b' : '#a87a00',
+            }}
+          />
+          <Typography
+            sx={{
+              lineHeight: 1.5,
+              color: isDark ? '#f5c46b' : '#8a6300',
+              fontSize: '11.5px',
+            }}
+          >
+            Changing the global shortcut takes effect after restarting
+            RightCheat.
+          </Typography>
+        </Box>
+
+        {/* Live preview */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+            p: '16px 12px',
+            backgroundColor: isDark
+              ? 'rgba(255,255,255,0.025)'
+              : 'rgba(255,255,255,0.35)',
+            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)'}`,
+            borderRadius: '10px',
+            boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: 10.5,
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'text.secondary',
+            }}
+          >
+            Preview
+          </Typography>
+          {previewCaps.length > 0 ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {previewCaps.map((c, i) => (
+                <Keycap key={i} big active>
+                  {c}
+                </Keycap>
+              ))}
+            </Box>
+          ) : (
+            <Typography
+              sx={{ fontSize: 13, color: 'text.secondary', p: '7px 0' }}
+            >
+              Not set
+            </Typography>
+          )}
+        </Box>
+
+        {/* Modifiers */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <Typography
+            sx={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+              color: 'text.secondary',
+              display: 'block',
+            }}
+          >
+            Modifiers
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px',
+              p: '4px',
+              backgroundColor: isDark
+                ? 'rgba(0,0,0,0.15)'
+                : 'rgba(255,255,255,0.45)',
+              border: `0.5px solid ${theme.palette.divider}`,
+              borderRadius: '9px',
+            }}
+          >
+            <ShortcutCheckbox
+              checked={ctrl}
+              onToggle={() => {
+                setCtrl((v) => !v)
+                setShowError(false)
+              }}
+              symbol='^'
+              label='Control'
+            />
+            <ShortcutCheckbox
+              checked={option}
+              onToggle={() => {
+                setOption((v) => !v)
+                setShowError(false)
+              }}
+              symbol='⌥'
+              label='Option'
+            />
+            <ShortcutCheckbox
+              checked={command}
+              onToggle={() => {
+                setCommand((v) => !v)
+                setShowError(false)
+              }}
+              symbol='⌘'
+              label='Command'
+            />
+          </Box>
+          {showError && !hasModifier && (
+            <Typography sx={{ fontSize: 10.5, color: '#ff6b6b', mt: '2px' }}>
+              Please check at least one of ^ ⌥ ⌘.
+            </Typography>
+          )}
+        </Box>
+
+        {/* Hotkey */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <Typography
+            sx={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+              color: 'text.secondary',
+              display: 'block',
+            }}
+          >
+            Hotkey
+          </Typography>
+          <Typography
+            sx={{ fontSize: 10.5, color: 'text.disabled', lineHeight: 1.4 }}
+          >
+            A single character — letters (A–Z, a–z) or digits (0–9) only.
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <HotkeyInput
+              value={hotkey}
+              onChange={(v) => {
+                setHotkey(v)
+                setShowError(false)
+              }}
+              invalid={showError && !hasHotkey}
+            />
+            <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+              Type a key to set it
+            </Typography>
+          </Box>
+          {showError && !hasHotkey && (
+            <Typography sx={{ fontSize: 10.5, color: '#ff6b6b', mt: '2px' }}>
+              Please enter a hotkey character.
+            </Typography>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions
+        sx={{
+          padding: '12px 16px 14px',
+          backgroundColor: isDark
+            ? 'rgba(255,255,255,0.018)'
+            : 'rgba(255,255,255,0.30)',
+          borderTop: `0.5px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Button
+          onClick={onCancel}
+          sx={{
+            borderRadius: '7px',
+            padding: '5px 16px',
+            fontSize: 12,
+            fontWeight: 600,
+            minWidth: 78,
+            textTransform: 'none',
+            backgroundColor: isDark
+              ? 'rgba(255,255,255,0.06)'
+              : 'rgba(255,255,255,0.75)',
+            border: `0.5px solid ${theme.palette.divider}`,
+            color: 'text.primary',
+            '&:hover': {
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.10)'
+                : 'rgba(255,255,255,0.95)',
+            },
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={!canSave}
+          sx={{
+            borderRadius: '7px',
+            padding: '5px 16px',
+            fontSize: 12,
+            fontWeight: 600,
+            minWidth: 78,
+            textTransform: 'none',
+            backgroundColor: isDark ? '#64b4ff' : '#0071e3',
+            border: '0.5px solid transparent',
+            color: '#fff',
+            boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
+            '&:hover': {
+              backgroundColor: isDark ? '#7cc0ff' : '#1a82eb',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.05)'
+                : 'rgba(0,0,0,0.04)',
+              border: `0.5px solid ${theme.palette.divider}`,
+              color: 'text.disabled',
+              boxShadow: 'none',
+            },
+          }}
+        >
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 

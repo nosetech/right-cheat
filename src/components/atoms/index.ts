@@ -1,6 +1,4 @@
-export * from './EditButton'
 export * from './FileEditButton'
 export * from './FileOpenButton'
-export * from './SettingsButton'
 export * from './ThemedSwitch'
 export * from './ThemeToggle'
