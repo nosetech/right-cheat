@@ -1414,7 +1414,13 @@ function ShortcutSettingsDialog({
             />
           </Box>
           {showError && !hasModifier && (
-            <Typography sx={{ fontSize: 10.5, color: theme.palette.error.main, mt: '2px' }}>
+            <Typography
+              sx={{
+                fontSize: 10.5,
+                color: theme.palette.error.main,
+                mt: '2px',
+              }}
+            >
               Please check at least one of ^ ⌥ ⌘.
             </Typography>
           )}
@@ -1452,7 +1458,13 @@ function ShortcutSettingsDialog({
             A single character — letters (A–Z, a–z) or digits (0–9) only.
           </Typography>
           {showError && !hasHotkey && (
-            <Typography sx={{ fontSize: 10.5, color: theme.palette.error.main, mt: '2px' }}>
+            <Typography
+              sx={{
+                fontSize: 10.5,
+                color: theme.palette.error.main,
+                mt: '2px',
+              }}
+            >
               Please enter a hotkey character.
             </Typography>
           )}
