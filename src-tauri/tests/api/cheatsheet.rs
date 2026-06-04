@@ -789,6 +789,38 @@ mod update_cheat_sheets_tests {
     }
 
     #[test]
+    fn multibyte_title_100_chars_succeeds() {
+        let app = setup_mock_app_with_db();
+        // 100 Japanese characters = 300 bytes; must be accepted
+        let updates = vec![CheatSheetUpdate {
+            id: None,
+            title: "あ".repeat(100),
+            sort_order: 0,
+            sheet_type: None,
+            layout: None,
+        }];
+
+        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn multibyte_title_101_chars_fails() {
+        let app = setup_mock_app_with_db();
+        // 101 Japanese characters = 303 bytes; must be rejected
+        let updates = vec![CheatSheetUpdate {
+            id: None,
+            title: "あ".repeat(101),
+            sort_order: 0,
+            sheet_type: None,
+            layout: None,
+        }];
+
+        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn preserves_commands_when_updating_existing_sheet() {
         let app = setup_mock_app_with_db();
         insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());

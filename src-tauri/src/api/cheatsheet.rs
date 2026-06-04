@@ -193,7 +193,7 @@ pub fn update_cheat_sheets<R: tauri::Runtime>(
         if item.title.trim().is_empty() {
             return Err("Title cannot be empty".to_string());
         }
-        if item.title.len() > 100 {
+        if item.title.chars().count() > 100 {
             return Err(format!(
                 "Title must be 100 characters or fewer: {}",
                 item.title

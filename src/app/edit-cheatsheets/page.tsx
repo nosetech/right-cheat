@@ -1305,7 +1305,7 @@ export default function EditCheatsheetsPage() {
         title: r.title.trim(),
         sort_order: i,
         sheet_type: r.sheetType,
-        layout: r.layout,
+        layout: r.sheetType === 'shortcut' ? 'inline' : r.layout,
       }))
       await invoke(CheatSheetAPI.UPDATE_CHEAT_SHEETS, { updates })
       info(`[edit-cheatsheets] saved ${updates.length} cheatsheets`)
