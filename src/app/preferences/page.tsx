@@ -391,10 +391,10 @@ export default function Page() {
         sx={{ p: '4px 20px 16px', display: 'flex', flexDirection: 'column' }}
       >
         {/* Global Shortcut */}
-        <Box sx={{ py: '13px' }}>
+        <Box sx={{ py: '20px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -403,7 +403,7 @@ export default function Page() {
           >
             Global Shortcut
           </Typography>
-          <Box sx={{ pl: '14px' }}>
+          <Box sx={{ pl: '14px', py: '8px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Typography
                 sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}
@@ -482,10 +482,10 @@ export default function Page() {
         <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
 
         {/* Theme */}
-        <Box sx={{ py: '13px' }}>
+        <Box sx={{ py: '20px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -494,7 +494,7 @@ export default function Page() {
           >
             Theme
           </Typography>
-          <Box sx={{ pl: '14px' }}>
+          <Box sx={{ pl: '14px', py: '8px' }}>
             <ThemeToggle
               themeMode={themeMode}
               onChange={handleThemeChange}
@@ -506,10 +506,10 @@ export default function Page() {
         <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
 
         {/* Other Settings */}
-        <Box sx={{ py: '13px' }}>
+        <Box sx={{ py: '20px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -518,7 +518,7 @@ export default function Page() {
           >
             Other Settings
           </Typography>
-          <Box sx={{ pl: '14px' }}>
+          <Box sx={{ pl: '14px', py: '8px' }}>
             <Box
               sx={{
                 display: 'flex',
@@ -541,6 +541,7 @@ export default function Page() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  py: '8px',
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -558,7 +559,7 @@ export default function Page() {
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
               {/* CheatSheet DB section */}
-              <Box>
+              <Box sx={{ py: '8px' }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -669,7 +670,7 @@ export default function Page() {
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
               {/* Log section */}
-              <Box>
+              <Box sx={{ py: '8px' }}>
                 {/* Header row */}
                 <Box
                   sx={{
