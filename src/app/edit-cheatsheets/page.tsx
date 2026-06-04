@@ -769,9 +769,11 @@ function EditRow({
   onTypeChange,
   onLayoutChange,
   onRemove,
-  onDragStart,
-  onDragOver,
-  onDragEnd,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onRowRef,
   onMoveUp,
   onMoveDown,
 }: {
@@ -787,9 +789,11 @@ function EditRow({
   onTypeChange: (t: SheetType) => void
   onLayoutChange: (l: LayoutType) => void
   onRemove: () => void
-  onDragStart: (e: React.DragEvent) => void
-  onDragOver: (e: React.DragEvent) => void
-  onDragEnd: () => void
+  onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void
+  onPointerMove: (e: React.PointerEvent) => void
+  onPointerUp: () => void
+  onPointerCancel: () => void
+  onRowRef: (el: HTMLDivElement | null) => void
   onMoveUp: () => void
   onMoveDown: () => void
 }) {
@@ -814,7 +818,7 @@ function EditRow({
 
   return (
     <div
-      onDragOver={onDragOver}
+      ref={onRowRef}
       style={{
         position: 'relative',
         paddingTop: dropTarget === 'before' ? 2 : 0,
@@ -870,19 +874,23 @@ function EditRow({
           transition: 'background 0.12s, border-color 0.12s, opacity 0.12s',
         }}
       >
-        {/* Drag handle — keyboard: ArrowUp/ArrowDown to reorder */}
+        {/* Drag handle — pointer events for WKWebView compatibility; keyboard: ArrowUp/ArrowDown */}
         <div
-          draggable
           role='button'
           tabIndex={0}
           aria-label={`Drag to reorder: ${row.title}`}
-          onDragStart={(e) => {
+          onPointerDown={(e) => {
             setGrabbing(true)
-            onDragStart(e)
+            onPointerDown(e)
           }}
-          onDragEnd={() => {
+          onPointerMove={onPointerMove}
+          onPointerUp={() => {
             setGrabbing(false)
-            onDragEnd()
+            onPointerUp()
+          }}
+          onPointerCancel={() => {
+            setGrabbing(false)
+            onPointerCancel()
           }}
           onKeyDown={(e) => {
             if (e.key === 'ArrowUp') {
@@ -911,6 +919,7 @@ function EditRow({
                 : 'rgba(0,0,0,0.22)',
             transition: 'color 0.12s',
             userSelect: 'none',
+            touchAction: 'none',
             outline: 'none',
           }}
         >
@@ -1117,6 +1126,12 @@ export default function EditCheatsheetsPage() {
   } | null>(null)
   const [dirty, setDirty] = useState(false)
   const listEndRef = useRef<HTMLDivElement>(null)
+  const rowRefsMap = useRef<Map<string, HTMLDivElement>>(new Map())
+  // Pointer Events の onPointerUp 内で最新の dropTarget を読めるよう ref で保持
+  const dropTargetRef = useRef<{
+    id: string
+    position: 'before' | 'after'
+  } | null>(null)
 
   const errors = validateRows(rows)
   const errorCt = errors.filter(
@@ -1201,47 +1216,70 @@ export default function EditCheatsheetsPage() {
   }, [])
 
   // DnD handlers
-  const onDragStart = useCallback(
-    (localId: string) => (e: React.DragEvent) => {
+  // Pointer Events ベースの DnD（HTML5 DnD の代替 — WKWebView 互換）
+  const onHandlePointerDown = useCallback(
+    (localId: string) => (e: React.PointerEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      dropTargetRef.current = null
       setDragId(localId)
-      e.dataTransfer.effectAllowed = 'move'
-      try {
-        e.dataTransfer.setData('text/plain', localId)
-      } catch (_) {}
+      setDropTarget(null)
     },
     [],
   )
 
-  const onDragOver = useCallback(
-    (localId: string) => (e: React.DragEvent) => {
-      e.preventDefault()
-      if (localId === dragId) return
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-      const after = e.clientY - rect.top > rect.height / 2
-      setDropTarget({ id: localId, position: after ? 'after' : 'before' })
+  // ポインターキャプチャにより、常にドラッグ中の行ハンドルでこのハンドラが発火する
+  const onHandlePointerMove = useCallback(
+    (localId: string) => (e: React.PointerEvent) => {
+      if (!dragId) return
+      let found: { id: string; position: 'before' | 'after' } | null = null
+      for (const [rowId, el] of rowRefsMap.current.entries()) {
+        if (rowId === localId) continue
+        const rect = el.getBoundingClientRect()
+        if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          found = {
+            id: rowId,
+            position:
+              e.clientY > rect.top + rect.height / 2 ? 'after' : 'before',
+          }
+          break
+        }
+      }
+      dropTargetRef.current = found
+      setDropTarget(found)
     },
     [dragId],
   )
 
-  const onDragEnd = useCallback(() => {
+  const onHandlePointerUp = useCallback(
+    (localId: string) => () => {
+      const target = dropTargetRef.current
+      dropTargetRef.current = null
+      if (target) {
+        setRows((prevRows) => {
+          const from = prevRows.findIndex((r) => r.localId === localId)
+          let to = prevRows.findIndex((r) => r.localId === target.id)
+          if (from === -1 || to === -1) return prevRows
+          const next = prevRows.slice()
+          const [moved] = next.splice(from, 1)
+          if (from < to) to -= 1
+          if (target.position === 'after') to += 1
+          next.splice(to, 0, moved)
+          return next
+        })
+        setDirty(true)
+      }
+      setDragId(null)
+      setDropTarget(null)
+    },
+    [],
+  )
+
+  const onHandlePointerCancel = useCallback(() => {
+    dropTargetRef.current = null
     setDragId(null)
     setDropTarget(null)
   }, [])
-
-  const onDrop = useCallback(() => {
-    if (!dragId || !dropTarget) return onDragEnd()
-    const from = rows.findIndex((r) => r.localId === dragId)
-    let to = rows.findIndex((r) => r.localId === dropTarget.id)
-    if (from === -1 || to === -1) return onDragEnd()
-    const next = rows.slice()
-    const [moved] = next.splice(from, 1)
-    if (from < to) to -= 1
-    if (dropTarget.position === 'after') to += 1
-    next.splice(to, 0, moved)
-    setRows(next)
-    setDirty(true)
-    onDragEnd()
-  }, [dragId, dropTarget, rows, onDragEnd])
 
   const moveRow = useCallback((localId: string, direction: 'up' | 'down') => {
     setRows((rs) => {
@@ -1332,8 +1370,7 @@ export default function EditCheatsheetsPage() {
       >
         {/* Row list */}
         <Box
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={onDrop}
+          style={{ userSelect: dragId ? 'none' : undefined }}
           sx={{
             flex: 1,
             minHeight: 0,
@@ -1385,9 +1422,14 @@ export default function EditCheatsheetsPage() {
                 onTypeChange={(v) => updateType(r.localId, v)}
                 onLayoutChange={(v) => updateLayout(r.localId, v)}
                 onRemove={() => removeRow(r.localId)}
-                onDragStart={onDragStart(r.localId)}
-                onDragOver={onDragOver(r.localId)}
-                onDragEnd={onDragEnd}
+                onPointerDown={onHandlePointerDown(r.localId)}
+                onPointerMove={onHandlePointerMove(r.localId)}
+                onPointerUp={onHandlePointerUp(r.localId)}
+                onPointerCancel={onHandlePointerCancel}
+                onRowRef={(el) => {
+                  if (el) rowRefsMap.current.set(r.localId, el)
+                  else rowRefsMap.current.delete(r.localId)
+                }}
                 onMoveUp={() => moveRow(r.localId, 'up')}
                 onMoveDown={() => moveRow(r.localId, 'down')}
               />
