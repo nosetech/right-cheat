@@ -16,6 +16,8 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import {
   Box,
   Button,
@@ -85,7 +87,7 @@ export default function Page() {
         )
         const res_json = JSON.parse(response)
         if (res_json.status === 'success') {
-          const shortcut: ShortcutDef = JSON.parse(response).message
+          const shortcut: ShortcutDef = res_json.message
           setToggleVisibleShortcut(shortcut)
         } else {
           error(
@@ -181,43 +183,41 @@ export default function Page() {
     }
   }
 
-  const handleShortcutSave = (shortcut: ShortcutDef) => {
+  const handleShortcutSave = async (shortcut: ShortcutDef) => {
     setShortcutDialogOpen(false)
-    ;(async () => {
-      let saved = false
-      try {
-        const response = await invoke<string>(
-          GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
-          { shortcut },
+    let saved = false
+    try {
+      const response = await invoke<string>(
+        GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS,
+        { shortcut },
+      )
+      debug(
+        `[preferences] invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
+      )
+      const res_json = JSON.parse(response)
+      if (res_json.status === 'success') {
+        setToggleVisibleShortcut(shortcut)
+        saved = true
+      } else {
+        error(
+          `[preferences] Failed to set toggle visible shortcut settings: ${res_json.message}`,
         )
-        debug(
-          `[preferences] invoke '${GlobalShortcutAPI.SET_TOGGLE_VISIBLE_SHORTCUT_SETTINGS}' response=${response}`,
-        )
-        const res_json = JSON.parse(response)
-        if (res_json.status === 'success') {
-          setToggleVisibleShortcut(shortcut)
-          saved = true
-        } else {
-          error(
-            `[preferences] Failed to set toggle visible shortcut settings: ${res_json.message}`,
-          )
-          await message('Failed to save global shortcut settings', {
-            title: 'Preferences',
-            kind: 'error',
-          })
-        }
-      } catch (err) {
-        error(`[preferences] Error setting shortcut: ${err}`)
         await message('Failed to save global shortcut settings', {
           title: 'Preferences',
           kind: 'error',
         })
       }
+    } catch (err) {
+      error(`[preferences] Error setting shortcut: ${err}`)
+      await message('Failed to save global shortcut settings', {
+        title: 'Preferences',
+        kind: 'error',
+      })
+    }
 
-      if (saved) {
-        await showRestartConfirmationDialog()
-      }
-    })()
+    if (saved) {
+      await showRestartConfirmationDialog()
+    }
   }
 
   const handleThemeChange = async (newThemeMode: string) => {
@@ -404,16 +404,16 @@ export default function Page() {
             Global Shortcut
           </Typography>
           <Box sx={{ pl: '14px' }}>
-            {toggleVisibleShortcut && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Typography
-                  sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}
-                >
-                  Toggle Visible
-                </Typography>
-                <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>
-                  :
-                </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Typography
+                sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}
+              >
+                Toggle Visible
+              </Typography>
+              <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>
+                :
+              </Typography>
+              {toggleVisibleShortcut && (
                 <Box
                   sx={{
                     backgroundColor: isDark
@@ -447,9 +447,12 @@ export default function Page() {
                       <span key={i}>{c}</span>
                     ))}
                 </Box>
-                <Tooltip title='Edit global shortcut…'>
+              )}
+              <Tooltip title='Edit global shortcut…'>
+                <span>
                   <IconButton
                     size='small'
+                    disabled={!toggleVisibleShortcut}
                     onClick={() => setShortcutDialogOpen(true)}
                     sx={{
                       width: 28,
@@ -466,21 +469,11 @@ export default function Page() {
                       },
                     }}
                   >
-                    <svg
-                      width='14'
-                      height='14'
-                      viewBox='0 0 24 24'
-                      fill='none'
-                      stroke='currentColor'
-                      strokeWidth='2'
-                    >
-                      <circle cx='12' cy='12' r='3' />
-                      <path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' />
-                    </svg>
+                    <SettingsOutlinedIcon sx={{ fontSize: 14 }} />
                   </IconButton>
-                </Tooltip>
-              </Box>
-            )}
+                </span>
+              </Tooltip>
+            </Box>
           </Box>
         </Box>
 
@@ -623,17 +616,7 @@ export default function Page() {
                         },
                       }}
                     >
-                      <svg
-                        width='14'
-                        height='14'
-                        viewBox='0 0 24 24'
-                        fill='none'
-                        stroke='currentColor'
-                        strokeWidth='2'
-                      >
-                        <path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' />
-                        <polyline points='14 2 14 8 20 8' />
-                      </svg>
+                      <InsertDriveFileOutlinedIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
                   <Box
@@ -831,6 +814,16 @@ function RowDot() {
       }}
     />
   )
+}
+
+function dialogPaperSx(isDark: boolean) {
+  return {
+    borderRadius: '14px',
+    border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
+    boxShadow: isDark
+      ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
+      : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
+  }
 }
 
 function LogSummaryRow({ label, value }: { label: string; value: string }) {
@@ -1073,6 +1066,10 @@ function ShortcutCheckbox({
         p: '7px 10px',
         borderRadius: '8px',
         outline: 'none',
+        '&:focus-visible': {
+          outline: `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: '2px',
+        },
         backgroundColor: checked
           ? isDark
             ? 'rgba(100,180,255,0.10)'
@@ -1179,7 +1176,7 @@ function HotkeyInput({ value, onChange, invalid }: HotkeyInputProps) {
         width: 64,
         textAlign: 'center',
         backgroundColor: isDark ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.9)',
-        border: `0.5px solid ${invalid ? '#ff6b6b' : focused ? theme.palette.primary.main : theme.palette.divider}`,
+        border: `0.5px solid ${invalid ? theme.palette.error.main : focused ? theme.palette.primary.main : theme.palette.divider}`,
         borderRadius: '7px',
         padding: '7px 8px',
         fontFamily: 'monospace',
@@ -1264,17 +1261,7 @@ function ShortcutSettingsDialog({
       onClose={onCancel}
       maxWidth='xs'
       fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            borderRadius: '14px',
-            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
-            boxShadow: isDark
-              ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
-              : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
-          },
-        },
-      }}
+      slotProps={{ paper: { sx: dialogPaperSx(isDark) } }}
     >
       <DialogTitle
         sx={{
@@ -1427,7 +1414,7 @@ function ShortcutSettingsDialog({
             />
           </Box>
           {showError && !hasModifier && (
-            <Typography sx={{ fontSize: 10.5, color: '#ff6b6b', mt: '2px' }}>
+            <Typography sx={{ fontSize: 10.5, color: theme.palette.error.main, mt: '2px' }}>
               Please check at least one of ^ ⌥ ⌘.
             </Typography>
           )}
@@ -1465,7 +1452,7 @@ function ShortcutSettingsDialog({
             A single character — letters (A–Z, a–z) or digits (0–9) only.
           </Typography>
           {showError && !hasHotkey && (
-            <Typography sx={{ fontSize: 10.5, color: '#ff6b6b', mt: '2px' }}>
+            <Typography sx={{ fontSize: 10.5, color: theme.palette.error.main, mt: '2px' }}>
               Please enter a hotkey character.
             </Typography>
           )}
@@ -1621,17 +1608,7 @@ function LogSettingsDialog({
       onClose={onCancel}
       maxWidth='xs'
       fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            borderRadius: '14px',
-            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
-            boxShadow: isDark
-              ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
-              : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
-          },
-        },
-      }}
+      slotProps={{ paper: { sx: dialogPaperSx(isDark) } }}
     >
       <DialogTitle
         sx={{
