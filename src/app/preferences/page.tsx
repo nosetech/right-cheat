@@ -391,10 +391,10 @@ export default function Page() {
         sx={{ p: '4px 20px 16px', display: 'flex', flexDirection: 'column' }}
       >
         {/* Global Shortcut */}
-        <Box sx={{ py: '13px' }}>
+        <Box sx={{ py: '20px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -403,7 +403,7 @@ export default function Page() {
           >
             Global Shortcut
           </Typography>
-          <Box sx={{ pl: '14px' }}>
+          <Box sx={{ pl: '14px', py: '8px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Typography
                 sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}
@@ -462,10 +462,12 @@ export default function Page() {
                       backgroundColor: isDark
                         ? 'rgba(100,180,255,0.10)'
                         : 'rgba(0,113,227,0.07)',
-                      color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                      color: isDark
+                        ? 'rgba(255,255,255,0.25)'
+                        : 'rgba(0,0,0,0.28)',
                       '&:hover': {
                         borderColor: theme.palette.primary.main,
-                        color: 'primary.main',
+                        color: theme.palette.primary.main,
                       },
                     }}
                   >
@@ -480,10 +482,10 @@ export default function Page() {
         <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
 
         {/* Theme */}
-        <Box sx={{ py: '13px' }}>
+        <Box sx={{ py: '20px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -492,7 +494,7 @@ export default function Page() {
           >
             Theme
           </Typography>
-          <Box sx={{ pl: '14px' }}>
+          <Box sx={{ pl: '14px', py: '8px' }}>
             <ThemeToggle
               themeMode={themeMode}
               onChange={handleThemeChange}
@@ -504,10 +506,10 @@ export default function Page() {
         <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
 
         {/* Other Settings */}
-        <Box sx={{ py: '13px' }}>
+        <Box sx={{ py: '20px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -516,7 +518,7 @@ export default function Page() {
           >
             Other Settings
           </Typography>
-          <Box sx={{ pl: '14px' }}>
+          <Box sx={{ pl: '14px', py: '8px' }}>
             <Box
               sx={{
                 display: 'flex',
@@ -539,6 +541,7 @@ export default function Page() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  py: '8px',
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -556,7 +559,7 @@ export default function Page() {
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
               {/* CheatSheet DB section */}
-              <Box>
+              <Box sx={{ py: '8px' }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -610,9 +613,12 @@ export default function Page() {
                         backgroundColor: isDark
                           ? 'rgba(100,180,255,0.10)'
                           : 'rgba(0,113,227,0.07)',
-                        color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                        color: isDark
+                          ? 'rgba(255,255,255,0.25)'
+                          : 'rgba(0,0,0,0.28)',
                         '&:hover': {
                           borderColor: theme.palette.primary.main,
+                          color: theme.palette.primary.main,
                         },
                       }}
                     >
@@ -664,7 +670,7 @@ export default function Page() {
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
               {/* Log section */}
-              <Box>
+              <Box sx={{ py: '8px' }}>
                 {/* Header row */}
                 <Box
                   sx={{
@@ -715,10 +721,12 @@ export default function Page() {
                           backgroundColor: isDark
                             ? 'rgba(100,180,255,0.10)'
                             : 'rgba(0,113,227,0.07)',
-                          color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                          color: isDark
+                            ? 'rgba(255,255,255,0.25)'
+                            : 'rgba(0,0,0,0.28)',
                           '&:hover': {
                             borderColor: theme.palette.primary.main,
-                            color: 'primary.main',
+                            color: theme.palette.primary.main,
                           },
                         }}
                       >
@@ -737,10 +745,12 @@ export default function Page() {
                           backgroundColor: isDark
                             ? 'rgba(100,180,255,0.10)'
                             : 'rgba(0,113,227,0.07)',
-                          color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                          color: isDark
+                            ? 'rgba(255,255,255,0.25)'
+                            : 'rgba(0,0,0,0.28)',
                           '&:hover': {
                             borderColor: theme.palette.primary.main,
-                            color: 'primary.main',
+                            color: theme.palette.primary.main,
                           },
                         }}
                       >
@@ -1700,8 +1710,11 @@ function LogSettingsDialog({
                   backgroundColor: isDark
                     ? 'rgba(100,180,255,0.10)'
                     : 'rgba(0,113,227,0.07)',
-                  color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
-                  '&:hover': { borderColor: theme.palette.primary.main },
+                  color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.28)',
+                  '&:hover': {
+                    borderColor: theme.palette.primary.main,
+                    color: theme.palette.primary.main,
+                  },
                 }}
               >
                 <FolderOutlinedIcon sx={{ fontSize: 14 }} />
