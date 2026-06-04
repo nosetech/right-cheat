@@ -23,22 +23,27 @@ export function ThemeToggle({
 }: ThemeToggleProps) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
+  const borderColor = isDark
+    ? 'rgba(255,255,255,0.10)'
+    : 'rgba(255,255,255,0.72)'
 
   return (
     <Box sx={{ display: 'flex' }} role='group' aria-label='Theme selection'>
       {MODES.map(({ value, label }, i) => {
         const selected = themeMode === value
-        const borderColor = isDark
-          ? 'rgba(255,255,255,0.10)'
-          : 'rgba(255,255,255,0.72)'
+        const borderRadius =
+          i === 0 ? '5px 0 0 5px' : i === MODES.length - 1 ? '0 5px 5px 0' : 0
+
         return (
-          <button
+          <Box
             key={value}
+            component='button'
             onClick={() => !disabled && onChange(value)}
             disabled={disabled}
             aria-label={`${value} theme`}
             aria-pressed={selected}
-            style={{
+            sx={{
+              position: 'relative',
               background: selected
                 ? isDark
                   ? 'rgba(255,255,255,0.12)'
@@ -60,21 +65,23 @@ export function ThemeToggle({
                   ? 'rgba(255,255,255,0.28)'
                   : 'rgba(0,0,0,0.28)',
               transition: 'color 0.14s, background 0.14s, box-shadow 0.14s',
-              borderRadius:
-                i === 0
-                  ? '5px 0 0 5px'
-                  : i === MODES.length - 1
-                    ? '0 5px 5px 0'
-                    : 0,
+              borderRadius,
               boxShadow:
                 selected && !isDark
                   ? 'inset 0 1px 0 rgba(255,255,255,0.85)'
                   : 'none',
               opacity: disabled ? 0.5 : 1,
+              outline: 'none',
+              '&:focus-visible': {
+                outline: `2px solid ${theme.palette.primary.main}`,
+                outlineOffset: '1px',
+                borderRadius: '5px',
+                zIndex: 2,
+              },
             }}
           >
             {label}
-          </button>
+          </Box>
         )
       })}
     </Box>
