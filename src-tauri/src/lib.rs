@@ -287,9 +287,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 tauri::WebviewUrl::App("/preferences".into()),
             )
             .title("Preferences")
-            .inner_size(580.0, 560.0)
-            .max_inner_size(800.0, 560.0)
-            .min_inner_size(580.0, 560.0)
+            .inner_size(580.0, 680.0)
+            .max_inner_size(800.0, 680.0)
+            .min_inner_size(580.0, 680.0)
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
             .build();

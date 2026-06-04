@@ -1161,7 +1161,7 @@ function HotkeyInput({ value, onChange, invalid }: HotkeyInputProps) {
       return
     }
     const ch = raw.slice(-1)
-    if (/^[a-zA-Z0-9]$/.test(ch)) onChange(ch.toUpperCase())
+    if (/^[a-zA-Z0-9]$/.test(ch)) onChange(ch)
   }
 
   return (
@@ -1237,7 +1237,12 @@ function ShortcutSettingsDialog({
 
   const hasModifier = ctrl || option || command
   const hasHotkey = hotkey.trim().length > 0
-  const canSave = hasModifier && hasHotkey
+  const dirty =
+    ctrl !== shortcut.ctrl ||
+    option !== shortcut.option ||
+    command !== shortcut.command ||
+    hotkey !== shortcut.hotkey
+  const canSave = hasModifier && hasHotkey && dirty
 
   const handleSave = () => {
     if (!canSave) {
@@ -1441,11 +1446,6 @@ function ShortcutSettingsDialog({
           >
             Hotkey
           </Typography>
-          <Typography
-            sx={{ fontSize: 10.5, color: 'text.disabled', lineHeight: 1.4 }}
-          >
-            A single character — letters (A–Z, a–z) or digits (0–9) only.
-          </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <HotkeyInput
               value={hotkey}
@@ -1459,6 +1459,11 @@ function ShortcutSettingsDialog({
               Type a key to set it
             </Typography>
           </Box>
+          <Typography
+            sx={{ fontSize: 10.5, color: 'text.disabled', lineHeight: 1.4 }}
+          >
+            A single character — letters (A–Z, a–z) or digits (0–9) only.
+          </Typography>
           {showError && !hasHotkey && (
             <Typography sx={{ fontSize: 10.5, color: '#ff6b6b', mt: '2px' }}>
               Please enter a hotkey character.
