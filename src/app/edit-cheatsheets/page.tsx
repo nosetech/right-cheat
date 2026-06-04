@@ -15,6 +15,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { confirm, message } from '@tauri-apps/plugin-dialog'
 import { debug, info, error as logError } from '@tauri-apps/plugin-log'
 
+import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import {
@@ -171,79 +172,6 @@ function validateRows(rows: RowData[]): RowError[] {
       duplicate: t.length > 0 && (counts[norm[i]] ?? 0) > 1,
     }
   })
-}
-
-// ─── FooterButton ─────────────────────────────────────────────────────────────
-
-function FooterButton({
-  onClick,
-  primary,
-  disabled,
-  children,
-}: {
-  onClick?: () => void
-  primary?: boolean
-  disabled?: boolean
-  children: React.ReactNode
-}) {
-  const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
-  const accent = isDark ? '#64b4ff' : '#0071e3'
-
-  return (
-    <Box
-      component='button'
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      sx={{
-        background: disabled
-          ? isDark
-            ? 'rgba(255,255,255,0.05)'
-            : 'rgba(0,0,0,0.04)'
-          : primary
-            ? accent
-            : isDark
-              ? 'rgba(255,255,255,0.06)'
-              : 'rgba(255,255,255,0.75)',
-        color: disabled
-          ? isDark
-            ? 'rgba(255,255,255,0.25)'
-            : 'rgba(0,0,0,0.28)'
-          : primary
-            ? '#fff'
-            : theme.palette.text.primary,
-        border: `0.5px solid ${
-          primary && !disabled
-            ? 'transparent'
-            : isDark
-              ? 'rgba(255,255,255,0.10)'
-              : 'rgba(0,0,0,0.12)'
-        }`,
-        borderRadius: '7px',
-        padding: '5px 16px',
-        fontFamily: theme.typography.fontFamily,
-        fontSize: '12px',
-        fontWeight: 600,
-        letterSpacing: '0.01em',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'all 0.14s',
-        minWidth: '78px',
-        boxShadow:
-          !isDark && !disabled ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
-        '&:hover:not(:disabled)': {
-          background: primary
-            ? isDark
-              ? '#7cc0ff'
-              : '#1a82eb'
-            : isDark
-              ? 'rgba(255,255,255,0.10)'
-              : 'rgba(255,255,255,0.95)',
-        },
-      }}
-    >
-      {children}
-    </Box>
-  )
 }
 
 // ─── TypeBadge ───────────────────────────────────────────────────────────────
@@ -844,6 +772,8 @@ function EditRow({
   onDragStart,
   onDragOver,
   onDragEnd,
+  onMoveUp,
+  onMoveDown,
 }: {
   row: RowData
   index: number
@@ -860,6 +790,8 @@ function EditRow({
   onDragStart: (e: React.DragEvent) => void
   onDragOver: (e: React.DragEvent) => void
   onDragEnd: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
 }) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
@@ -938,9 +870,12 @@ function EditRow({
           transition: 'background 0.12s, border-color 0.12s, opacity 0.12s',
         }}
       >
-        {/* Drag handle */}
+        {/* Drag handle — keyboard: ArrowUp/ArrowDown to reorder */}
         <div
           draggable
+          role='button'
+          tabIndex={0}
+          aria-label={`Drag to reorder: ${row.title}`}
           onDragStart={(e) => {
             setGrabbing(true)
             onDragStart(e)
@@ -949,7 +884,16 @@ function EditRow({
             setGrabbing(false)
             onDragEnd()
           }}
-          title='Drag to reorder'
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowUp') {
+              e.preventDefault()
+              onMoveUp()
+            } else if (e.key === 'ArrowDown') {
+              e.preventDefault()
+              onMoveDown()
+            }
+          }}
+          title='Drag to reorder (Arrow keys to move)'
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -967,6 +911,7 @@ function EditRow({
                 : 'rgba(0,0,0,0.22)',
             transition: 'color 0.12s',
             userSelect: 'none',
+            outline: 'none',
           }}
         >
           <svg width='10' height='14' viewBox='0 0 10 14' fill='currentColor'>
@@ -1100,10 +1045,12 @@ function EditRow({
           onChange={onLayoutChange}
         />
 
-        {/* Delete button */}
+        {/* Delete button — hidden until row is hovered/focused; removed from tab order when invisible */}
         <button
           onClick={onRemove}
           title='Delete'
+          tabIndex={hov || isEditing ? 0 : -1}
+          aria-label={`Delete ${row.title}`}
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.color = '#ff6b6b'
             ;(e.currentTarget as HTMLButtonElement).style.background = isDark
@@ -1296,6 +1243,19 @@ export default function EditCheatsheetsPage() {
     onDragEnd()
   }, [dragId, dropTarget, rows, onDragEnd])
 
+  const moveRow = useCallback((localId: string, direction: 'up' | 'down') => {
+    setRows((rs) => {
+      const idx = rs.findIndex((r) => r.localId === localId)
+      if (idx === -1) return rs
+      const next = rs.slice()
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+      if (swapIdx < 0 || swapIdx >= next.length) return rs
+      ;[next[idx], next[swapIdx]] = [next[swapIdx], next[idx]]
+      return next
+    })
+    setDirty(true)
+  }, [])
+
   const onSave = useCallback(async () => {
     if (!canSave) return
     setSaving(true)
@@ -1428,6 +1388,8 @@ export default function EditCheatsheetsPage() {
                 onDragStart={onDragStart(r.localId)}
                 onDragOver={onDragOver(r.localId)}
                 onDragEnd={onDragEnd}
+                onMoveUp={() => moveRow(r.localId, 'up')}
+                onMoveDown={() => moveRow(r.localId, 'down')}
               />
             ))
           )}

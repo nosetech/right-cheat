@@ -442,7 +442,7 @@ pub fn update_cheat_sheets_batch(
         ids
     };
 
-    let updated_ids: Vec<i64> = updates.iter().filter_map(|u| u.id).collect();
+    let updated_ids: std::collections::HashSet<i64> = updates.iter().filter_map(|u| u.id).collect();
     let deleted_ids: Vec<i64> = existing_ids
         .into_iter()
         .filter(|id| !updated_ids.contains(id))

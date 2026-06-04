@@ -563,7 +563,7 @@ mod list_cheat_sheet_summaries_tests {
         let app = setup_mock_app_with_db();
         insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
 
-        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let result = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
 
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].title, "Test1");
@@ -577,7 +577,7 @@ mod list_cheat_sheet_summaries_tests {
         let app = setup_mock_app_with_db();
         insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
 
-        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let result = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
 
         let sheet1 = result.iter().find(|s| s.title == "Test1").unwrap();
         let sheet2 = result.iter().find(|s| s.title == "Test2").unwrap();
@@ -589,7 +589,7 @@ mod list_cheat_sheet_summaries_tests {
     fn returns_empty_when_no_sheets() {
         let app = setup_mock_app_with_db();
 
-        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let result = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
 
         assert!(result.is_empty());
     }
@@ -604,8 +604,7 @@ mod update_cheat_sheets_tests {
         let app = setup_mock_app_with_db();
         insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
 
-        let summaries =
-            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let summaries = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
         let id1 = summaries[0].id;
         let id2 = summaries[1].id;
 
@@ -626,10 +625,10 @@ mod update_cheat_sheets_tests {
             },
         ];
 
-        update_cheat_sheets(app.app_handle().clone(), updates).expect("should succeed");
+        update_cheat_sheets(app.handle().clone(), updates).expect("should succeed");
 
         let titles_result =
-            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+            list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
         assert_eq!(titles_result[0].title, "Test2-Renamed");
         assert_eq!(titles_result[1].title, "Test1-Renamed");
     }
@@ -639,8 +638,7 @@ mod update_cheat_sheets_tests {
         let app = setup_mock_app_with_db();
         insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
 
-        let summaries =
-            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let summaries = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
         let id1 = summaries[0].id;
         let id2 = summaries[1].id;
 
@@ -668,9 +666,9 @@ mod update_cheat_sheets_tests {
             },
         ];
 
-        update_cheat_sheets(app.app_handle().clone(), updates).expect("should succeed");
+        update_cheat_sheets(app.handle().clone(), updates).expect("should succeed");
 
-        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let result = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
         assert_eq!(result.len(), 3);
         assert!(result.iter().any(|s| s.title == "NewSheet"));
     }
@@ -680,8 +678,7 @@ mod update_cheat_sheets_tests {
         let app = setup_mock_app_with_db();
         insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
 
-        let summaries =
-            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let summaries = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
         let id1 = summaries[0].id;
 
         let updates = vec![CheatSheetUpdate {
@@ -692,9 +689,9 @@ mod update_cheat_sheets_tests {
             layout: None,
         }];
 
-        update_cheat_sheets(app.app_handle().clone(), updates).expect("should succeed");
+        update_cheat_sheets(app.handle().clone(), updates).expect("should succeed");
 
-        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let result = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].title, "Test1");
     }
@@ -711,7 +708,7 @@ mod update_cheat_sheets_tests {
             layout: None,
         }];
 
-        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        let result = update_cheat_sheets(app.handle().clone(), updates);
         assert!(result.is_err());
     }
 
@@ -727,7 +724,7 @@ mod update_cheat_sheets_tests {
             layout: None,
         }];
 
-        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        let result = update_cheat_sheets(app.handle().clone(), updates);
         assert!(result.is_err());
     }
 
@@ -743,7 +740,7 @@ mod update_cheat_sheets_tests {
             layout: None,
         }];
 
-        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        let result = update_cheat_sheets(app.handle().clone(), updates);
         assert!(result.is_err());
     }
 
@@ -768,7 +765,7 @@ mod update_cheat_sheets_tests {
             },
         ];
 
-        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        let result = update_cheat_sheets(app.handle().clone(), updates);
         assert!(result.is_err());
     }
 
@@ -784,7 +781,7 @@ mod update_cheat_sheets_tests {
             layout: None,
         }];
 
-        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        let result = update_cheat_sheets(app.handle().clone(), updates);
         assert!(result.is_ok());
     }
 
@@ -800,7 +797,7 @@ mod update_cheat_sheets_tests {
             layout: None,
         }];
 
-        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        let result = update_cheat_sheets(app.handle().clone(), updates);
         assert!(result.is_ok());
     }
 
@@ -816,7 +813,7 @@ mod update_cheat_sheets_tests {
             layout: None,
         }];
 
-        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        let result = update_cheat_sheets(app.handle().clone(), updates);
         assert!(result.is_err());
     }
 
@@ -825,8 +822,7 @@ mod update_cheat_sheets_tests {
         let app = setup_mock_app_with_db();
         insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
 
-        let summaries =
-            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let summaries = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
         let id1 = summaries[0].id;
         let id2 = summaries[1].id;
 
@@ -847,9 +843,9 @@ mod update_cheat_sheets_tests {
             },
         ];
 
-        update_cheat_sheets(app.app_handle().clone(), updates).expect("should succeed");
+        update_cheat_sheets(app.handle().clone(), updates).expect("should succeed");
 
-        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let result = list_cheat_sheet_summaries(app.handle().clone()).expect("should succeed");
         let sheet1 = result.iter().find(|s| s.title == "Test1-Renamed").unwrap();
         assert_eq!(sheet1.command_count, 2, "commands should be preserved");
         assert_eq!(sheet1.sheet_type, Some("shortcut".to_string()));
