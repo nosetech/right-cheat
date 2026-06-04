@@ -204,7 +204,7 @@ fn menu_configuration<R: tauri::Runtime>(
                     &MenuItem::with_id(
                         handle,
                         "id_edit_cheatsheets",
-                        "Edit Cheatsheets...",
+                        "Edit Cheatsheets",
                         true,
                         None::<&str>,
                     )?,
