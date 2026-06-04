@@ -462,10 +462,12 @@ export default function Page() {
                       backgroundColor: isDark
                         ? 'rgba(100,180,255,0.10)'
                         : 'rgba(0,113,227,0.07)',
-                      color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
+                      color: isDark
+                        ? 'rgba(255,255,255,0.25)'
+                        : 'rgba(0,0,0,0.28)',
                       '&:hover': {
                         borderColor: theme.palette.primary.main,
-                        color: 'primary.main',
+                        color: theme.palette.primary.main,
                       },
                     }}
                   >
@@ -1707,8 +1709,11 @@ function LogSettingsDialog({
                   backgroundColor: isDark
                     ? 'rgba(100,180,255,0.10)'
                     : 'rgba(0,113,227,0.07)',
-                  color: isDark ? 'rgba(100,180,255,0.8)' : '#0071e3',
-                  '&:hover': { borderColor: theme.palette.primary.main },
+                  color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.28)',
+                  '&:hover': {
+                    borderColor: theme.palette.primary.main,
+                    color: theme.palette.primary.main,
+                  },
                 }}
               >
                 <FolderOutlinedIcon sx={{ fontSize: 14 }} />

@@ -25,7 +25,7 @@ export function ThemeToggle({
   const isDark = theme.palette.mode === 'dark'
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex' }} role='group' aria-label='Theme selection'>
       {MODES.map(({ value, label }, i) => {
         const selected = themeMode === value
         const borderColor = isDark
@@ -37,6 +37,7 @@ export function ThemeToggle({
             onClick={() => !disabled && onChange(value)}
             disabled={disabled}
             aria-label={`${value} theme`}
+            aria-pressed={selected}
             style={{
               background: selected
                 ? isDark
@@ -58,7 +59,7 @@ export function ThemeToggle({
                 : isDark
                   ? 'rgba(255,255,255,0.28)'
                   : 'rgba(0,0,0,0.28)',
-              transition: 'all 0.14s',
+              transition: 'color 0.14s, background 0.14s, box-shadow 0.14s',
               borderRadius:
                 i === 0
                   ? '5px 0 0 5px'

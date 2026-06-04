@@ -20,7 +20,7 @@ export function ThemedSwitch({
     ? 'rgba(255,255,255,0.10)'
     : 'rgba(255,255,255,0.75)'
 
-  const handleClick = () => {
+  const handleToggle = () => {
     if (disabled) return
     const syntheticEvent = {
       target: { checked: !checked },
@@ -31,9 +31,17 @@ export function ThemedSwitch({
   return (
     <Box
       component='div'
-      role='checkbox'
+      role='switch'
       aria-checked={checked}
-      onClick={handleClick}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
+      onClick={handleToggle}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          handleToggle()
+        }
+      }}
       sx={{
         width: 36,
         height: 20,
@@ -47,6 +55,11 @@ export function ThemedSwitch({
         cursor: disabled ? 'default' : 'pointer',
         transition: 'background 0.2s',
         opacity: disabled ? 0.5 : 1,
+        outline: 'none',
+        '&:focus-visible': {
+          outline: `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: '2px',
+        },
       }}
     >
       <Box
@@ -57,8 +70,9 @@ export function ThemedSwitch({
           backgroundColor: '#fff',
           position: 'absolute',
           top: '2px',
-          left: checked ? '18px' : '2px',
-          transition: 'left 0.2s',
+          left: '2px',
+          transform: checked ? 'translateX(16px)' : 'translateX(0)',
+          transition: 'transform 0.2s',
           boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
         }}
       />
