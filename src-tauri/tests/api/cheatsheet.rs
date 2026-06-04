@@ -1,7 +1,8 @@
 use app_lib::api::cheatsheet::{
     get_cheat_sheet, get_cheat_sheet_window_size, get_cheat_titles, import_from_json,
-    reload_cheat_sheet, save_cheat_sheet_window_size, CheatSheet, Command, CommandGroup,
-    CommandItem, ConflictResolution, WindowSize,
+    list_cheat_sheet_summaries, reload_cheat_sheet, save_cheat_sheet_window_size,
+    update_cheat_sheets, CheatSheet, CheatSheetUpdate, Command, CommandGroup, CommandItem,
+    ConflictResolution, WindowSize,
 };
 use app_lib::db::{schema, DbConnection};
 use rusqlite::Connection;
@@ -550,5 +551,276 @@ mod window_size_unit {
         let clamped = ws.clamp_to_min(0, 0);
         assert_eq!(clamped.width, 1);
         assert_eq!(clamped.height, 1);
+    }
+}
+
+#[cfg(test)]
+mod list_cheat_sheet_summaries_tests {
+    use super::*;
+
+    #[test]
+    fn returns_summaries_sorted_by_sort_order() {
+        let app = setup_mock_app_with_db();
+        insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
+
+        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].title, "Test1");
+        assert_eq!(result[1].title, "Test2");
+        assert_eq!(result[0].sort_order, 0);
+        assert_eq!(result[1].sort_order, 1);
+    }
+
+    #[test]
+    fn includes_command_count() {
+        let app = setup_mock_app_with_db();
+        insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
+
+        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+
+        let sheet1 = result.iter().find(|s| s.title == "Test1").unwrap();
+        let sheet2 = result.iter().find(|s| s.title == "Test2").unwrap();
+        assert_eq!(sheet1.command_count, 2);
+        assert_eq!(sheet2.command_count, 1);
+    }
+
+    #[test]
+    fn returns_empty_when_no_sheets() {
+        let app = setup_mock_app_with_db();
+
+        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+
+        assert!(result.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod update_cheat_sheets_tests {
+    use super::*;
+
+    #[test]
+    fn renames_and_reorders_sheets() {
+        let app = setup_mock_app_with_db();
+        insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
+
+        let summaries =
+            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let id1 = summaries[0].id;
+        let id2 = summaries[1].id;
+
+        let updates = vec![
+            CheatSheetUpdate {
+                id: Some(id2),
+                title: "Test2-Renamed".to_string(),
+                sort_order: 0,
+                sheet_type: None,
+                layout: None,
+            },
+            CheatSheetUpdate {
+                id: Some(id1),
+                title: "Test1-Renamed".to_string(),
+                sort_order: 1,
+                sheet_type: None,
+                layout: None,
+            },
+        ];
+
+        update_cheat_sheets(app.app_handle().clone(), updates).expect("should succeed");
+
+        let titles_result =
+            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        assert_eq!(titles_result[0].title, "Test2-Renamed");
+        assert_eq!(titles_result[1].title, "Test1-Renamed");
+    }
+
+    #[test]
+    fn adds_new_sheet_when_id_is_none() {
+        let app = setup_mock_app_with_db();
+        insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
+
+        let summaries =
+            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let id1 = summaries[0].id;
+        let id2 = summaries[1].id;
+
+        let updates = vec![
+            CheatSheetUpdate {
+                id: Some(id1),
+                title: "Test1".to_string(),
+                sort_order: 0,
+                sheet_type: None,
+                layout: None,
+            },
+            CheatSheetUpdate {
+                id: Some(id2),
+                title: "Test2".to_string(),
+                sort_order: 1,
+                sheet_type: None,
+                layout: None,
+            },
+            CheatSheetUpdate {
+                id: None,
+                title: "NewSheet".to_string(),
+                sort_order: 2,
+                sheet_type: Some("command".to_string()),
+                layout: Some("inline".to_string()),
+            },
+        ];
+
+        update_cheat_sheets(app.app_handle().clone(), updates).expect("should succeed");
+
+        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        assert_eq!(result.len(), 3);
+        assert!(result.iter().any(|s| s.title == "NewSheet"));
+    }
+
+    #[test]
+    fn deletes_sheet_not_in_updates() {
+        let app = setup_mock_app_with_db();
+        insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
+
+        let summaries =
+            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let id1 = summaries[0].id;
+
+        let updates = vec![CheatSheetUpdate {
+            id: Some(id1),
+            title: "Test1".to_string(),
+            sort_order: 0,
+            sheet_type: None,
+            layout: None,
+        }];
+
+        update_cheat_sheets(app.app_handle().clone(), updates).expect("should succeed");
+
+        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].title, "Test1");
+    }
+
+    #[test]
+    fn returns_error_for_empty_title() {
+        let app = setup_mock_app_with_db();
+
+        let updates = vec![CheatSheetUpdate {
+            id: None,
+            title: "".to_string(),
+            sort_order: 0,
+            sheet_type: None,
+            layout: None,
+        }];
+
+        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn returns_error_for_whitespace_only_title() {
+        let app = setup_mock_app_with_db();
+
+        let updates = vec![CheatSheetUpdate {
+            id: None,
+            title: "   ".to_string(),
+            sort_order: 0,
+            sheet_type: None,
+            layout: None,
+        }];
+
+        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn returns_error_for_title_exceeding_max_length() {
+        let app = setup_mock_app_with_db();
+
+        let updates = vec![CheatSheetUpdate {
+            id: None,
+            title: "a".repeat(101),
+            sort_order: 0,
+            sheet_type: None,
+            layout: None,
+        }];
+
+        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn returns_error_for_duplicate_titles() {
+        let app = setup_mock_app_with_db();
+
+        let updates = vec![
+            CheatSheetUpdate {
+                id: None,
+                title: "SameTitle".to_string(),
+                sort_order: 0,
+                sheet_type: None,
+                layout: None,
+            },
+            CheatSheetUpdate {
+                id: None,
+                title: "SameTitle".to_string(),
+                sort_order: 1,
+                sheet_type: None,
+                layout: None,
+            },
+        ];
+
+        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn title_length_at_max_boundary_succeeds() {
+        let app = setup_mock_app_with_db();
+
+        let updates = vec![CheatSheetUpdate {
+            id: None,
+            title: "a".repeat(100),
+            sort_order: 0,
+            sheet_type: Some("command".to_string()),
+            layout: None,
+        }];
+
+        let result = update_cheat_sheets(app.app_handle().clone(), updates);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn preserves_commands_when_updating_existing_sheet() {
+        let app = setup_mock_app_with_db();
+        insert_test_data(&*app.state::<DbConnection>().0.lock().unwrap());
+
+        let summaries =
+            list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let id1 = summaries[0].id;
+        let id2 = summaries[1].id;
+
+        let updates = vec![
+            CheatSheetUpdate {
+                id: Some(id1),
+                title: "Test1-Renamed".to_string(),
+                sort_order: 0,
+                sheet_type: Some("shortcut".to_string()),
+                layout: Some("stacked".to_string()),
+            },
+            CheatSheetUpdate {
+                id: Some(id2),
+                title: "Test2".to_string(),
+                sort_order: 1,
+                sheet_type: None,
+                layout: None,
+            },
+        ];
+
+        update_cheat_sheets(app.app_handle().clone(), updates).expect("should succeed");
+
+        let result = list_cheat_sheet_summaries(app.app_handle().clone()).expect("should succeed");
+        let sheet1 = result.iter().find(|s| s.title == "Test1-Renamed").unwrap();
+        assert_eq!(sheet1.command_count, 2, "commands should be preserved");
+        assert_eq!(sheet1.sheet_type, Some("shortcut".to_string()));
+        assert_eq!(sheet1.layout, Some("stacked".to_string()));
     }
 }

@@ -115,6 +115,38 @@ pub struct ImportSummary {
 }
 
 #[derive(Debug, Serialize)]
+pub struct CheatSheetSummary {
+    pub id: i64,
+    pub title: String,
+    pub sort_order: i64,
+    pub sheet_type: Option<String>,
+    pub layout: Option<String>,
+    pub command_count: i64,
+}
+
+impl From<repository::CheatSheetSummaryRow> for CheatSheetSummary {
+    fn from(r: repository::CheatSheetSummaryRow) -> Self {
+        Self {
+            id: r.id,
+            title: r.title,
+            sort_order: r.sort_order,
+            sheet_type: r.sheet_type,
+            layout: r.layout,
+            command_count: r.command_count,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CheatSheetUpdate {
+    pub id: Option<i64>,
+    pub title: String,
+    pub sort_order: i64,
+    pub sheet_type: Option<String>,
+    pub layout: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct CommandSearchResult {
     pub id: i64,
     pub cheatsheet_id: i64,
@@ -142,6 +174,65 @@ where
     let state = app.state::<DbConnection>();
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     f(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn list_cheat_sheet_summaries<R: tauri::Runtime>(
+    app: AppHandle<R>,
+) -> Result<Vec<CheatSheetSummary>, String> {
+    with_db(&app, |conn| repository::list_cheat_sheet_summaries(conn))
+        .map(|rows| rows.into_iter().map(CheatSheetSummary::from).collect())
+}
+
+#[tauri::command]
+pub fn update_cheat_sheets<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    updates: Vec<CheatSheetUpdate>,
+) -> Result<(), String> {
+    for item in &updates {
+        if item.title.trim().is_empty() {
+            return Err("Title cannot be empty".to_string());
+        }
+        if item.title.len() > 100 {
+            return Err(format!(
+                "Title must be 100 characters or fewer: {}",
+                item.title
+            ));
+        }
+    }
+
+    let titles: Vec<&str> = updates.iter().map(|u| u.title.as_str()).collect();
+    let mut seen = std::collections::HashSet::new();
+    for t in &titles {
+        let norm = t.trim().to_lowercase();
+        if !seen.insert(norm) {
+            return Err(format!("Duplicate title: {}", t));
+        }
+    }
+
+    let items: Vec<repository::CheatSheetUpdateItem> = updates
+        .into_iter()
+        .map(|u| repository::CheatSheetUpdateItem {
+            id: u.id,
+            title: u.title,
+            sort_order: u.sort_order,
+            sheet_type: u.sheet_type,
+            layout: u.layout,
+        })
+        .collect();
+
+    with_db(&app, |conn| {
+        repository::update_cheat_sheets_batch(conn, &items)
+    })?;
+
+    log::info!(
+        "[cheatsheet] update_cheat_sheets: {} items saved",
+        items.len()
+    );
+
+    let _ = app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ());
+
+    Ok(())
 }
 
 #[tauri::command]

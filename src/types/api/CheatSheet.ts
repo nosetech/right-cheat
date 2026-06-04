@@ -6,6 +6,25 @@ export class CheatSheetAPI {
   static readonly IMPORT_FROM_JSON = 'import_from_json'
   static readonly EXPORT_TO_JSON = 'export_to_json'
   static readonly SEARCH_COMMANDS = 'search_commands'
+  static readonly LIST_CHEAT_SHEET_SUMMARIES = 'list_cheat_sheet_summaries'
+  static readonly UPDATE_CHEAT_SHEETS = 'update_cheat_sheets'
+}
+
+export type CheatSheetSummary = {
+  id: number
+  title: string
+  sort_order: number
+  sheet_type: 'command' | 'application' | 'shortcut' | null
+  layout: 'inline' | 'stacked' | 'command_only' | null
+  command_count: number
+}
+
+export type CheatSheetUpdate = {
+  id: number | null
+  title: string
+  sort_order: number
+  sheet_type: 'command' | 'application' | 'shortcut' | null
+  layout: 'inline' | 'stacked' | 'command_only' | null
 }
 
 export type ImportSummary = {

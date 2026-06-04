@@ -123,6 +123,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            api::cheatsheet::list_cheat_sheet_summaries,
+            api::cheatsheet::update_cheat_sheets,
             api::cheatsheet::get_cheat_titles,
             api::cheatsheet::get_cheat_sheet,
             api::cheatsheet::reload_cheat_sheet,
@@ -199,6 +201,14 @@ fn menu_configuration<R: tauri::Runtime>(
                 "File",
                 true,
                 &[
+                    &MenuItem::with_id(
+                        handle,
+                        "id_edit_cheatsheets",
+                        "Edit Cheatsheets...",
+                        true,
+                        None::<&str>,
+                    )?,
+                    &PredefinedMenuItem::separator(handle)?,
                     &MenuItem::with_id(
                         handle,
                         "id_import_json",
@@ -290,6 +300,20 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             .inner_size(580.0, 680.0)
             .max_inner_size(800.0, 680.0)
             .min_inner_size(580.0, 680.0)
+            .title_bar_style(tauri::TitleBarStyle::Overlay)
+            .hidden_title(true)
+            .build();
+        }
+        "id_edit_cheatsheets" => {
+            let _ = tauri::webview::WebviewWindowBuilder::new(
+                handle,
+                "edit_cheatsheets",
+                tauri::WebviewUrl::App("/edit-cheatsheets".into()),
+            )
+            .title("Edit Cheatsheets")
+            .inner_size(620.0, 640.0)
+            .min_inner_size(560.0, 400.0)
+            .max_inner_size(800.0, 800.0)
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
             .build();
