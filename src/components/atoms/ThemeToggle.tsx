@@ -44,7 +44,9 @@ export function ThemeToggle({
                   : 'rgba(255,255,255,0.7)'
                 : 'transparent',
               backdropFilter: 'blur(12px)',
-              border: `0.5px solid ${borderColor}`,
+              borderTop: `0.5px solid ${borderColor}`,
+              borderRight: `0.5px solid ${borderColor}`,
+              borderBottom: `0.5px solid ${borderColor}`,
               borderLeft: i === 0 ? `0.5px solid ${borderColor}` : 'none',
               padding: '5px 14px',
               cursor: disabled ? 'default' : 'pointer',
