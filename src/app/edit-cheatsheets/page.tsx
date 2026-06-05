@@ -8,7 +8,15 @@ import {
 } from 'react'
 import ReactDOM from 'react-dom'
 
-import { Box } from '@mui/material'
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -1118,6 +1126,7 @@ export default function EditCheatsheetsPage() {
   const [rows, setRows] = useState<RowData[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{
@@ -1294,8 +1303,13 @@ export default function EditCheatsheetsPage() {
     setDirty(true)
   }, [])
 
-  const onSave = useCallback(async () => {
+  const onSave = useCallback(() => {
     if (!canSave) return
+    setConfirmSaveOpen(true)
+  }, [canSave])
+
+  const doSave = useCallback(async () => {
+    setConfirmSaveOpen(false)
     setSaving(true)
     try {
       const updates: CheatSheetUpdate[] = rows.map((r, i) => ({
@@ -1307,7 +1321,6 @@ export default function EditCheatsheetsPage() {
       }))
       await invoke(CheatSheetAPI.UPDATE_CHEAT_SHEETS, { updates })
       info(`[edit-cheatsheets] saved ${updates.length} cheatsheets`)
-      await message('Saved.', { title: 'Edit Cheatsheets' })
       await getCurrentWindow().close()
     } catch (e) {
       logError(`[edit-cheatsheets] save error: ${e}`)
@@ -1318,7 +1331,7 @@ export default function EditCheatsheetsPage() {
     } finally {
       setSaving(false)
     }
-  }, [canSave, rows])
+  }, [rows])
 
   const onCancel = useCallback(async () => {
     if (dirty) {
@@ -1583,6 +1596,95 @@ export default function EditCheatsheetsPage() {
           </Box>
         </Box>
       </Box>
+
+      <Dialog
+        open={confirmSaveOpen}
+        onClose={() => setConfirmSaveOpen(false)}
+        maxWidth='xs'
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: '14px',
+              border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
+              boxShadow: isDark
+                ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
+                : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
+            },
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            padding: '14px 18px 12px',
+            fontSize: 14,
+            fontWeight: 600,
+            borderBottom: `0.5px solid ${divider}`,
+          }}
+        >
+          Save Changes
+        </DialogTitle>
+        <DialogContent sx={{ padding: '16px 18px !important' }}>
+          <Typography sx={{ fontSize: 13 }}>
+            Save changes and close?
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            padding: '12px 16px 14px',
+            backgroundColor: isDark
+              ? 'rgba(255,255,255,0.018)'
+              : 'rgba(255,255,255,0.30)',
+            borderTop: `0.5px solid ${divider}`,
+          }}
+        >
+          <Button
+            onClick={() => setConfirmSaveOpen(false)}
+            sx={{
+              borderRadius: '7px',
+              padding: '5px 16px',
+              fontSize: 12,
+              fontWeight: 600,
+              minWidth: 78,
+              textTransform: 'none',
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.06)'
+                : 'rgba(255,255,255,0.75)',
+              border: `0.5px solid ${divider}`,
+              color: 'text.primary',
+              '&:hover': {
+                backgroundColor: isDark
+                  ? 'rgba(255,255,255,0.10)'
+                  : 'rgba(255,255,255,0.95)',
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={doSave}
+            sx={{
+              borderRadius: '7px',
+              padding: '5px 16px',
+              fontSize: 12,
+              fontWeight: 600,
+              minWidth: 78,
+              textTransform: 'none',
+              backgroundColor: isDark ? '#64b4ff' : '#0071e3',
+              border: '0.5px solid transparent',
+              color: '#fff',
+              boxShadow: !isDark
+                ? 'inset 0 1px 0 rgba(255,255,255,0.5)'
+                : 'none',
+              '&:hover': {
+                backgroundColor: isDark ? '#7cc0ff' : '#1a82eb',
+              },
+            }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   )
 }
