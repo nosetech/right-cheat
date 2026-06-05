@@ -387,6 +387,102 @@ pub fn search_commands(conn: &Connection, query: &str, limit: u32) -> Result<Vec
     }
 }
 
+pub struct CheatSheetSummaryRow {
+    pub id: i64,
+    pub title: String,
+    pub sort_order: i64,
+    pub sheet_type: Option<String>,
+    pub layout: Option<String>,
+    pub command_count: i64,
+}
+
+pub fn list_cheat_sheet_summaries(conn: &Connection) -> Result<Vec<CheatSheetSummaryRow>> {
+    let mut stmt = conn.prepare(
+        "SELECT c.id, c.title, c.sort_order, c.sheet_type, c.layout,
+                COUNT(cmd.id) as command_count
+         FROM cheatsheets c
+         LEFT JOIN commands cmd ON cmd.cheatsheet_id = c.id
+         GROUP BY c.id, c.title, c.sort_order, c.sheet_type, c.layout
+         ORDER BY c.sort_order ASC, c.id ASC",
+    )?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(CheatSheetSummaryRow {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                sort_order: row.get(2)?,
+                sheet_type: row.get(3)?,
+                layout: row.get(4)?,
+                command_count: row.get(5)?,
+            })
+        })?
+        .collect::<Result<Vec<_>>>()?;
+    Ok(rows)
+}
+
+pub struct CheatSheetUpdateItem {
+    pub id: Option<i64>,
+    pub title: String,
+    pub sort_order: i64,
+    pub sheet_type: Option<String>,
+    pub layout: Option<String>,
+}
+
+pub fn update_cheat_sheets_batch(
+    conn: &Connection,
+    updates: &[CheatSheetUpdateItem],
+) -> Result<()> {
+    let tx = conn.unchecked_transaction()?;
+
+    let existing_ids: Vec<i64> = {
+        let mut stmt = tx.prepare("SELECT id FROM cheatsheets")?;
+        let ids = stmt
+            .query_map([], |r| r.get(0))?
+            .collect::<Result<Vec<_>>>()?;
+        ids
+    };
+
+    let updated_ids: std::collections::HashSet<i64> = updates.iter().filter_map(|u| u.id).collect();
+    let deleted_ids: Vec<i64> = existing_ids
+        .into_iter()
+        .filter(|id| !updated_ids.contains(id))
+        .collect();
+
+    for id in &deleted_ids {
+        tx.execute("DELETE FROM cheatsheets WHERE id = ?1", params![id])?;
+    }
+
+    for item in updates {
+        match item.id {
+            Some(id) => {
+                tx.execute(
+                    "UPDATE cheatsheets
+                     SET title = ?1, sort_order = ?2, sheet_type = ?3, layout = ?4,
+                         updated_at = datetime('now')
+                     WHERE id = ?5",
+                    params![
+                        item.title,
+                        item.sort_order,
+                        item.sheet_type,
+                        item.layout,
+                        id
+                    ],
+                )?;
+            }
+            None => {
+                tx.execute(
+                    "INSERT INTO cheatsheets (title, sort_order, sheet_type, layout)
+                     VALUES (?1, ?2, ?3, ?4)",
+                    params![item.title, item.sort_order, item.sheet_type, item.layout],
+                )?;
+            }
+        }
+    }
+
+    tx.commit()?;
+    Ok(())
+}
+
 /// 全チートシートを取得する。将来のエクスポート拡張用。
 #[allow(dead_code)]
 pub fn get_all_cheatsheets(conn: &Connection) -> Result<Vec<CheatSheet>> {
