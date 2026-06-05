@@ -1625,9 +1625,7 @@ export default function EditCheatsheetsPage() {
           Save Changes
         </DialogTitle>
         <DialogContent sx={{ padding: '16px 18px !important' }}>
-          <Typography sx={{ fontSize: 13 }}>
-            Save changes and close?
-          </Typography>
+          <Typography sx={{ fontSize: 13 }}>Save changes and close?</Typography>
         </DialogContent>
         <DialogActions
           sx={{
