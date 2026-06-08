@@ -83,8 +83,12 @@ export default function Page() {
         await getVisibleOnAllWorkspacesSettings()
       setVisibleOnAllWorkspaces(visibleOnAllWorkspacesValue)
 
-      const confirmActionsValue = await getConfirmActions()
-      setConfirmActionsState(confirmActionsValue)
+      try {
+        const confirmActionsValue = await getConfirmActions()
+        setConfirmActionsState(confirmActionsValue)
+      } catch (err) {
+        error(`[preferences] Error getting confirm_actions: ${err}`)
+      }
 
       try {
         const response = await invoke<string>(

@@ -1116,6 +1116,18 @@ function EditRow({
   )
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function dialogPaperSx(isDark: boolean) {
+  return {
+    borderRadius: '14px',
+    border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
+    boxShadow: isDark
+      ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
+      : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
+  }
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function EditCheatsheetsPage() {
@@ -1155,8 +1167,12 @@ export default function EditCheatsheetsPage() {
 
   useEffect(() => {
     ;(async () => {
-      const confirmActionsValue = await getConfirmActions()
-      setConfirmActionsState(confirmActionsValue)
+      try {
+        const confirmActionsValue = await getConfirmActions()
+        setConfirmActionsState(confirmActionsValue)
+      } catch (e) {
+        logError(`[edit-cheatsheets] load confirm_actions error: ${e}`)
+      }
 
       try {
         const summaries = await invoke<CheatSheetSummary[]>(
@@ -1179,6 +1195,8 @@ export default function EditCheatsheetsPage() {
         setLoading(false)
       }
     })()
+    // getConfirmActions は usePreferencesStore から返るメモ化済み関数のため、
+    // 初回マウント時の一度きりの読み込みで十分。依存配列から除外している。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -1350,10 +1368,12 @@ export default function EditCheatsheetsPage() {
     if (confirmActions && dirty) {
       setConfirmCancelOpen(true)
     } else {
-      getCurrentWindow().close()
+      void getCurrentWindow().close()
     }
   }, [confirmActions, dirty])
 
+  // async/await で close() のエラーを検知する。onClick ハンドラから呼ばれるため
+  // 呼び出し元で Promise は await されないが、close() 失敗時のログ等を将来追加できる。
   const doCancel = useCallback(async () => {
     setConfirmCancelOpen(false)
     await getCurrentWindow().close()
@@ -1616,17 +1636,7 @@ export default function EditCheatsheetsPage() {
         onClose={() => setConfirmSaveOpen(false)}
         maxWidth='xs'
         fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: '14px',
-              border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
-              boxShadow: isDark
-                ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
-                : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
-            },
-          },
-        }}
+        slotProps={{ paper: { sx: dialogPaperSx(isDark) } }}
       >
         <DialogTitle
           sx={{
@@ -1703,17 +1713,7 @@ export default function EditCheatsheetsPage() {
         onClose={() => setConfirmCancelOpen(false)}
         maxWidth='xs'
         fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: '14px',
-              border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
-              boxShadow: isDark
-                ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
-                : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
-            },
-          },
-        }}
+        slotProps={{ paper: { sx: dialogPaperSx(isDark) } }}
       >
         <DialogTitle
           sx={{
