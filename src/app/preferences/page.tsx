@@ -48,8 +48,13 @@ export default function Page() {
   const [shortcutDialogOpen, setShortcutDialogOpen] = useState<boolean>(false)
   const [visibleOnAllWorkspaces, setVisibleOnAllWorkspaces] =
     useState<boolean>(true)
+  const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
 
-  const { getVisibleOnAllWorkspacesSettings } = usePreferencesStore()
+  const {
+    getVisibleOnAllWorkspacesSettings,
+    getConfirmActions,
+    setConfirmActions,
+  } = usePreferencesStore()
   const {
     themeMode,
     setThemeMode: setStoredThemeMode,
@@ -77,6 +82,9 @@ export default function Page() {
       const visibleOnAllWorkspacesValue =
         await getVisibleOnAllWorkspacesSettings()
       setVisibleOnAllWorkspaces(visibleOnAllWorkspacesValue)
+
+      const confirmActionsValue = await getConfirmActions()
+      setConfirmActionsState(confirmActionsValue)
 
       try {
         const response = await invoke<string>(
@@ -356,6 +364,21 @@ export default function Page() {
     }
   }
 
+  const handleConfirmActionsChange = async (enabled: boolean) => {
+    setConfirmActionsState(enabled)
+    try {
+      await setConfirmActions(enabled)
+      debug(`[preferences] confirm_actions set to ${enabled}`)
+    } catch (err) {
+      error(`[preferences] Error setting confirm_actions: ${err}`)
+      await message('Failed to save confirm before actions setting', {
+        title: 'Preferences',
+        kind: 'error',
+      })
+      setConfirmActionsState(!enabled)
+    }
+  }
+
   const handleOpenLatestLog = async () => {
     try {
       await invoke(LogSettingsAPI.OPEN_LATEST_LOG_FILE)
@@ -553,6 +576,29 @@ export default function Page() {
                 <ThemedSwitch
                   checked={visibleOnAllWorkspaces}
                   onChange={handleVisibleOnAllWorkspacesChange}
+                />
+              </Box>
+
+              <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+              {/* Confirm before actions */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  py: '8px',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RowDot />
+                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                    Confirm before actions
+                  </Typography>
+                </Box>
+                <ThemedSwitch
+                  checked={confirmActions}
+                  onChange={(e) => handleConfirmActionsChange(e.target.checked)}
                 />
               </Box>
 

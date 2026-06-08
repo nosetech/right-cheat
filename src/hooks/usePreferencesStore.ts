@@ -48,11 +48,28 @@ export const usePreferencesStore = (options?: StoreOptions) => {
       return settings?.enabled ?? true
     }, [loadPreferencesFile])
 
+  const getConfirmActions = useCallback(async (): Promise<boolean> => {
+    const store = await loadPreferencesFile()
+    const setting = await store.get<{ enabled: boolean }>('confirm_actions')
+    return setting?.enabled ?? true
+  }, [loadPreferencesFile])
+
+  const setConfirmActions = useCallback(
+    async (enabled: boolean) => {
+      const store = await loadPreferencesFile()
+      await store.set('confirm_actions', { enabled })
+      await store.save()
+    },
+    [loadPreferencesFile],
+  )
+
   return {
     getCheatSheetFilePath,
     setCheatSheetFilePath,
     getThemeMode,
     setThemeMode,
     getVisibleOnAllWorkspacesSettings,
+    getConfirmActions,
+    setConfirmActions,
   }
 }
