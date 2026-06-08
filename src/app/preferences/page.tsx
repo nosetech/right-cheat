@@ -48,8 +48,13 @@ export default function Page() {
   const [shortcutDialogOpen, setShortcutDialogOpen] = useState<boolean>(false)
   const [visibleOnAllWorkspaces, setVisibleOnAllWorkspaces] =
     useState<boolean>(true)
+  const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
 
-  const { getVisibleOnAllWorkspacesSettings } = usePreferencesStore()
+  const {
+    getVisibleOnAllWorkspacesSettings,
+    getConfirmActions,
+    setConfirmActions,
+  } = usePreferencesStore()
   const {
     themeMode,
     setThemeMode: setStoredThemeMode,
@@ -77,6 +82,13 @@ export default function Page() {
       const visibleOnAllWorkspacesValue =
         await getVisibleOnAllWorkspacesSettings()
       setVisibleOnAllWorkspaces(visibleOnAllWorkspacesValue)
+
+      try {
+        const confirmActionsValue = await getConfirmActions()
+        setConfirmActionsState(confirmActionsValue)
+      } catch (err) {
+        error(`[preferences] Error getting confirm_actions: ${err}`)
+      }
 
       try {
         const response = await invoke<string>(
@@ -356,6 +368,21 @@ export default function Page() {
     }
   }
 
+  const handleConfirmActionsChange = async (enabled: boolean) => {
+    setConfirmActionsState(enabled)
+    try {
+      await setConfirmActions(enabled)
+      debug(`[preferences] confirm_actions set to ${enabled}`)
+    } catch (err) {
+      error(`[preferences] Error setting confirm_actions: ${err}`)
+      await message('Failed to save confirm before actions setting', {
+        title: 'Preferences',
+        kind: 'error',
+      })
+      setConfirmActionsState(!enabled)
+    }
+  }
+
   const handleOpenLatestLog = async () => {
     try {
       await invoke(LogSettingsAPI.OPEN_LATEST_LOG_FILE)
@@ -391,7 +418,7 @@ export default function Page() {
         sx={{ p: '4px 20px 16px', display: 'flex', flexDirection: 'column' }}
       >
         {/* Global Shortcut */}
-        <Box sx={{ py: '20px' }}>
+        <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
               fontSize: 14,
@@ -482,7 +509,7 @@ export default function Page() {
         <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
 
         {/* Theme */}
-        <Box sx={{ py: '20px' }}>
+        <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
               fontSize: 14,
@@ -506,7 +533,7 @@ export default function Page() {
         <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
 
         {/* Other Settings */}
-        <Box sx={{ py: '20px' }}>
+        <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
               fontSize: 14,
@@ -541,7 +568,7 @@ export default function Page() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  py: '8px',
+                  py: '6px',
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -558,8 +585,31 @@ export default function Page() {
 
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
+              {/* Confirm before actions */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  py: '6px',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RowDot />
+                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                    Confirm before actions
+                  </Typography>
+                </Box>
+                <ThemedSwitch
+                  checked={confirmActions}
+                  onChange={(e) => handleConfirmActionsChange(e.target.checked)}
+                />
+              </Box>
+
+              <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
               {/* CheatSheet DB section */}
-              <Box sx={{ py: '8px' }}>
+              <Box sx={{ py: '6px' }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -670,7 +720,7 @@ export default function Page() {
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
               {/* Log section */}
-              <Box sx={{ py: '8px' }}>
+              <Box sx={{ py: '6px' }}>
                 {/* Header row */}
                 <Box
                   sx={{

@@ -20,12 +20,13 @@ import {
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { confirm, message } from '@tauri-apps/plugin-dialog'
+import { message } from '@tauri-apps/plugin-dialog'
 import { debug, info, error as logError } from '@tauri-apps/plugin-log'
 
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import {
   CheatSheetAPI,
   CheatSheetSummary,
@@ -1115,6 +1116,18 @@ function EditRow({
   )
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function dialogPaperSx(isDark: boolean) {
+  return {
+    borderRadius: '14px',
+    border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
+    boxShadow: isDark
+      ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
+      : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
+  }
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function EditCheatsheetsPage() {
@@ -1123,10 +1136,14 @@ export default function EditCheatsheetsPage() {
   const accent = isDark ? '#64b4ff' : '#0071e3'
   const divider = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
 
+  const { getConfirmActions } = usePreferencesStore()
+  const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
+
   const [rows, setRows] = useState<RowData[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false)
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{
@@ -1151,6 +1168,13 @@ export default function EditCheatsheetsPage() {
   useEffect(() => {
     ;(async () => {
       try {
+        const confirmActionsValue = await getConfirmActions()
+        setConfirmActionsState(confirmActionsValue)
+      } catch (e) {
+        logError(`[edit-cheatsheets] load confirm_actions error: ${e}`)
+      }
+
+      try {
         const summaries = await invoke<CheatSheetSummary[]>(
           CheatSheetAPI.LIST_CHEAT_SHEET_SUMMARIES,
         )
@@ -1171,6 +1195,9 @@ export default function EditCheatsheetsPage() {
         setLoading(false)
       }
     })()
+    // getConfirmActions は usePreferencesStore から返るメモ化済み関数のため、
+    // 初回マウント時の一度きりの読み込みで十分。依存配列から除外している。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const updateTitle = useCallback((localId: string, value: string) => {
@@ -1303,11 +1330,6 @@ export default function EditCheatsheetsPage() {
     setDirty(true)
   }, [])
 
-  const onSave = useCallback(() => {
-    if (!canSave) return
-    setConfirmSaveOpen(true)
-  }, [canSave])
-
   const doSave = useCallback(async () => {
     setConfirmSaveOpen(false)
     setSaving(true)
@@ -1333,17 +1355,29 @@ export default function EditCheatsheetsPage() {
     }
   }, [rows])
 
-  const onCancel = useCallback(async () => {
-    if (dirty) {
-      const ok = await confirm('You have unsaved changes. Close anyway?', {
-        title: 'Edit Cheatsheets',
-        okLabel: 'Close',
-        cancelLabel: 'Keep editing',
-      })
-      if (!ok) return
+  const onSave = useCallback(() => {
+    if (!canSave) return
+    if (confirmActions) {
+      setConfirmSaveOpen(true)
+    } else {
+      doSave()
     }
+  }, [canSave, confirmActions, doSave])
+
+  const onCancel = useCallback(() => {
+    if (confirmActions && dirty) {
+      setConfirmCancelOpen(true)
+    } else {
+      void getCurrentWindow().close()
+    }
+  }, [confirmActions, dirty])
+
+  // async/await で close() のエラーを検知する。onClick ハンドラから呼ばれるため
+  // 呼び出し元で Promise は await されないが、close() 失敗時のログ等を将来追加できる。
+  const doCancel = useCallback(async () => {
+    setConfirmCancelOpen(false)
     await getCurrentWindow().close()
-  }, [dirty])
+  }, [])
 
   // Cmd+S shortcut
   useEffect(() => {
@@ -1602,17 +1636,7 @@ export default function EditCheatsheetsPage() {
         onClose={() => setConfirmSaveOpen(false)}
         maxWidth='xs'
         fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: '14px',
-              border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
-              boxShadow: isDark
-                ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
-                : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
-            },
-          },
-        }}
+        slotProps={{ paper: { sx: dialogPaperSx(isDark) } }}
       >
         <DialogTitle
           sx={{
@@ -1680,6 +1704,86 @@ export default function EditCheatsheetsPage() {
             }}
           >
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmCancelOpen}
+        onClose={() => setConfirmCancelOpen(false)}
+        maxWidth='xs'
+        fullWidth
+        slotProps={{ paper: { sx: dialogPaperSx(isDark) } }}
+      >
+        <DialogTitle
+          sx={{
+            padding: '14px 18px 12px',
+            fontSize: 14,
+            fontWeight: 600,
+            borderBottom: `0.5px solid ${divider}`,
+          }}
+        >
+          Discard Changes
+        </DialogTitle>
+        <DialogContent sx={{ padding: '16px 18px !important' }}>
+          <Typography sx={{ fontSize: 13 }}>
+            You have unsaved changes. Close anyway?
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            padding: '12px 16px 14px',
+            backgroundColor: isDark
+              ? 'rgba(255,255,255,0.018)'
+              : 'rgba(255,255,255,0.30)',
+            borderTop: `0.5px solid ${divider}`,
+          }}
+        >
+          <Button
+            onClick={() => setConfirmCancelOpen(false)}
+            sx={{
+              borderRadius: '7px',
+              padding: '5px 16px',
+              fontSize: 12,
+              fontWeight: 600,
+              minWidth: 78,
+              textTransform: 'none',
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.06)'
+                : 'rgba(255,255,255,0.75)',
+              border: `0.5px solid ${divider}`,
+              color: 'text.primary',
+              '&:hover': {
+                backgroundColor: isDark
+                  ? 'rgba(255,255,255,0.10)'
+                  : 'rgba(255,255,255,0.95)',
+              },
+            }}
+          >
+            Keep editing
+          </Button>
+          <Button
+            onClick={doCancel}
+            sx={{
+              borderRadius: '7px',
+              padding: '5px 16px',
+              fontSize: 12,
+              fontWeight: 600,
+              minWidth: 78,
+              textTransform: 'none',
+              backgroundColor: isDark
+                ? 'rgba(255,100,100,0.20)'
+                : 'rgba(200,50,50,0.08)',
+              border: `0.5px solid ${isDark ? 'rgba(255,100,100,0.35)' : 'rgba(200,50,50,0.25)'}`,
+              color: isDark ? '#ff9090' : '#b83232',
+              '&:hover': {
+                backgroundColor: isDark
+                  ? 'rgba(255,100,100,0.28)'
+                  : 'rgba(200,50,50,0.13)',
+              },
+            }}
+          >
+            Close
           </Button>
         </DialogActions>
       </Dialog>
