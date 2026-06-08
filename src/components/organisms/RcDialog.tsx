@@ -129,7 +129,9 @@ function SecondaryButton({ onClick, children }: SecondaryButtonProps) {
       component='button'
       onClick={onClick}
       sx={{
-        background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.75)',
+        background: isDark
+          ? 'rgba(255,255,255,0.06)'
+          : 'rgba(255,255,255,0.75)',
         color: theme.palette.text.primary,
         border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)'}`,
         borderRadius: '7px',
@@ -282,6 +284,7 @@ export function RcDialog({
                 fontSize: '12.5px',
                 lineHeight: 1.65,
                 color: 'text.secondary',
+                whiteSpace: 'pre-line',
               }}
             >
               {message}
@@ -298,7 +301,9 @@ export function RcDialog({
           alignItems: 'center',
           justifyContent: 'flex-end',
           gap: '8px',
-          background: isDark ? 'rgba(255,255,255,0.018)' : 'rgba(255,255,255,0.40)',
+          background: isDark
+            ? 'rgba(255,255,255,0.018)'
+            : 'rgba(255,255,255,0.40)',
           borderTop: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
         }}
       >

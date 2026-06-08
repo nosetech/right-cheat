@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { ThemedSwitch, ThemeToggle } from '@/components/atoms'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
@@ -33,7 +34,7 @@ import {
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
-import { ask, message, open as openOsDialog } from '@tauri-apps/plugin-dialog'
+import { open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 
@@ -77,6 +78,75 @@ export default function Page() {
   })
   const [effectiveDbPath, setEffectiveDbPath] = useState<string>('')
 
+  // ── RcDialog state ──────────────────────────────────────────
+  const [rcDialog, setRcDialog] = useState<{
+    open: boolean
+    variant: DialogVariant
+    title: string
+    message: string
+    isYesNo: boolean
+  }>({
+    open: false,
+    variant: 'information',
+    title: '',
+    message: '',
+    isYesNo: false,
+  })
+  const rcDialogResolve = useRef<((yes: boolean) => void) | null>(null)
+
+  const showRcInfo = (title: string, msg: string): Promise<void> =>
+    new Promise((resolve) => {
+      rcDialogResolve.current = () => resolve()
+      setRcDialog({
+        open: true,
+        variant: 'information',
+        title,
+        message: msg,
+        isYesNo: false,
+      })
+    })
+
+  const showRcError = (title: string, msg: string): Promise<void> =>
+    new Promise((resolve) => {
+      rcDialogResolve.current = () => resolve()
+      setRcDialog({
+        open: true,
+        variant: 'error',
+        title,
+        message: msg,
+        isYesNo: false,
+      })
+    })
+
+  const showRcConfirm = (
+    variant: DialogVariant,
+    title: string,
+    msg: string,
+  ): Promise<boolean> =>
+    new Promise((resolve) => {
+      rcDialogResolve.current = resolve
+      setRcDialog({ open: true, variant, title, message: msg, isYesNo: true })
+    })
+
+  const handleRcDialogOk = () => {
+    setRcDialog((prev) => ({ ...prev, open: false }))
+    rcDialogResolve.current?.(true)
+    rcDialogResolve.current = null
+  }
+
+  const handleRcDialogYes = () => {
+    setRcDialog((prev) => ({ ...prev, open: false }))
+    rcDialogResolve.current?.(true)
+    rcDialogResolve.current = null
+  }
+
+  const handleRcDialogNo = () => {
+    setRcDialog((prev) => ({ ...prev, open: false }))
+    rcDialogResolve.current?.(false)
+    rcDialogResolve.current = null
+  }
+  // ────────────────────────────────────────────────────────────
+
   useEffect(() => {
     ;(async () => {
       const visibleOnAllWorkspacesValue =
@@ -105,19 +175,19 @@ export default function Page() {
           error(
             `[preferences] Failed to get toggle visible shortcut settings: ${res_json.message}`,
           )
-          await message('Failed to get global shortcut settings', {
-            title: 'Preferences',
-            kind: 'error',
-          })
+          await showRcError(
+            'Preferences',
+            'Failed to get global shortcut settings',
+          )
         }
       } catch (err) {
         error(
           `[preferences] Error getting toggle visible shortcut settings: ${err}`,
         )
-        await message('Failed to get global shortcut settings', {
-          title: 'Preferences',
-          kind: 'error',
-        })
+        await showRcError(
+          'Preferences',
+          'Failed to get global shortcut settings',
+        )
       }
 
       try {
@@ -135,10 +205,7 @@ export default function Page() {
         setEffectiveLogDir(logDir)
       } catch (err) {
         error(`[preferences] Error getting log settings: ${err}`)
-        await message('Failed to get log settings', {
-          title: 'Preferences',
-          kind: 'error',
-        })
+        await showRcError('Preferences', 'Failed to get log settings')
       }
 
       try {
@@ -156,10 +223,7 @@ export default function Page() {
         setEffectiveDbPath(dbPath)
       } catch (err) {
         error(`[preferences] Error getting DB settings: ${err}`)
-        await message('Failed to get DB settings', {
-          title: 'Preferences',
-          kind: 'error',
-        })
+        await showRcError('Preferences', 'Failed to get DB settings')
       }
     })()
 
@@ -167,14 +231,10 @@ export default function Page() {
   }, [])
 
   const showRestartConfirmationDialog = async () => {
-    const shouldRestart = await ask(
+    const shouldRestart = await showRcConfirm(
+      'confirmation',
+      'Restart Confirmation',
       'A restart is required to apply the settings.\nDo you want to restart now?',
-      {
-        title: 'Restart Confirmation',
-        kind: 'info',
-        okLabel: 'Yes',
-        cancelLabel: 'No',
-      },
     )
 
     if (shouldRestart) {
@@ -185,12 +245,9 @@ export default function Page() {
       }
     } else {
       debug('[preferences] User cancelled the restart.')
-      await message(
+      await showRcInfo(
+        'Settings Saved',
         'Settings saved.\nThey will take effect on the next launch.',
-        {
-          title: 'Preferences',
-          kind: 'info',
-        },
       )
     }
   }
@@ -214,17 +271,17 @@ export default function Page() {
         error(
           `[preferences] Failed to set toggle visible shortcut settings: ${res_json.message}`,
         )
-        await message('Failed to save global shortcut settings', {
-          title: 'Preferences',
-          kind: 'error',
-        })
+        await showRcError(
+          'Preferences',
+          'Failed to save global shortcut settings',
+        )
       }
     } catch (err) {
       error(`[preferences] Error setting shortcut: ${err}`)
-      await message('Failed to save global shortcut settings', {
-        title: 'Preferences',
-        kind: 'error',
-      })
+      await showRcError(
+        'Preferences',
+        'Failed to save global shortcut settings',
+      )
     }
 
     if (saved) {
@@ -237,10 +294,7 @@ export default function Page() {
     try {
       await setStoredThemeMode(mode)
     } catch {
-      await message('Failed to save theme settings', {
-        title: 'Preferences',
-        kind: 'error',
-      })
+      await showRcError('Preferences', 'Failed to save theme settings')
       return
     }
 
@@ -251,10 +305,7 @@ export default function Page() {
       )
     } catch (err) {
       error(`[preferences] Error notifying theme change: ${err}`)
-      await message('Failed to apply theme change', {
-        title: 'Preferences',
-        kind: 'error',
-      })
+      await showRcError('Preferences', 'Failed to apply theme change')
     }
   }
 
@@ -280,10 +331,10 @@ export default function Page() {
         saved = true
       } catch (err) {
         error(`[preferences] Error setting visible on all workspaces: ${err}`)
-        await message('Failed to save visible on all workspaces settings', {
-          title: 'Preferences',
-          kind: 'error',
-        })
+        await showRcError(
+          'Preferences',
+          'Failed to save visible on all workspaces settings',
+        )
       }
 
       if (saved) {
@@ -309,10 +360,7 @@ export default function Page() {
         saved = true
       } catch (err) {
         error(`[preferences] Error setting log settings: ${err}`)
-        await message('Failed to save log settings', {
-          title: 'Preferences',
-          kind: 'error',
-        })
+        await showRcError('Preferences', 'Failed to save log settings')
       }
       if (saved) {
         await showRestartConfirmationDialog()
@@ -334,20 +382,13 @@ export default function Page() {
       saved = true
     } catch (err) {
       error(`[preferences] Error setting DB settings: ${err}`)
-      await message(`Failed to save DB settings.\n${err}`, {
-        title: 'Preferences',
-        kind: 'error',
-      })
+      await showRcError('Preferences', `Failed to save DB settings.\n${err}`)
     }
     if (saved) {
-      const shouldRestart = await ask(
+      const shouldRestart = await showRcConfirm(
+        'warning',
+        'Restart Confirmation',
         'The existing DB file will not be moved automatically.\nPlease copy it to the new location manually before restarting.\n\nDo you want to restart now?',
-        {
-          title: 'Restart Confirmation',
-          kind: 'info',
-          okLabel: 'Yes',
-          cancelLabel: 'No',
-        },
       )
       if (shouldRestart) {
         if (process.env.NODE_ENV === 'production') {
@@ -357,12 +398,9 @@ export default function Page() {
         }
       } else {
         debug('[preferences] User cancelled the restart.')
-        await message(
+        await showRcInfo(
+          'Settings Saved',
           'Settings saved.\nThey will take effect on the next launch.',
-          {
-            title: 'Preferences',
-            kind: 'info',
-          },
         )
       }
     }
@@ -375,10 +413,10 @@ export default function Page() {
       debug(`[preferences] confirm_actions set to ${enabled}`)
     } catch (err) {
       error(`[preferences] Error setting confirm_actions: ${err}`)
-      await message('Failed to save confirm before actions setting', {
-        title: 'Preferences',
-        kind: 'error',
-      })
+      await showRcError(
+        'Preferences',
+        'Failed to save confirm before actions setting',
+      )
       setConfirmActionsState(!enabled)
     }
   }
@@ -391,10 +429,7 @@ export default function Page() {
       )
     } catch (err) {
       error(`[preferences] Error opening latest log file: ${err}`)
-      await message('Failed to open log file', {
-        title: 'Preferences',
-        kind: 'error',
-      })
+      await showRcError('Preferences', 'Failed to open log file')
     }
   }
 
@@ -852,6 +887,24 @@ export default function Page() {
           shortcut={toggleVisibleShortcut}
           onSave={handleShortcutSave}
           onCancel={() => setShortcutDialogOpen(false)}
+        />
+      )}
+      {rcDialog.isYesNo ? (
+        <RcDialog
+          open={rcDialog.open}
+          variant={rcDialog.variant}
+          title={rcDialog.title}
+          message={rcDialog.message}
+          onYes={handleRcDialogYes}
+          onNo={handleRcDialogNo}
+        />
+      ) : (
+        <RcDialog
+          open={rcDialog.open}
+          variant={rcDialog.variant}
+          title={rcDialog.title}
+          message={rcDialog.message}
+          onOk={handleRcDialogOk}
         />
       )}
     </>

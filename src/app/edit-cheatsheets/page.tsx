@@ -20,12 +20,12 @@ import {
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { message } from '@tauri-apps/plugin-dialog'
 import { debug, info, error as logError } from '@tauri-apps/plugin-log'
 
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { useNotificationContext } from '@/context/NotificationContext'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import {
   CheatSheetAPI,
@@ -1137,6 +1137,7 @@ export default function EditCheatsheetsPage() {
   const divider = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
 
   const { getConfirmActions } = usePreferencesStore()
+  const { showError } = useNotificationContext() ?? {}
   const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
 
   const [rows, setRows] = useState<RowData[]>([])
@@ -1346,14 +1347,11 @@ export default function EditCheatsheetsPage() {
       await getCurrentWindow().close()
     } catch (e) {
       logError(`[edit-cheatsheets] save error: ${e}`)
-      await message(`Failed to save: ${e}`, {
-        title: 'Edit Cheatsheets',
-        kind: 'error',
-      })
+      showError?.('Failed to save the cheatsheets')
     } finally {
       setSaving(false)
     }
-  }, [rows])
+  }, [rows, showError])
 
   const onSave = useCallback(() => {
     if (!canSave) return
