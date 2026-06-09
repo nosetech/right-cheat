@@ -50,12 +50,12 @@ const VARIANT_DEFS: Record<DialogVariant, VariantDef> = {
   },
   confirmation: {
     Icon: HelpOutlineIcon,
-    colorDark: '#64b4ff',
-    colorLight: '#0071e3',
-    bgDark: 'rgba(100,180,255,0.13)',
-    bgLight: 'rgba(0,113,227,0.08)',
-    borderDark: 'rgba(100,180,255,0.30)',
-    borderLight: 'rgba(0,113,227,0.22)',
+    colorDark: '#c084fc',
+    colorLight: '#7c3aed',
+    bgDark: 'rgba(192,132,252,0.13)',
+    bgLight: 'rgba(124,58,237,0.08)',
+    borderDark: 'rgba(192,132,252,0.30)',
+    borderLight: 'rgba(124,58,237,0.22)',
   },
 }
 
@@ -77,12 +77,13 @@ function ActionButton({ variant, onClick, children }: ActionButtonProps) {
     information: isDark ? '#7cc0ff' : '#1a82eb',
     warning: isDark ? '#ffc77a' : '#f57c00',
     error: isDark ? '#e85555' : '#b71c1c',
-    confirmation: isDark ? '#7cc0ff' : '#1a82eb',
+    confirmation: isDark ? '#d8b4fe' : '#6d28d9',
   }
 
   return (
     <Box
       component='button'
+      type='button'
       onClick={onClick}
       sx={{
         background: baseColor,
@@ -127,6 +128,7 @@ function SecondaryButton({ onClick, children }: SecondaryButtonProps) {
   return (
     <Box
       component='button'
+      type='button'
       onClick={onClick}
       sx={{
         background: isDark
@@ -237,6 +239,8 @@ export function RcDialog({
     <Dialog
       open={open}
       onClose={isYesNo ? onNo : onOk}
+      aria-labelledby='rc-dialog-title'
+      aria-describedby='rc-dialog-description'
       slotProps={{
         backdrop: {
           sx: {
@@ -268,6 +272,7 @@ export function RcDialog({
           <DialogIcon variant={variant} />
           <Box sx={{ flex: 1, minWidth: 0, pt: '1px' }}>
             <Box
+              id='rc-dialog-title'
               sx={{
                 fontSize: '14.5px',
                 fontWeight: 600,
@@ -280,6 +285,7 @@ export function RcDialog({
               {title}
             </Box>
             <Box
+              id='rc-dialog-description'
               sx={{
                 fontSize: '12.5px',
                 lineHeight: 1.65,

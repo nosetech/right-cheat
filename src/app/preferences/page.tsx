@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ThemedSwitch, ThemeToggle } from '@/components/atoms'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
@@ -94,57 +94,63 @@ export default function Page() {
   })
   const rcDialogResolve = useRef<((yes: boolean) => void) | null>(null)
 
-  const showRcInfo = (title: string, msg: string): Promise<void> =>
-    new Promise((resolve) => {
-      rcDialogResolve.current = () => resolve()
-      setRcDialog({
-        open: true,
-        variant: 'information',
-        title,
-        message: msg,
-        isYesNo: false,
-      })
-    })
+  const showRcInfo = useCallback(
+    (title: string, msg: string): Promise<void> =>
+      new Promise((resolve) => {
+        rcDialogResolve.current = () => resolve()
+        setRcDialog({
+          open: true,
+          variant: 'information',
+          title,
+          message: msg,
+          isYesNo: false,
+        })
+      }),
+    [],
+  )
 
-  const showRcError = (title: string, msg: string): Promise<void> =>
-    new Promise((resolve) => {
-      rcDialogResolve.current = () => resolve()
-      setRcDialog({
-        open: true,
-        variant: 'error',
-        title,
-        message: msg,
-        isYesNo: false,
-      })
-    })
+  const showRcError = useCallback(
+    (title: string, msg: string): Promise<void> =>
+      new Promise((resolve) => {
+        rcDialogResolve.current = () => resolve()
+        setRcDialog({
+          open: true,
+          variant: 'error',
+          title,
+          message: msg,
+          isYesNo: false,
+        })
+      }),
+    [],
+  )
 
-  const showRcConfirm = (
-    variant: DialogVariant,
-    title: string,
-    msg: string,
-  ): Promise<boolean> =>
-    new Promise((resolve) => {
-      rcDialogResolve.current = resolve
-      setRcDialog({ open: true, variant, title, message: msg, isYesNo: true })
-    })
+  const showRcConfirm = useCallback(
+    (variant: DialogVariant, title: string, msg: string): Promise<boolean> =>
+      new Promise((resolve) => {
+        rcDialogResolve.current = resolve
+        setRcDialog({ open: true, variant, title, message: msg, isYesNo: true })
+      }),
+    [],
+  )
 
-  const handleRcDialogOk = () => {
+  const resolveDialog = useCallback((result: boolean) => {
     setRcDialog((prev) => ({ ...prev, open: false }))
-    rcDialogResolve.current?.(true)
+    rcDialogResolve.current?.(result)
     rcDialogResolve.current = null
-  }
+  }, [])
 
-  const handleRcDialogYes = () => {
-    setRcDialog((prev) => ({ ...prev, open: false }))
-    rcDialogResolve.current?.(true)
-    rcDialogResolve.current = null
-  }
-
-  const handleRcDialogNo = () => {
-    setRcDialog((prev) => ({ ...prev, open: false }))
-    rcDialogResolve.current?.(false)
-    rcDialogResolve.current = null
-  }
+  const handleRcDialogOk = useCallback(
+    () => resolveDialog(true),
+    [resolveDialog],
+  )
+  const handleRcDialogYes = useCallback(
+    () => resolveDialog(true),
+    [resolveDialog],
+  )
+  const handleRcDialogNo = useCallback(
+    () => resolveDialog(false),
+    [resolveDialog],
+  )
   // ────────────────────────────────────────────────────────────
 
   useEffect(() => {
