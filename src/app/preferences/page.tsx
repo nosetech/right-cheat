@@ -735,7 +735,6 @@ export default function Page() {
                   >
                     <Typography
                       component='span'
-                      dir='ltr'
                       sx={{
                         fontFamily: 'monospace',
                         fontSize: '11px',
@@ -743,16 +742,10 @@ export default function Page() {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                        // direction:rtl makes long paths truncate from the left,
-                        // showing the filename at the right end. U+200E (LTR mark)
-                        // prevents the leading '/' of absolute paths from being
-                        // reclassified as RTL by the Unicode Bidi Algorithm, which
-                        // would otherwise make it appear as a visual trailing slash.
-                        direction: 'rtl',
                         color: 'text.primary',
                       }}
                     >
-                      {'‎' + effectiveDbPath}
+                      {effectiveDbPath}
                     </Typography>
                   </Box>
                 </Box>
