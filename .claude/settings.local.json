@@ -25,7 +25,8 @@
       "Bash(cargo check *)",
       "Bash(sqlite3 :memory: *)",
       "Bash(unzip *)",
-      "Bash(yarn lint:eslint *)"
+      "Bash(yarn lint:eslint *)",
+      "Bash(gh pr *)"
     ],
     "deny": [],
     "ask": []
