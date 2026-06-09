@@ -211,11 +211,15 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 
 #### 通知方式の選択基準
 
-| 画面 | エラー種別 | 通知方式 |
-|------|----------|---------|
+| 画面 | 通知種別 | 通知方式 |
+|------|---------|---------|
 | チートシート画面 | 重大エラー（チートシートが使えない） | MUI `Alert` コンポーネント（画面内固定表示） |
 | チートシート画面 | 軽微エラー（チートシートは使えるが操作が失敗） | MUI `Snackbar`（画面下中央トースト、5秒後自動消去） |
-| Preferences 画面 | 全エラー | Tauri ネイティブダイアログ（`message()` from `@tauri-apps/plugin-dialog`） |
+| Preferences 画面 | エラー・通知 | MUI Dialog（`RcDialog` コンポーネント） |
+| Preferences 画面 | 確認（Yes/No） | MUI Dialog（`RcDialog` コンポーネント） |
+| Edit Cheatsheets 画面 | エラー・通知 | MUI `Snackbar`（`NotificationContext`） |
+| Edit Cheatsheets 画面 | 確認（Yes/No） | MUI Dialog（`RcDialog` コンポーネント） |
+| 全画面共通 | ネイティブダイアログ（`message` / `ask` / `confirm`）の使用 | 廃止（ファイル選択 `open`/`save` は除く） |
 
 #### Snackbar の実装
 
@@ -260,6 +264,11 @@ if (saved) {
 以下は構造上の制約により UI 通知を実装していない（ログ出力のみ）:
 - `src/hooks/useFontSize.ts` — `ThemeProviderWrapper` 内で使用されており `NotificationProvider` の外側のため
 - `src/components/ThemeProviderWrapper.tsx` — `NotificationProvider` の外側のため
+
+#### 対応しない箇所
+
+以下はネイティブダイアログの継続使用を許容する:
+- ファイル選択ダイアログ（`open` / `save` from `@tauri-apps/plugin-dialog`）
 
 ### 主要な設計パターン
 - **遅延読み込み**: CheatSheet データは初回読み込み時にメモリにキャッシュ

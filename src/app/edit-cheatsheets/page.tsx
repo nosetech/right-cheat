@@ -8,24 +8,17 @@ import {
 } from 'react'
 import ReactDOM from 'react-dom'
 
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material'
+import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { message } from '@tauri-apps/plugin-dialog'
 import { debug, info, error as logError } from '@tauri-apps/plugin-log'
 
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { RcDialog } from '@/components/organisms/RcDialog'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { useNotificationContext } from '@/context/NotificationContext'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import {
   CheatSheetAPI,
@@ -1116,18 +1109,6 @@ function EditRow({
   )
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function dialogPaperSx(isDark: boolean) {
-  return {
-    borderRadius: '14px',
-    border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
-    boxShadow: isDark
-      ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
-      : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
-  }
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function EditCheatsheetsPage() {
@@ -1137,6 +1118,7 @@ export default function EditCheatsheetsPage() {
   const divider = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
 
   const { getConfirmActions } = usePreferencesStore()
+  const { showError } = useNotificationContext() ?? {}
   const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
 
   const [rows, setRows] = useState<RowData[]>([])
@@ -1346,14 +1328,11 @@ export default function EditCheatsheetsPage() {
       await getCurrentWindow().close()
     } catch (e) {
       logError(`[edit-cheatsheets] save error: ${e}`)
-      await message(`Failed to save: ${e}`, {
-        title: 'Edit Cheatsheets',
-        kind: 'error',
-      })
+      showError?.('Failed to save the cheatsheets')
     } finally {
       setSaving(false)
     }
-  }, [rows])
+  }, [rows, showError])
 
   const onSave = useCallback(() => {
     if (!canSave) return
@@ -1631,162 +1610,26 @@ export default function EditCheatsheetsPage() {
         </Box>
       </Box>
 
-      <Dialog
+      <RcDialog
         open={confirmSaveOpen}
-        onClose={() => setConfirmSaveOpen(false)}
-        maxWidth='xs'
-        fullWidth
-        slotProps={{ paper: { sx: dialogPaperSx(isDark) } }}
-      >
-        <DialogTitle
-          sx={{
-            padding: '14px 18px 12px',
-            fontSize: 14,
-            fontWeight: 600,
-            borderBottom: `0.5px solid ${divider}`,
-          }}
-        >
-          Save Changes
-        </DialogTitle>
-        <DialogContent sx={{ padding: '16px 18px !important' }}>
-          <Typography sx={{ fontSize: 13 }}>Save changes and close?</Typography>
-        </DialogContent>
-        <DialogActions
-          sx={{
-            padding: '12px 16px 14px',
-            backgroundColor: isDark
-              ? 'rgba(255,255,255,0.018)'
-              : 'rgba(255,255,255,0.30)',
-            borderTop: `0.5px solid ${divider}`,
-          }}
-        >
-          <Button
-            onClick={() => setConfirmSaveOpen(false)}
-            sx={{
-              borderRadius: '7px',
-              padding: '5px 16px',
-              fontSize: 12,
-              fontWeight: 600,
-              minWidth: 78,
-              textTransform: 'none',
-              backgroundColor: isDark
-                ? 'rgba(255,255,255,0.06)'
-                : 'rgba(255,255,255,0.75)',
-              border: `0.5px solid ${divider}`,
-              color: 'text.primary',
-              '&:hover': {
-                backgroundColor: isDark
-                  ? 'rgba(255,255,255,0.10)'
-                  : 'rgba(255,255,255,0.95)',
-              },
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={doSave}
-            sx={{
-              borderRadius: '7px',
-              padding: '5px 16px',
-              fontSize: 12,
-              fontWeight: 600,
-              minWidth: 78,
-              textTransform: 'none',
-              backgroundColor: isDark ? '#64b4ff' : '#0071e3',
-              border: '0.5px solid transparent',
-              color: '#fff',
-              boxShadow: !isDark
-                ? 'inset 0 1px 0 rgba(255,255,255,0.5)'
-                : 'none',
-              '&:hover': {
-                backgroundColor: isDark ? '#7cc0ff' : '#1a82eb',
-              },
-            }}
-          >
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
+        variant='confirmation'
+        title='Save Changes'
+        message='Save changes and close?'
+        onYes={doSave}
+        yesLabel='Save'
+        onNo={() => setConfirmSaveOpen(false)}
+        noLabel='Cancel'
+      />
+      <RcDialog
         open={confirmCancelOpen}
-        onClose={() => setConfirmCancelOpen(false)}
-        maxWidth='xs'
-        fullWidth
-        slotProps={{ paper: { sx: dialogPaperSx(isDark) } }}
-      >
-        <DialogTitle
-          sx={{
-            padding: '14px 18px 12px',
-            fontSize: 14,
-            fontWeight: 600,
-            borderBottom: `0.5px solid ${divider}`,
-          }}
-        >
-          Discard Changes
-        </DialogTitle>
-        <DialogContent sx={{ padding: '16px 18px !important' }}>
-          <Typography sx={{ fontSize: 13 }}>
-            You have unsaved changes. Close anyway?
-          </Typography>
-        </DialogContent>
-        <DialogActions
-          sx={{
-            padding: '12px 16px 14px',
-            backgroundColor: isDark
-              ? 'rgba(255,255,255,0.018)'
-              : 'rgba(255,255,255,0.30)',
-            borderTop: `0.5px solid ${divider}`,
-          }}
-        >
-          <Button
-            onClick={() => setConfirmCancelOpen(false)}
-            sx={{
-              borderRadius: '7px',
-              padding: '5px 16px',
-              fontSize: 12,
-              fontWeight: 600,
-              minWidth: 78,
-              textTransform: 'none',
-              backgroundColor: isDark
-                ? 'rgba(255,255,255,0.06)'
-                : 'rgba(255,255,255,0.75)',
-              border: `0.5px solid ${divider}`,
-              color: 'text.primary',
-              '&:hover': {
-                backgroundColor: isDark
-                  ? 'rgba(255,255,255,0.10)'
-                  : 'rgba(255,255,255,0.95)',
-              },
-            }}
-          >
-            Keep editing
-          </Button>
-          <Button
-            onClick={doCancel}
-            sx={{
-              borderRadius: '7px',
-              padding: '5px 16px',
-              fontSize: 12,
-              fontWeight: 600,
-              minWidth: 78,
-              textTransform: 'none',
-              backgroundColor: isDark
-                ? 'rgba(255,100,100,0.20)'
-                : 'rgba(200,50,50,0.08)',
-              border: `0.5px solid ${isDark ? 'rgba(255,100,100,0.35)' : 'rgba(200,50,50,0.25)'}`,
-              color: isDark ? '#ff9090' : '#b83232',
-              '&:hover': {
-                backgroundColor: isDark
-                  ? 'rgba(255,100,100,0.28)'
-                  : 'rgba(200,50,50,0.13)',
-              },
-            }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+        variant='confirmation'
+        title='Discard Changes'
+        message='You have unsaved changes. Close anyway?'
+        onYes={doCancel}
+        yesLabel='Close'
+        onNo={() => setConfirmCancelOpen(false)}
+        noLabel='Keep editing'
+      />
     </>
   )
 }

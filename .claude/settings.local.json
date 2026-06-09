@@ -24,7 +24,9 @@
       "WebFetch(domain:api.anthropic.com)",
       "Bash(cargo check *)",
       "Bash(sqlite3 :memory: *)",
-      "Bash(unzip *)"
+      "Bash(unzip *)",
+      "Bash(yarn lint:eslint *)",
+      "Bash(gh pr *)"
     ],
     "deny": [],
     "ask": []
