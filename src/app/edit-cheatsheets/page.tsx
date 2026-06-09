@@ -1622,7 +1622,7 @@ export default function EditCheatsheetsPage() {
       />
       <RcDialog
         open={confirmCancelOpen}
-        variant='error'
+        variant='confirmation'
         title='Discard Changes'
         message='You have unsaved changes. Close anyway?'
         onYes={doCancel}
