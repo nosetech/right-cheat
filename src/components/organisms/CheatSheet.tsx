@@ -597,7 +597,7 @@ export const CheatSheet = () => {
 
   // ─── レンダリング ─────────────────────────────────────────
   return (
-    <>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* ドラッグ領域 */}
       <Box
         data-tauri-drag-region
@@ -1155,6 +1155,6 @@ export const CheatSheet = () => {
           onCancel={() => setConfirmDialog(null)}
         />
       )}
-    </>
+    </Box>
   )
 }
