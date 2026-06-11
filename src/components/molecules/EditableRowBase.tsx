@@ -13,10 +13,12 @@ type Props = {
   isDropTarget?: boolean
   onEdit: () => void
   onDelete: () => void
-  onDragStart: (e: React.DragEvent) => void
-  onDragEnd: (e: React.DragEvent) => void
-  onDragOver: (e: React.DragEvent) => void
+  onPointerDown: (e: React.PointerEvent) => void
+  onPointerMove: (e: React.PointerEvent) => void
+  onPointerUp: () => void
+  onPointerCancel: () => void
   deleteLabel: string
+  rowRef?: (el: HTMLDivElement | null) => void
   children: React.ReactNode
 }
 
@@ -26,23 +28,26 @@ export function EditableRowBase({
   isDropTarget,
   onEdit,
   onDelete,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
   deleteLabel,
+  rowRef,
   children,
 }: Props) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
   const [isHovered, setIsHovered] = useState(false)
+  const [grabbing, setGrabbing] = useState(false)
   const accent = isDark ? '#64b4ff' : '#0071e3'
 
   return (
     <Box
+      ref={rowRef}
       data-edit-row
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onDragOver={onDragOver}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -75,18 +80,30 @@ export function EditableRowBase({
     >
       {/* ドラッグハンドル */}
       <Box
-        draggable
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
+        onPointerDown={(e) => {
+          e.preventDefault()
+          ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+          setGrabbing(true)
+          onPointerDown(e)
+        }}
+        onPointerMove={onPointerMove}
+        onPointerUp={() => {
+          setGrabbing(false)
+          onPointerUp()
+        }}
+        onPointerCancel={() => {
+          setGrabbing(false)
+          onPointerCancel()
+        }}
         sx={{
           flexShrink: 0,
-          cursor: 'grab',
+          cursor: grabbing ? 'grabbing' : 'grab',
+          touchAction: 'none',
           color: theme.palette.text.disabled,
           display: 'flex',
           alignItems: 'center',
           padding: '2px',
           '&:hover': { color: theme.palette.text.secondary },
-          '&:active': { cursor: 'grabbing' },
         }}
       >
         <svg width='10' height='14' viewBox='0 0 10 14' fill='currentColor'>

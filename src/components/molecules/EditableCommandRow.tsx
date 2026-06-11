@@ -13,9 +13,11 @@ type Props = {
   isDropTarget?: boolean
   onEdit: () => void
   onDelete: () => void
-  onDragStart: (e: React.DragEvent) => void
-  onDragEnd: (e: React.DragEvent) => void
-  onDragOver: (e: React.DragEvent) => void
+  onPointerDown: (e: React.PointerEvent) => void
+  onPointerMove: (e: React.PointerEvent) => void
+  onPointerUp: () => void
+  onPointerCancel: () => void
+  rowRef?: (el: HTMLDivElement | null) => void
 }
 
 export function EditableCommandRow({
@@ -25,9 +27,11 @@ export function EditableCommandRow({
   isDropTarget,
   onEdit,
   onDelete,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  rowRef,
 }: Props) {
   const theme = useTheme()
 
@@ -43,10 +47,12 @@ export function EditableCommandRow({
       isDropTarget={isDropTarget}
       onEdit={onEdit}
       onDelete={onDelete}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       deleteLabel='Delete'
+      rowRef={rowRef}
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
         {item.description ? (

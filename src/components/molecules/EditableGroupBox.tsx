@@ -13,9 +13,12 @@ type Props = {
   isDropTarget?: boolean
   onRename: () => void
   onDelete: () => void
-  onDragStart: (e: React.DragEvent) => void
-  onDragEnd: (e: React.DragEvent) => void
-  onGroupBodyDragOver: (e: React.DragEvent) => void
+  onPointerDown: (e: React.PointerEvent) => void
+  onPointerMove: (e: React.PointerEvent) => void
+  onPointerUp: () => void
+  onPointerCancel: () => void
+  blockRef?: (el: HTMLDivElement | null) => void
+  groupBodyRef?: (el: HTMLDivElement | null) => void
 }
 
 export function EditableGroupBox({
@@ -26,17 +29,22 @@ export function EditableGroupBox({
   isDropTarget,
   onRename,
   onDelete,
-  onDragStart,
-  onDragEnd,
-  onGroupBodyDragOver,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  blockRef,
+  groupBodyRef,
 }: Props) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
   const [isHovered, setIsHovered] = useState(false)
+  const [grabbing, setGrabbing] = useState(false)
   const accent = isDark ? '#64b4ff' : '#0071e3'
 
   return (
     <Box
+      ref={blockRef}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       sx={{
@@ -71,16 +79,28 @@ export function EditableGroupBox({
       >
         {/* グループドラッグハンドル */}
         <Box
-          draggable
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
+          onPointerDown={(e) => {
+            e.preventDefault()
+            ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+            setGrabbing(true)
+            onPointerDown(e)
+          }}
+          onPointerMove={onPointerMove}
+          onPointerUp={() => {
+            setGrabbing(false)
+            onPointerUp()
+          }}
+          onPointerCancel={() => {
+            setGrabbing(false)
+            onPointerCancel()
+          }}
           sx={{
-            cursor: 'grab',
+            cursor: grabbing ? 'grabbing' : 'grab',
+            touchAction: 'none',
             color: theme.palette.text.disabled,
             display: 'flex',
             alignItems: 'center',
             '&:hover': { color: theme.palette.text.secondary },
-            '&:active': { cursor: 'grabbing' },
           }}
         >
           <svg width='8' height='12' viewBox='0 0 10 14' fill='currentColor'>
@@ -152,10 +172,7 @@ export function EditableGroupBox({
       </Box>
 
       {/* グループ本体（ドロップターゲット） */}
-      <Box
-        onDragOver={onGroupBodyDragOver}
-        sx={{ minHeight: isEmpty ? '40px' : undefined }}
-      >
+      <Box ref={groupBodyRef} sx={{ minHeight: isEmpty ? '40px' : undefined }}>
         {isEmpty ? (
           <Typography
             sx={{

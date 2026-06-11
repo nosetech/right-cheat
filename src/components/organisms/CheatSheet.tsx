@@ -124,6 +124,18 @@ export const CheatSheet = () => {
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null)
   const [dropMark, setDropMark] = useState<DropMark | null>(null)
 
+  // Pointer Events DnD refs
+  const blockRefsMap = useRef<Map<string, HTMLDivElement>>(new Map())
+  const groupBodyRefsMap = useRef<Map<string, HTMLDivElement>>(new Map())
+  const itemRefsMap = useRef<Map<string, HTMLDivElement>>(new Map())
+  const editBlocksRef = useRef<EditBlock[]>([])
+  const dragInfoRef = useRef<DragInfo | null>(null)
+  const dropMarkRef = useRef<DropMark | null>(null)
+
+  useEffect(() => {
+    editBlocksRef.current = editBlocks
+  }, [editBlocks])
+
   const editDirty =
     editMode &&
     editSnapshot !== null &&
@@ -347,41 +359,38 @@ export const CheatSheet = () => {
   }, [])
 
   // ─── DnD ──────────────────────────────────────────────────
-  const performDrop = useCallback(() => {
-    if (!dragInfo || !dropMark) return
-
+  const performDropWith = useCallback((info: DragInfo, mark: DropMark) => {
     setEditBlocks((prev) => {
       const next = [...prev]
 
       // ドラッグ中のアイテムを取り出す
       let dragged: EditBlock | undefined
 
-      if (dragInfo.type === 'group') {
-        dragged = next[dragInfo.blockIndex]
-        next.splice(dragInfo.blockIndex, 1)
-      } else if (dragInfo.itemIndex !== undefined) {
-        const group = next[dragInfo.blockIndex]
+      if (info.type === 'group') {
+        dragged = next[info.blockIndex]
+        next.splice(info.blockIndex, 1)
+      } else if (info.itemIndex !== undefined) {
+        const group = next[info.blockIndex]
         if (isEditGroup(group)) {
-          dragged = group.commandlist[dragInfo.itemIndex]
+          dragged = group.commandlist[info.itemIndex]
           const newItems = [...group.commandlist]
-          newItems.splice(dragInfo.itemIndex, 1)
-          next[dragInfo.blockIndex] = { ...group, commandlist: newItems }
+          newItems.splice(info.itemIndex, 1)
+          next[info.blockIndex] = { ...group, commandlist: newItems }
         }
       } else {
-        dragged = next[dragInfo.blockIndex]
-        next.splice(dragInfo.blockIndex, 1)
+        dragged = next[info.blockIndex]
+        next.splice(info.blockIndex, 1)
       }
 
       if (!dragged) return prev
 
       // ドロップ先に挿入
-      if (dropMark.kind === 'into-group') {
-        // グループのインデックスを再計算（splice後ずれる可能性あり）
-        let groupIdx = dropMark.groupBlockIndex
+      if (mark.kind === 'into-group') {
+        let groupIdx = mark.groupBlockIndex
         if (
-          dragInfo.type !== 'group' &&
-          dragInfo.itemIndex === undefined &&
-          dragInfo.blockIndex < dropMark.groupBlockIndex
+          info.type !== 'group' &&
+          info.itemIndex === undefined &&
+          info.blockIndex < mark.groupBlockIndex
         ) {
           groupIdx -= 1
         }
@@ -395,19 +404,19 @@ export const CheatSheet = () => {
         return next
       }
 
-      if (dropMark.kind === 'between-items') {
-        let groupIdx = dropMark.groupBlockIndex
+      if (mark.kind === 'between-items') {
+        let groupIdx = mark.groupBlockIndex
         if (
-          dragInfo.type !== 'group' &&
-          dragInfo.itemIndex === undefined &&
-          dragInfo.blockIndex < dropMark.groupBlockIndex
+          info.type !== 'group' &&
+          info.itemIndex === undefined &&
+          info.blockIndex < mark.groupBlockIndex
         ) {
           groupIdx -= 1
         }
         const group = next[groupIdx]
         if (isEditGroup(group) && !isEditGroup(dragged)) {
           const newItems = [...group.commandlist]
-          const insertAt = dropMark.afterItemIndex + 1
+          const insertAt = mark.afterItemIndex + 1
           newItems.splice(insertAt, 0, dragged as EditCommandData)
           next[groupIdx] = { ...group, commandlist: newItems }
         }
@@ -415,60 +424,124 @@ export const CheatSheet = () => {
       }
 
       // between-blocks
-      let insertAt = dropMark.afterBlockIndex + 1
+      let insertAt = mark.afterBlockIndex + 1
       if (
-        (dragInfo.type === 'group' || dragInfo.itemIndex === undefined) &&
-        dragInfo.blockIndex < dropMark.afterBlockIndex
+        (info.type === 'group' || info.itemIndex === undefined) &&
+        info.blockIndex < mark.afterBlockIndex
       ) {
         insertAt -= 1
       }
       next.splice(Math.max(0, insertAt), 0, dragged)
       return next
     })
+  }, [])
 
+  const computeDropMark = useCallback((clientY: number): DropMark | null => {
+    const blocks = editBlocksRef.current
+    const dragging = dragInfoRef.current
+
+    // グループ内アイテムを先にチェック（より具体的なターゲット）
+    for (const [editId, el] of itemRefsMap.current.entries()) {
+      const rect = el.getBoundingClientRect()
+      if (clientY < rect.top || clientY > rect.bottom) continue
+
+      for (let bi = 0; bi < blocks.length; bi++) {
+        const block = blocks[bi]
+        if (!isEditGroup(block)) continue
+        const itemIdx = block.commandlist.findIndex(
+          (it) => it._editId === editId,
+        )
+        if (itemIdx === -1) continue
+
+        if (dragging?.blockIndex === bi && dragging.itemIndex === itemIdx)
+          continue
+
+        const isAfter = clientY > rect.top + rect.height / 2
+        return {
+          kind: 'between-items',
+          groupBlockIndex: bi,
+          afterItemIndex: isAfter ? itemIdx : itemIdx - 1,
+        }
+      }
+    }
+
+    // ブロックをチェック
+    for (const [editId, el] of blockRefsMap.current.entries()) {
+      const rect = el.getBoundingClientRect()
+      if (clientY < rect.top || clientY > rect.bottom) continue
+
+      const bi = blocks.findIndex((b) => b._editId === editId)
+      if (bi === -1) continue
+
+      if (
+        dragging &&
+        dragging.blockIndex === bi &&
+        dragging.itemIndex === undefined
+      )
+        continue
+
+      const block = blocks[bi]
+      if (isEditGroup(block)) {
+        const bodyEl = groupBodyRefsMap.current.get(editId)
+        if (bodyEl) {
+          const bodyRect = bodyEl.getBoundingClientRect()
+          if (clientY >= bodyRect.top && clientY <= bodyRect.bottom) {
+            return { kind: 'into-group', groupBlockIndex: bi }
+          }
+        }
+      }
+
+      const isAfter = clientY > rect.top + rect.height / 2
+      return {
+        kind: 'between-blocks',
+        afterBlockIndex: isAfter ? bi : bi - 1,
+      }
+    }
+
+    return null
+  }, [])
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent, blockIndex: number, itemIndex?: number) => {
+      const info: DragInfo = {
+        type: itemIndex !== undefined ? 'item' : 'group',
+        blockIndex,
+        itemIndex,
+      }
+      dragInfoRef.current = info
+      setDragInfo(info)
+      dropMarkRef.current = null
+      setDropMark(null)
+    },
+    [],
+  )
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragInfoRef.current) return
+      const mark = computeDropMark(e.clientY)
+      dropMarkRef.current = mark
+      setDropMark(mark)
+    },
+    [computeDropMark],
+  )
+
+  const handlePointerUp = useCallback(() => {
+    const info = dragInfoRef.current
+    const mark = dropMarkRef.current
+    dragInfoRef.current = null
+    dropMarkRef.current = null
     setDragInfo(null)
     setDropMark(null)
-  }, [dragInfo, dropMark])
+    if (info && mark) performDropWith(info, mark)
+  }, [performDropWith])
 
-  const handleBlockDragOver = useCallback(
-    (e: React.DragEvent, blockIndex: number) => {
-      e.preventDefault()
-      if (!dragInfo) return
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-      const isAfter = e.clientY > rect.top + rect.height / 2
-      setDropMark({
-        kind: 'between-blocks',
-        afterBlockIndex: isAfter ? blockIndex : blockIndex - 1,
-      })
-    },
-    [dragInfo],
-  )
-
-  const handleGroupBodyDragOver = useCallback(
-    (e: React.DragEvent, groupBlockIndex: number) => {
-      e.preventDefault()
-      e.stopPropagation()
-      if (!dragInfo || dragInfo.type === 'group') return
-      setDropMark({ kind: 'into-group', groupBlockIndex })
-    },
-    [dragInfo],
-  )
-
-  const handleItemInGroupDragOver = useCallback(
-    (e: React.DragEvent, groupBlockIndex: number, itemIndex: number) => {
-      e.preventDefault()
-      e.stopPropagation()
-      if (!dragInfo || dragInfo.type === 'group') return
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-      const isAfter = e.clientY > rect.top + rect.height / 2
-      setDropMark({
-        kind: 'between-items',
-        groupBlockIndex,
-        afterItemIndex: isAfter ? itemIndex : itemIndex - 1,
-      })
-    },
-    [dragInfo],
-  )
+  const handlePointerCancel = useCallback(() => {
+    dragInfoRef.current = null
+    dropMarkRef.current = null
+    setDragInfo(null)
+    setDropMark(null)
+  }, [])
 
   // ─── 通常モード計算 ───────────────────────────────────────
   const isKeyboardShortcutEnabled =
@@ -639,24 +712,11 @@ export const CheatSheet = () => {
             // ─── 編集モード ───────────────────────────────────
             <Stack
               spacing={0}
-              onDragOver={(e) => {
-                // リスト末尾へのドロップ（最後ブロックの後）
-                if (dragInfo && editBlocks.length > 0) {
-                  const last = e.currentTarget.lastElementChild
-                  if (last) {
-                    const rect = last.getBoundingClientRect()
-                    if (e.clientY > rect.bottom - 20) {
-                      e.preventDefault()
-                      setDropMark({
-                        kind: 'between-blocks',
-                        afterBlockIndex: editBlocks.length - 1,
-                      })
-                    }
-                  }
-                }
+              sx={{
+                py: 1,
+                minHeight: '40px',
+                userSelect: dragInfo ? 'none' : undefined,
               }}
-              onDrop={performDrop}
-              sx={{ py: 1, minHeight: '40px' }}
             >
               {editBlocks.map((block, blockIndex) => {
                 const isBlockDragging =
@@ -701,17 +761,19 @@ export const CheatSheet = () => {
                             onConfirm: () => deleteGroup(block._editId),
                           })
                         }
-                        onDragStart={(e) => {
-                          e.dataTransfer.effectAllowed = 'move'
-                          setDragInfo({ type: 'group', blockIndex })
+                        onPointerDown={(e) => handlePointerDown(e, blockIndex)}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerCancel}
+                        blockRef={(el) => {
+                          if (el) blockRefsMap.current.set(block._editId, el)
+                          else blockRefsMap.current.delete(block._editId)
                         }}
-                        onDragEnd={() => {
-                          setDragInfo(null)
-                          setDropMark(null)
+                        groupBodyRef={(el) => {
+                          if (el)
+                            groupBodyRefsMap.current.set(block._editId, el)
+                          else groupBodyRefsMap.current.delete(block._editId)
                         }}
-                        onGroupBodyDragOver={(e) =>
-                          handleGroupBodyDragOver(e, blockIndex)
-                        }
                       >
                         <Stack spacing={0}>
                           {block.commandlist.map((item, itemIndex) => {
@@ -761,25 +823,25 @@ export const CheatSheet = () => {
                                           deleteCommand(item._editId),
                                       })
                                     }
-                                    onDragStart={(e) => {
-                                      e.dataTransfer.effectAllowed = 'move'
-                                      setDragInfo({
-                                        type: 'item',
-                                        blockIndex,
-                                        itemIndex,
-                                      })
-                                    }}
-                                    onDragEnd={() => {
-                                      setDragInfo(null)
-                                      setDropMark(null)
-                                    }}
-                                    onDragOver={(e) =>
-                                      handleItemInGroupDragOver(
+                                    onPointerDown={(e) =>
+                                      handlePointerDown(
                                         e,
                                         blockIndex,
                                         itemIndex,
                                       )
                                     }
+                                    onPointerMove={handlePointerMove}
+                                    onPointerUp={handlePointerUp}
+                                    onPointerCancel={handlePointerCancel}
+                                    rowRef={(el) => {
+                                      if (el)
+                                        itemRefsMap.current.set(
+                                          item._editId,
+                                          el,
+                                        )
+                                      else
+                                        itemRefsMap.current.delete(item._editId)
+                                    }}
                                   />
                                 ) : (
                                   <EditableCommandRow
@@ -806,25 +868,25 @@ export const CheatSheet = () => {
                                           deleteCommand(item._editId),
                                       })
                                     }
-                                    onDragStart={(e) => {
-                                      e.dataTransfer.effectAllowed = 'move'
-                                      setDragInfo({
-                                        type: 'item',
-                                        blockIndex,
-                                        itemIndex,
-                                      })
-                                    }}
-                                    onDragEnd={() => {
-                                      setDragInfo(null)
-                                      setDropMark(null)
-                                    }}
-                                    onDragOver={(e) =>
-                                      handleItemInGroupDragOver(
+                                    onPointerDown={(e) =>
+                                      handlePointerDown(
                                         e,
                                         blockIndex,
                                         itemIndex,
                                       )
                                     }
+                                    onPointerMove={handlePointerMove}
+                                    onPointerUp={handlePointerUp}
+                                    onPointerCancel={handlePointerCancel}
+                                    rowRef={(el) => {
+                                      if (el)
+                                        itemRefsMap.current.set(
+                                          item._editId,
+                                          el,
+                                        )
+                                      else
+                                        itemRefsMap.current.delete(item._editId)
+                                    }}
                                   />
                                 )}
                               </Box>
@@ -880,17 +942,17 @@ export const CheatSheet = () => {
                                   ),
                               })
                             }
-                            onDragStart={(e) => {
-                              e.dataTransfer.effectAllowed = 'move'
-                              setDragInfo({ type: 'item', blockIndex })
-                            }}
-                            onDragEnd={() => {
-                              setDragInfo(null)
-                              setDropMark(null)
-                            }}
-                            onDragOver={(e) =>
-                              handleBlockDragOver(e, blockIndex)
+                            onPointerDown={(e) =>
+                              handlePointerDown(e, blockIndex)
                             }
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            onPointerCancel={handlePointerCancel}
+                            rowRef={(el) => {
+                              if (el)
+                                blockRefsMap.current.set(block._editId, el)
+                              else blockRefsMap.current.delete(block._editId)
+                            }}
                           />
                         ) : (
                           <EditableCommandRow
@@ -922,17 +984,17 @@ export const CheatSheet = () => {
                                   ),
                               })
                             }
-                            onDragStart={(e) => {
-                              e.dataTransfer.effectAllowed = 'move'
-                              setDragInfo({ type: 'item', blockIndex })
-                            }}
-                            onDragEnd={() => {
-                              setDragInfo(null)
-                              setDropMark(null)
-                            }}
-                            onDragOver={(e) =>
-                              handleBlockDragOver(e, blockIndex)
+                            onPointerDown={(e) =>
+                              handlePointerDown(e, blockIndex)
                             }
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            onPointerCancel={handlePointerCancel}
+                            rowRef={(el) => {
+                              if (el)
+                                blockRefsMap.current.set(block._editId, el)
+                              else blockRefsMap.current.delete(block._editId)
+                            }}
                           />
                         )}
                       </>
