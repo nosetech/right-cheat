@@ -3,6 +3,8 @@ import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useState } from 'react'
 
+import { EditIconButton } from '@/components/atoms/EditIconButton'
+
 type Props = {
   groupName: string
   children: React.ReactNode
@@ -112,7 +114,7 @@ export function EditableGroupBox({
             transition: 'opacity 0.12s',
           }}
         >
-          <GroupIconBtn title='Rename' onClick={onRename}>
+          <EditIconButton title='Rename' onClick={onRename} size='xs'>
             <svg
               width='10'
               height='10'
@@ -124,8 +126,13 @@ export function EditableGroupBox({
               <path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' />
               <path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' />
             </svg>
-          </GroupIconBtn>
-          <GroupIconBtn title='Delete group' onClick={onDelete} danger>
+          </EditIconButton>
+          <EditIconButton
+            title='Delete group'
+            onClick={onDelete}
+            danger
+            size='xs'
+          >
             <svg
               width='10'
               height='10'
@@ -140,7 +147,7 @@ export function EditableGroupBox({
               <path d='M14 11v6' />
               <path d='M9 6V4h6v2' />
             </svg>
-          </GroupIconBtn>
+          </EditIconButton>
         </Box>
       </Box>
 
@@ -165,58 +172,6 @@ export function EditableGroupBox({
           children
         )}
       </Box>
-    </Box>
-  )
-}
-
-function GroupIconBtn({
-  title,
-  onClick,
-  danger,
-  children,
-}: {
-  title: string
-  onClick: () => void
-  danger?: boolean
-  children: React.ReactNode
-}) {
-  const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
-  const [hov, setHov] = useState(false)
-
-  return (
-    <Box
-      component='button'
-      title={title}
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      sx={{
-        background: hov
-          ? danger
-            ? isDark
-              ? 'rgba(255,107,107,0.18)'
-              : 'rgba(211,47,47,0.10)'
-            : isDark
-              ? 'rgba(255,255,255,0.10)'
-              : 'rgba(0,0,0,0.07)'
-          : 'transparent',
-        border: 'none',
-        borderRadius: '3px',
-        padding: '2px',
-        cursor: 'pointer',
-        color: hov
-          ? danger
-            ? '#ff6b6b'
-            : theme.palette.text.primary
-          : theme.palette.text.secondary,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.12s',
-      }}
-    >
-      {children}
     </Box>
   )
 }

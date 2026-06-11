@@ -1,8 +1,9 @@
 'use client'
-import { Box, Dialog, TextField } from '@mui/material'
+import { Box, TextField } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useEffect, useRef, useState } from 'react'
 
+import { EditDialog } from '@/components/molecules/EditDialog'
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { EditGroupData } from '@/types/edit/EditBlock'
 
@@ -31,7 +32,7 @@ export function GroupEditDialog({ group, isNew, onSave, onCancel }: Props) {
         e.stopPropagation()
         onCancel()
       }
-      if (e.key === 'Enter' && name.trim().length > 0) {
+      if (e.key === 'Enter' && name.trim().length > 0 && !e.isComposing) {
         e.stopPropagation()
         onSave(name.trim())
       }
@@ -41,33 +42,7 @@ export function GroupEditDialog({ group, isNew, onSave, onCancel }: Props) {
   }, [name, onCancel, onSave])
 
   return (
-    <Dialog
-      open
-      onClose={onCancel}
-      slotProps={{
-        backdrop: {
-          sx: {
-            backgroundColor: isDark
-              ? 'rgba(0,0,10,0.45)'
-              : 'rgba(20,30,60,0.28)',
-            backdropFilter: 'blur(3px)',
-          },
-        },
-        paper: {
-          sx: {
-            width: 400,
-            maxWidth: 400,
-            borderRadius: '14px',
-            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)'}`,
-            boxShadow: isDark
-              ? '0 24px 64px rgba(0,0,0,0.65)'
-              : '0 24px 64px rgba(0,0,50,0.30)',
-            overflow: 'hidden',
-            m: 0,
-          },
-        },
-      }}
-    >
+    <EditDialog width={400} onClose={onCancel}>
       {/* ヘッダー */}
       <Box
         sx={{
@@ -123,6 +98,6 @@ export function GroupEditDialog({ group, isNew, onSave, onCancel }: Props) {
           Save
         </FooterButton>
       </Box>
-    </Dialog>
+    </EditDialog>
   )
 }

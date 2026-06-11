@@ -1,9 +1,10 @@
 'use client'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import { Box, Dialog } from '@mui/material'
+import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useEffect } from 'react'
 
+import { EditDialog } from '@/components/molecules/EditDialog'
 import { FooterButton } from '@/components/molecules/FooterButton'
 
 type Props = {
@@ -36,33 +37,7 @@ export function DeleteConfirmDialog({
   }, [onCancel])
 
   return (
-    <Dialog
-      open
-      onClose={onCancel}
-      slotProps={{
-        backdrop: {
-          sx: {
-            backgroundColor: isDark
-              ? 'rgba(0,0,10,0.45)'
-              : 'rgba(20,30,60,0.28)',
-            backdropFilter: 'blur(3px)',
-          },
-        },
-        paper: {
-          sx: {
-            width: 380,
-            maxWidth: 380,
-            borderRadius: '14px',
-            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)'}`,
-            boxShadow: isDark
-              ? '0 24px 64px rgba(0,0,0,0.65)'
-              : '0 24px 64px rgba(0,0,50,0.30)',
-            overflow: 'hidden',
-            m: 0,
-          },
-        },
-      }}
-    >
+    <EditDialog width={380} onClose={onCancel}>
       {/* ボディ */}
       <Box sx={{ p: '18px 20px 10px' }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -129,7 +104,7 @@ export function DeleteConfirmDialog({
         <FooterButton onClick={onCancel}>Cancel</FooterButton>
         <DangerButton onClick={onConfirm}>{confirmLabel}</DangerButton>
       </Box>
-    </Dialog>
+    </EditDialog>
   )
 }
 

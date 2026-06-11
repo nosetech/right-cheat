@@ -18,21 +18,21 @@ export type EditBlock = EditCommandData | EditGroupData
 
 export const isEditGroup = (b: EditBlock): b is EditGroupData => 'group' in b
 
-let _editCounter = 0
+const newEditId = () => crypto.randomUUID()
 
 export const toEditBlocks = (items: CommandListItem[]): EditBlock[] =>
   items.map((item) => {
     if (isCommandGroupData(item)) {
       return {
         ...item,
-        _editId: `e${_editCounter++}`,
+        _editId: newEditId(),
         commandlist: item.commandlist.map((c) => ({
           ...c,
-          _editId: `e${_editCounter++}`,
+          _editId: newEditId(),
         })),
       } as EditGroupData
     }
-    return { ...item, _editId: `e${_editCounter++}` } as EditCommandData
+    return { ...item, _editId: newEditId() } as EditCommandData
   })
 
 export const fromEditBlocks = (blocks: EditBlock[]): CommandListItem[] =>

@@ -109,6 +109,10 @@ export const CheatSheet = () => {
 
   // ─── 編集モード state ─────────────────────────────────────
   const [editMode, setEditMode] = useState(false)
+  const editModeRef = useRef(false)
+  useEffect(() => {
+    editModeRef.current = editMode
+  }, [editMode])
   const [editBlocks, setEditBlocks] = useState<EditBlock[]>([])
   const [editSnapshot, setEditSnapshot] = useState<EditBlock[] | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -135,6 +139,7 @@ export const CheatSheet = () => {
     let unlisten: (() => void) | undefined
     ;(async () => {
       unlisten = await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
+        if (editModeRef.current) return
         ;(async () => {
           setReloading(true)
           setCheatSheet('')
@@ -238,7 +243,7 @@ export const CheatSheet = () => {
     (data: CommandDialogSaveData) => {
       const { description, commandText, key, layout, targetGroupEditId } = data
       const newItem: EditCommandData = {
-        _editId: cmdDialog?.item?._editId ?? `enew-${Date.now()}`,
+        _editId: cmdDialog?.item?._editId ?? crypto.randomUUID(),
         id: cmdDialog?.item?.id,
         description: description.trim() || undefined,
         command: isShortcuts ? key.trim() : commandText,
@@ -291,7 +296,7 @@ export const CheatSheet = () => {
     (name: string) => {
       if (groupDialog?.isNew) {
         const newGroup: EditGroupData = {
-          _editId: `gnew-${Date.now()}`,
+          _editId: crypto.randomUUID(),
           group: name,
           commandlist: [],
         }
@@ -371,9 +376,6 @@ export const CheatSheet = () => {
 
       // ドロップ先に挿入
       if (dropMark.kind === 'into-group') {
-        const gi = next.findIndex(
-          (b) => isEditGroup(b) && next.indexOf(b) === dropMark.groupBlockIndex,
-        )
         // グループのインデックスを再計算（splice後ずれる可能性あり）
         let groupIdx = dropMark.groupBlockIndex
         if (
@@ -520,16 +522,6 @@ export const CheatSheet = () => {
     { enabled: !editMode },
   )
 
-  // ─── 編集モードのフラットインデックス ────────────────────
-  const editFlatIndices = useMemo(() => {
-    let acc = 0
-    return editBlocks.map((block) => {
-      const start = acc
-      acc += isEditGroup(block) ? block.commandlist.length : 1
-      return start
-    })
-  }, [editBlocks])
-
   // ─── レンダリング ─────────────────────────────────────────
   return (
     <>
@@ -675,7 +667,7 @@ export const CheatSheet = () => {
                   dropMark.afterBlockIndex === blockIndex - 1
 
                 return (
-                  <Box key={blockIndex}>
+                  <Box key={block._editId}>
                     {/* ドロップインジケーター（上） */}
                     {isBlockDropTarget && (
                       <Box
@@ -732,7 +724,7 @@ export const CheatSheet = () => {
                               dropMark.afterItemIndex === itemIndex - 1
 
                             return (
-                              <Box key={itemIndex}>
+                              <Box key={item._editId}>
                                 {isItemDropTarget && (
                                   <Box
                                     sx={{
