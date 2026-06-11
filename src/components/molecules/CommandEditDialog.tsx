@@ -172,7 +172,8 @@ export function CommandEditDialog({
               size='small'
               fullWidth
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && canSave && !e.nativeEvent.isComposing) handleSave()
+                if (e.key === 'Enter' && canSave && !e.nativeEvent.isComposing)
+                  handleSave()
               }}
             />
           </FieldRow>
