@@ -11,6 +11,7 @@ type Props = {
   item: EditCommandData
   isDragging?: boolean
   isDropTarget?: boolean
+  alignItems?: 'center' | 'flex-start'
   onEdit: () => void
   onDelete: () => void
   onPointerDown: (e: React.PointerEvent) => void
@@ -26,6 +27,7 @@ export function EditableRowBase({
   index,
   isDragging,
   isDropTarget,
+  alignItems = 'center',
   onEdit,
   onDelete,
   onPointerDown,
@@ -50,7 +52,7 @@ export function EditableRowBase({
       onMouseLeave={() => setIsHovered(false)}
       sx={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems,
         gap: '6px',
         padding: '5px 6px',
         borderRadius: '6px',
@@ -103,6 +105,7 @@ export function EditableRowBase({
           display: 'flex',
           alignItems: 'center',
           padding: '2px',
+          paddingTop: alignItems === 'flex-start' ? '6px' : '2px',
           '&:hover': { color: theme.palette.text.secondary },
         }}
       >
@@ -126,6 +129,7 @@ export function EditableRowBase({
           textAlign: 'right',
           flexShrink: 0,
           userSelect: 'none',
+          paddingTop: alignItems === 'flex-start' ? '6px' : 0,
         }}
       >
         {index + 1}

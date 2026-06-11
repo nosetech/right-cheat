@@ -34,10 +34,8 @@ export function EditableCommandRow({
   rowRef,
 }: Props) {
   const theme = useTheme()
-
-  const cmdPreview = item.command.includes('\n')
-    ? item.command.split('\n')[0] + ' …'
-    : item.command
+  const isDark = theme.palette.mode === 'dark'
+  const isMultiLine = item.command.includes('\n')
 
   return (
     <EditableRowBase
@@ -45,6 +43,7 @@ export function EditableCommandRow({
       item={item}
       isDragging={isDragging}
       isDropTarget={isDropTarget}
+      alignItems='flex-start'
       onEdit={onEdit}
       onDelete={onDelete}
       onPointerDown={onPointerDown}
@@ -54,11 +53,19 @@ export function EditableCommandRow({
       deleteLabel='Delete'
       rowRef={rowRef}
     >
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+        }}
+      >
         {item.description ? (
           <TruncatedText
             text={item.description}
-            sx={{ fontSize: '11px', color: theme.palette.text.primary }}
+            sx={{ fontSize: '11px', color: theme.palette.text.secondary }}
           />
         ) : (
           <Typography
@@ -71,14 +78,32 @@ export function EditableCommandRow({
             (no description)
           </Typography>
         )}
-        <TruncatedText
-          text={cmdPreview}
+        <Box
           sx={{
-            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: '10.5px',
-            color: theme.palette.text.secondary,
+            background: isDark
+              ? 'rgba(255,255,255,0.055)'
+              : 'rgba(255,255,255,0.48)',
+            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+            borderRadius: 1,
+            boxShadow: isDark ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.55)',
+            padding: '5px 8px',
           }}
-        />
+        >
+          <Typography
+            component='pre'
+            sx={{
+              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+              fontSize: isMultiLine ? '10px' : '11.5px',
+              color: theme.palette.text.primary,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+              lineHeight: 1.55,
+              margin: 0,
+            }}
+          >
+            {item.command}
+          </Typography>
+        </Box>
       </Box>
     </EditableRowBase>
   )

@@ -51,7 +51,7 @@ export function EditableShortcutRow({
       deleteLabel='Delete'
       rowRef={rowRef}
     >
-      {/* キーチップ */}
+      {/* キーチップ — ShortcutField と同じスタイル */}
       <Box
         sx={{
           flexShrink: 0,
@@ -59,17 +59,18 @@ export function EditableShortcutRow({
             ? 'rgba(255,255,255,0.055)'
             : 'rgba(255,255,255,0.48)',
           border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-          borderRadius: '4px',
-          px: '6px',
-          py: '2px',
+          borderRadius: 1,
+          px: 1,
+          py: '3px',
         }}
       >
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: '10.5px',
+            fontSize: '11.5px',
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',
+            lineHeight: 1.55,
           }}
         >
           {item.command}
