@@ -1,3 +1,4 @@
+export * from './AddRowButton'
 export * from './FileEditButton'
 export * from './FileOpenButton'
 export * from './ThemedSwitch'

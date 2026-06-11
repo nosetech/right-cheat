@@ -28,11 +28,13 @@ fn insert_test_data(conn: &Connection) {
         layout: None,
         commandlist: vec![
             CommandItem::Single(Command {
+                id: None,
                 description: Some("Test Command1".to_string()),
                 command: "command1".to_string(),
                 layout: None,
             }),
             CommandItem::Single(Command {
+                id: None,
                 description: Some("Test Command2".to_string()),
                 command: "command2".to_string(),
                 layout: None,
@@ -45,6 +47,7 @@ fn insert_test_data(conn: &Connection) {
         window_size: None,
         layout: None,
         commandlist: vec![CommandItem::Single(Command {
+            id: None,
             description: Some("Test Command3".to_string()),
             command: "command3".to_string(),
             layout: None,
@@ -140,6 +143,7 @@ mod get_cheat_sheet {
                 window_size: None,
                 layout: None,
                 commandlist: vec![CommandItem::Single(Command {
+                    id: None,
                     description: Some("cmd".to_string()),
                     command: "do something".to_string(),
                     layout: None,
@@ -165,8 +169,10 @@ mod get_cheat_sheet {
                 window_size: None,
                 layout: None,
                 commandlist: vec![CommandItem::Group(CommandGroup {
+                    id: None,
                     group: "グループ1".to_string(),
                     commandlist: vec![Command {
+                        id: None,
                         description: Some("g1".to_string()),
                         command: "g1cmd".to_string(),
                         layout: None,

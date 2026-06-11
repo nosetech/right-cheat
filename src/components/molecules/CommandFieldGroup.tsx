@@ -14,6 +14,7 @@ type CommandFieldGroupProps = {
   mode: 'copy' | 'execute'
   cheatSheetLayout?: CommandLayout
   commandFieldRefs: React.MutableRefObject<Array<HTMLDivElement | null>>
+  editMode?: boolean
 }
 
 export const CommandFieldGroup = ({
@@ -23,6 +24,7 @@ export const CommandFieldGroup = ({
   mode,
   cheatSheetLayout,
   commandFieldRefs,
+  editMode = false,
 }: CommandFieldGroupProps) => {
   const theme = useTheme()
 
@@ -69,6 +71,7 @@ export const CommandFieldGroup = ({
               }
               mode={mode}
               layout={item.layout ?? cheatSheetLayout ?? 'inline'}
+              editMode={editMode}
             />
           )
         })}
