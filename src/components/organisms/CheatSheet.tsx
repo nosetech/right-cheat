@@ -571,9 +571,7 @@ export const CheatSheet = () => {
             <IconButton
               onClick={editMode ? cancelEditMode : enterEditMode}
               size='small'
-              disabled={
-                !selectCheatSheet || cheatSheetData?.type === 'application'
-              }
+              disabled={!selectCheatSheet}
               title={editMode ? 'Cancel edit mode (Esc)' : 'Edit mode'}
               sx={{
                 background: editMode
@@ -587,10 +585,7 @@ export const CheatSheet = () => {
                 color: editMode
                   ? theme.palette.accent.main
                   : theme.palette.text.disabled,
-                opacity:
-                  !selectCheatSheet || cheatSheetData?.type === 'application'
-                    ? 0.3
-                    : 1,
+                opacity: !selectCheatSheet ? 0.3 : 1,
                 transition: 'all 0.15s',
                 ml: '2px',
               }}
