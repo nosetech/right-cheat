@@ -847,6 +847,11 @@ export const CheatSheet = () => {
                                   <EditableCommandRow
                                     index={itemIndex}
                                     item={item}
+                                    layout={
+                                      item.layout ??
+                                      cheatSheetData?.layout ??
+                                      'inline'
+                                    }
                                     isDragging={isItemDragging}
                                     isDropTarget={
                                       dropMark?.kind === 'between-items' &&
@@ -962,6 +967,11 @@ export const CheatSheet = () => {
                                 .filter((b) => !isEditGroup(b)).length
                             }
                             item={block as EditCommandData}
+                            layout={
+                              (block as EditCommandData).layout ??
+                              cheatSheetData?.layout ??
+                              'inline'
+                            }
                             isDragging={isBlockDragging}
                             isDropTarget={
                               dropMark?.kind === 'between-blocks' &&
