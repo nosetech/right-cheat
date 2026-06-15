@@ -135,67 +135,6 @@ export const useWindowSize = (selectedTitle: string) => {
     }
   }, [selectedTitle, showError])
 
-  const temporaryUnpin = useCallback(
-    async (minWidth = 0, minHeight = 0): Promise<boolean> => {
-      if (!savedSizeRef.current) return false
-
-      const win = getCurrentWindow()
-      try {
-        await win.setResizable(true)
-        isResizableRef.current = true
-
-        const [size, monitor] = await Promise.all([
-          win.innerSize(),
-          currentMonitor().catch(() => null),
-        ])
-        const scaleFactor = monitor?.scaleFactor ?? 1.0
-        const logicalWidth = Math.round(size.width / scaleFactor)
-        const logicalHeight = Math.round(size.height / scaleFactor)
-
-        if (logicalWidth < minWidth || logicalHeight < minHeight) {
-          await win.setSize(
-            new LogicalSize(
-              Math.max(logicalWidth, minWidth),
-              Math.max(logicalHeight, minHeight),
-            ),
-          )
-        }
-
-        await restoreFocusAfterWindowOp()
-        debug(
-          `[useWindowSize] temporaryUnpin: resizable=true, size=>=( ${minWidth}x${minHeight})`,
-        )
-        return true
-      } catch (e) {
-        logError(`[useWindowSize] temporaryUnpin failed: ${e}`)
-        return false
-      }
-    },
-    [],
-  )
-
-  const restorePin = useCallback(async (): Promise<void> => {
-    if (!savedSizeRef.current) return
-
-    const win = getCurrentWindow()
-    try {
-      await win.setSize(
-        new LogicalSize(
-          savedSizeRef.current.width,
-          savedSizeRef.current.height,
-        ),
-      )
-      await win.setResizable(false)
-      isResizableRef.current = false
-      await restoreFocusAfterWindowOp()
-      debug(
-        `[useWindowSize] restorePin: size=${savedSizeRef.current.width}x${savedSizeRef.current.height}, resizable=false`,
-      )
-    } catch (e) {
-      logError(`[useWindowSize] restorePin failed: ${e}`)
-    }
-  }, [])
-
   const togglePin = useCallback(async () => {
     if (!selectedTitle) return
 
@@ -285,5 +224,5 @@ export const useWindowSize = (selectedTitle: string) => {
     }
   }, [selectedTitle, showError])
 
-  return { isPinned, togglePin, temporaryUnpin, restorePin }
+  return { isPinned, togglePin }
 }
