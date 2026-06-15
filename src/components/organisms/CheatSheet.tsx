@@ -199,8 +199,8 @@ export const CheatSheet = () => {
     setEditBlocks(blocks)
     setEditSnapshot(snapshot)
     setEditMode(true)
-    // CommandEditDialog (width=460) が収まるよう一時的にピン留めを解除してウィンドウを拡大する
-    await temporaryUnpin(500, 520)
+    // 一時的にリサイズ可能にする（ダイアログ実寸後の拡大は EditDialog 側で行う）
+    await temporaryUnpin()
   }, [cheatSheetData, temporaryUnpin])
 
   const cancelEditMode = useCallback(() => {
@@ -666,12 +666,12 @@ export const CheatSheet = () => {
             {/* ピン留めボタン */}
             <IconButton
               ref={pinButtonRef}
-              onClick={selectCheatSheet ? togglePin : undefined}
+              onClick={selectCheatSheet && !editMode ? togglePin : undefined}
               size='small'
-              disabled={!selectCheatSheet}
+              disabled={!selectCheatSheet || editMode}
               title={isPinned ? 'Unpin (p)' : 'Pin (p)'}
               sx={{
-                opacity: selectCheatSheet ? 1 : 0.3,
+                opacity: selectCheatSheet && !editMode ? 1 : 0.3,
                 color: isPinned
                   ? theme.palette.accent.main
                   : theme.palette.text.disabled,

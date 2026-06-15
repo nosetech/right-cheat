@@ -136,7 +136,7 @@ export const useWindowSize = (selectedTitle: string) => {
   }, [selectedTitle, showError])
 
   const temporaryUnpin = useCallback(
-    async (minWidth: number, minHeight: number): Promise<boolean> => {
+    async (minWidth = 0, minHeight = 0): Promise<boolean> => {
       if (!savedSizeRef.current) return false
 
       const win = getCurrentWindow()
