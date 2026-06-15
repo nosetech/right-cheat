@@ -94,7 +94,8 @@ export const CheatSheet = () => {
   const [reloading, setReloading] = useState<boolean>(false)
 
   const theme = useTheme()
-  const { isPinned, togglePin } = useWindowSize(selectCheatSheet)
+  const { isPinned, togglePin, temporaryUnpin, restorePin } =
+    useWindowSize(selectCheatSheet)
   const { showError } = useNotificationContext() ?? {}
 
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
@@ -191,14 +192,16 @@ export const CheatSheet = () => {
   }, [selectCheatSheet, loadCheatSheetData])
 
   // ─── 編集モード操作 ───────────────────────────────────────
-  const enterEditMode = useCallback(() => {
+  const enterEditMode = useCallback(async () => {
     if (!cheatSheetData) return
     const blocks = toEditBlocks(cheatSheetData.commandlist)
     const snapshot = JSON.parse(JSON.stringify(blocks)) as EditBlock[]
     setEditBlocks(blocks)
     setEditSnapshot(snapshot)
     setEditMode(true)
-  }, [cheatSheetData])
+    // CommandEditDialog (width=460) が収まるよう一時的にピン留めを解除してウィンドウを拡大する
+    await temporaryUnpin(500, 520)
+  }, [cheatSheetData, temporaryUnpin])
 
   const cancelEditMode = useCallback(() => {
     if (editSnapshot) setEditBlocks(JSON.parse(JSON.stringify(editSnapshot)))
@@ -209,7 +212,8 @@ export const CheatSheet = () => {
     setConfirmDialog(null)
     setDragInfo(null)
     setDropMark(null)
-  }, [editSnapshot])
+    void restorePin()
+  }, [editSnapshot, restorePin])
 
   const saveEditMode = useCallback(async () => {
     if (!selectCheatSheet) return
@@ -228,6 +232,7 @@ export const CheatSheet = () => {
       // フレッシュなIDで再ロード
       const data = await loadCheatSheetData(selectCheatSheet)
       setCheatSheetData(data)
+      await restorePin()
     } catch (e) {
       logError(`[CheatSheet] saveEditMode error: ${String(e)}`)
       showError?.(
@@ -236,7 +241,7 @@ export const CheatSheet = () => {
     } finally {
       setIsSaving(false)
     }
-  }, [selectCheatSheet, editBlocks, loadCheatSheetData, showError])
+  }, [selectCheatSheet, editBlocks, loadCheatSheetData, showError, restorePin])
 
   // Esc = Cancel（ダイアログが開いていない場合のみ）
   useEffect(() => {
