@@ -108,6 +108,18 @@ export default function EditCommandPage() {
     await getCurrentWebviewWindow().destroy()
   }
 
+  // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        void getCurrentWebviewWindow().destroy()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   if (!initPayload) {
     return null
   }
