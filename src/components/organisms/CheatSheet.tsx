@@ -80,8 +80,16 @@ export const CheatSheet = () => {
   const [errorMessage, setErrorMessage] = useState<string>()
   const [reloading, setReloading] = useState<boolean>(false)
 
+  // ─── 編集モード state ─────────────────────────────────────
+  const [editMode, setEditMode] = useState(false)
+  const editModeRef = useRef(false)
+  useEffect(() => {
+    editModeRef.current = editMode
+  }, [editMode])
+
   const theme = useTheme()
-  const { isPinned, togglePin } = useWindowSize(selectCheatSheet)
+  // 編集モード中はピン留めでもウィンドウサイズを変更できるようにする
+  const { isPinned, togglePin } = useWindowSize(selectCheatSheet, editMode)
   const { showError } = useNotificationContext() ?? {}
   const { getConfirmActions } = usePreferencesStore()
 
@@ -95,12 +103,6 @@ export const CheatSheet = () => {
     setErrorMessage,
   })
 
-  // ─── 編集モード state ─────────────────────────────────────
-  const [editMode, setEditMode] = useState(false)
-  const editModeRef = useRef(false)
-  useEffect(() => {
-    editModeRef.current = editMode
-  }, [editMode])
   const [editBlocks, setEditBlocks] = useState<EditBlock[]>([])
   const [editSnapshot, setEditSnapshot] = useState<EditBlock[] | null>(null)
   const [isSaving, setIsSaving] = useState(false)

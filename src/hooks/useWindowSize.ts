@@ -42,7 +42,7 @@ const restoreFocusAfterWindowOp = async (): Promise<void> => {
   }
 }
 
-export const useWindowSize = (selectedTitle: string) => {
+export const useWindowSize = (selectedTitle: string, editMode = false) => {
   const [isPinned, setIsPinned] = useState(false)
   const { showError } = useNotificationContext() ?? {}
   const savedSizeRef = useRef<WindowSizeSettings | null>(null)
@@ -134,6 +134,34 @@ export const useWindowSize = (selectedTitle: string) => {
       setIsPinned(false)
     }
   }, [selectedTitle, showError])
+
+  // 編集モードの切り替えに応じてリサイズ可否を制御する。
+  // 編集モード中はピン留め（非リサイズ）でもウィンドウサイズを変更できるようにし、
+  // 編集モード終了時はピン留め状態に応じてリサイズ可否を元に戻す。
+  const prevEditModeRef = useRef(editMode)
+  useEffect(() => {
+    if (prevEditModeRef.current === editMode) return
+    prevEditModeRef.current = editMode
+    if (!selectedTitle) return
+
+    const win = getCurrentWindow()
+    // 編集モード中は常にリサイズ可。終了時はピン留めなら非リサイズに戻す。
+    const shouldBeResizable = editMode ? true : savedSizeRef.current === null
+
+    if (isResizableRef.current === shouldBeResizable) return
+    ;(async () => {
+      try {
+        debug(
+          `[useWindowSize] editMode=${editMode}: setResizable(${shouldBeResizable})`,
+        )
+        await win.setResizable(shouldBeResizable)
+        isResizableRef.current = shouldBeResizable
+        await restoreFocusAfterWindowOp()
+      } catch (e) {
+        logError(`[useWindowSize] Failed to toggle resizable: ${e}`)
+      }
+    })()
+  }, [editMode, selectedTitle])
 
   const togglePin = useCallback(async () => {
     if (!selectedTitle) return
