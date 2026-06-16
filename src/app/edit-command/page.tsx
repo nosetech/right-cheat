@@ -1,30 +1,19 @@
 'use client'
-import { Box, MenuItem, Select, TextField } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
 import { useEffect, useRef, useState } from 'react'
 
-import { EditDialog } from '@/components/molecules/EditDialog'
+import { Box, MenuItem, Select, TextField } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+
+import { Event } from '@/common'
 import { FooterButton } from '@/components/molecules/FooterButton'
+import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { CommandLayout } from '@/types/api/CheatSheet'
-import { EditCommandData, GroupOption } from '@/types/edit/EditBlock'
-
-export type CommandDialogSaveData = {
-  description: string
-  commandText: string
-  key: string
-  layout: string
-  targetGroupEditId: string | null
-}
-
-type Props = {
-  kind: 'command' | 'shortcut'
-  item: EditCommandData | null
-  initialGroupEditId: string | null
-  groups: GroupOption[]
-  isNew: boolean
-  onSave: (data: CommandDialogSaveData) => void
-  onCancel: () => void
-}
+import {
+  EditCommandInitPayload,
+  EditCommandSavePayload,
+} from '@/types/edit/EditWindow'
 
 const LAYOUT_OPTIONS: { value: string; label: string }[] = [
   { value: 'inherit', label: 'Inherit (sheet default)' },
@@ -33,51 +22,63 @@ const LAYOUT_OPTIONS: { value: string; label: string }[] = [
   { value: 'command_only', label: 'command_only' },
 ]
 
-export function CommandEditDialog({
-  kind,
-  item,
-  initialGroupEditId,
-  groups,
-  isNew,
-  onSave,
-  onCancel,
-}: Props) {
+const FOOTER_HEIGHT = 60
+
+export default function EditCommandPage() {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const isShortcut = kind === 'shortcut'
 
-  const [groupEditId, setGroupEditId] = useState<string>(
-    initialGroupEditId ?? '',
+  const [initPayload, setInitPayload] = useState<EditCommandInitPayload | null>(
+    null,
   )
-  const [description, setDescription] = useState(item?.description ?? '')
-  const [commandText, setCommandText] = useState(
-    isShortcut ? '' : (item?.command ?? ''),
-  )
-  const [key, setKey] = useState(isShortcut ? (item?.command ?? '') : '')
-  const [layout, setLayout] = useState<string>(
-    !isShortcut && item?.layout ? item.layout : 'inherit',
-  )
+  const [groupEditId, setGroupEditId] = useState<string>('')
+  const [description, setDescription] = useState('')
+  const [commandText, setCommandText] = useState('')
+  const [key, setKey] = useState('')
+  const [layout, setLayout] = useState<string>('inherit')
 
   const descRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
-    setTimeout(() => descRef.current?.focus(), 80)
+    const win = getCurrentWebviewWindow()
+
+    const setup = async () => {
+      await win.once<EditCommandInitPayload>(
+        Event.EDIT_COMMAND_INIT,
+        (event) => {
+          const payload = event.payload
+          setInitPayload(payload)
+          setGroupEditId(payload.initialGroupEditId ?? '')
+          setDescription(payload.item?.description ?? '')
+          if (payload.kind === 'shortcut') {
+            setKey(payload.item?.command ?? '')
+            setCommandText('')
+          } else {
+            setCommandText(payload.item?.command ?? '')
+            setKey('')
+          }
+          setLayout(
+            payload.kind !== 'shortcut' && payload.item?.layout
+              ? payload.item.layout
+              : 'inherit',
+          )
+          setTimeout(() => descRef.current?.focus(), 80)
+        },
+      )
+      await win.emitTo('main', Event.EDIT_COMMAND_READY, {})
+    }
+
+    setup()
   }, [])
 
-  // Esc でキャンセル（編集モードは維持）
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation()
-        onCancel()
-      }
-    }
-    document.addEventListener('keydown', h, true)
-    return () => document.removeEventListener('keydown', h, true)
-  }, [onCancel])
+  const isShortcut = initPayload?.kind === 'shortcut'
+  const isNew = initPayload?.isNew ?? true
+  const groups = initPayload?.groups ?? []
 
   const canSave = isShortcut
     ? key.trim().length > 0
     : commandText.trim().length > 0
+
   const title = isShortcut
     ? isNew
       ? 'Add Shortcut'
@@ -86,43 +87,57 @@ export function CommandEditDialog({
       ? 'Add Command'
       : 'Edit Command'
 
-  const handleSave = () => {
-    if (!canSave) return
-    onSave({
+  const handleSave = async () => {
+    if (!canSave || !initPayload) return
+    const win = getCurrentWebviewWindow()
+    const payload: EditCommandSavePayload = {
+      _editId: initPayload.item?._editId ?? crypto.randomUUID(),
+      dbId: initPayload.item?.id,
+      isNew,
       description,
       commandText,
       key,
       layout,
       targetGroupEditId: groupEditId || null,
-    })
+    }
+    await win.emitTo('main', Event.EDIT_COMMAND_SAVE, payload)
+    await win.destroy()
+  }
+
+  const handleCancel = async () => {
+    await getCurrentWebviewWindow().destroy()
+  }
+
+  if (!initPayload) {
+    return null
   }
 
   return (
-    <EditDialog width={460} onClose={onCancel}>
-      {/* ヘッダー */}
+    <>
+      <Box
+        data-tauri-drag-region
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: `${TITLEBAR_HEIGHT}px`,
+          zIndex: 999,
+        }}
+      />
+      <WindowTitleBar title={title} />
+
       <Box
         sx={{
           px: '18px',
-          pt: '16px',
-          pb: '12px',
-          borderBottom: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)'}`,
-        }}
-      >
-        <Box sx={{ fontSize: '14px', fontWeight: 600, color: 'text.primary' }}>
-          {title}
-        </Box>
-      </Box>
-
-      {/* フォーム */}
-      <Box
-        sx={{
-          p: '16px 18px 4px',
+          pt: '12px',
+          pb: `${FOOTER_HEIGHT + 12}px`,
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
+          overflowY: 'auto',
         }}
       >
-        {/* Group */}
         <FieldRow label='Group'>
           <Select
             value={groupEditId}
@@ -142,7 +157,6 @@ export function CommandEditDialog({
           </Select>
         </FieldRow>
 
-        {/* Description */}
         <FieldRow label='Description'>
           <TextField
             inputRef={descRef}
@@ -159,7 +173,6 @@ export function CommandEditDialog({
           />
         </FieldRow>
 
-        {/* Key (shortcut) or Command (command) */}
         {isShortcut ? (
           <FieldRow
             label='Key'
@@ -213,10 +226,14 @@ export function CommandEditDialog({
         )}
       </Box>
 
-      {/* フッター */}
       <Box
         sx={{
-          p: '12px 16px 14px',
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: `${FOOTER_HEIGHT}px`,
+          p: '10px 16px',
           display: 'flex',
           justifyContent: 'flex-end',
           gap: '8px',
@@ -226,12 +243,12 @@ export function CommandEditDialog({
           borderTop: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
         }}
       >
-        <FooterButton onClick={onCancel}>Cancel</FooterButton>
+        <FooterButton onClick={handleCancel}>Cancel</FooterButton>
         <FooterButton primary disabled={!canSave} onClick={handleSave}>
           Save
         </FooterButton>
       </Box>
-    </EditDialog>
+    </>
   )
 }
 

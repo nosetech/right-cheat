@@ -8,13 +8,13 @@ import { Alert, Box, Grid, IconButton, Stack } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import {
+  WebviewWindow,
+  getCurrentWebviewWindow,
+} from '@tauri-apps/api/webviewWindow'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
-import {
-  CommandDialogSaveData,
-  CommandEditDialog,
-} from '@/components/molecules/CommandEditDialog'
 import { CommandField } from '@/components/molecules/CommandField'
 import { CommandFieldGroup } from '@/components/molecules/CommandFieldGroup'
 import { DeleteConfirmDialog } from '@/components/molecules/DeleteConfirmDialog'
@@ -22,7 +22,6 @@ import { EditableCommandRow } from '@/components/molecules/EditableCommandRow'
 import { EditableGroupBox } from '@/components/molecules/EditableGroupBox'
 import { EditableShortcutRow } from '@/components/molecules/EditableShortcutRow'
 import { EditModeFooter } from '@/components/molecules/EditModeFooter'
-import { GroupEditDialog } from '@/components/molecules/GroupEditDialog'
 import {
   SheetSwitchButton,
   SheetSwitchButtonHandle,
@@ -52,6 +51,12 @@ import {
   isEditGroup,
   toEditBlocks,
 } from '@/types/edit/EditBlock'
+import {
+  EditCommandInitPayload,
+  EditCommandSavePayload,
+  EditGroupInitPayload,
+  EditGroupSavePayload,
+} from '@/types/edit/EditWindow'
 
 // ─── DnD 型定義 ───────────────────────────────────────────────
 type DragInfo = {
@@ -66,17 +71,6 @@ type DropMark =
   | { kind: 'between-items'; groupBlockIndex: number; afterItemIndex: number }
 
 // ─── ダイアログ型定義 ─────────────────────────────────────────
-type CmdDialogState = {
-  item: EditCommandData | null
-  initialGroupEditId: string | null
-  isNew: boolean
-}
-
-type GroupDialogState = {
-  group: EditGroupData | null
-  isNew: boolean
-}
-
 type ConfirmState = {
   title: string
   message: string
@@ -116,9 +110,11 @@ export const CheatSheet = () => {
   const [editBlocks, setEditBlocks] = useState<EditBlock[]>([])
   const [editSnapshot, setEditSnapshot] = useState<EditBlock[] | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [cmdDialog, setCmdDialog] = useState<CmdDialogState | null>(null)
-  const [groupDialog, setGroupDialog] = useState<GroupDialogState | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmState | null>(null)
+
+  // 編集ウィンドウ（edit_command / edit_group）の開閉カウント
+  const [editWindowOpenCount, setEditWindowOpenCount] = useState(0)
+  const isEditWindowOpen = editWindowOpenCount > 0
 
   // DnD state
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null)
@@ -200,12 +196,13 @@ export const CheatSheet = () => {
     setEditMode(true)
   }, [cheatSheetData])
 
-  const cancelEditMode = useCallback(() => {
+  const cancelEditMode = useCallback(async () => {
+    await WebviewWindow.getByLabel('edit_command').then((w) => w?.destroy())
+    await WebviewWindow.getByLabel('edit_group').then((w) => w?.destroy())
+    setEditWindowOpenCount(0)
     if (editSnapshot) setEditBlocks(JSON.parse(JSON.stringify(editSnapshot)))
     setEditSnapshot(null)
     setEditMode(false)
-    setCmdDialog(null)
-    setGroupDialog(null)
     setConfirmDialog(null)
     setDragInfo(null)
     setDropMark(null)
@@ -238,25 +235,34 @@ export const CheatSheet = () => {
     }
   }, [selectCheatSheet, editBlocks, loadCheatSheetData, showError])
 
-  // Esc = Cancel（ダイアログが開いていない場合のみ）
+  // Esc = Cancel（確認ダイアログが開いていない場合のみ）
   useEffect(() => {
     if (!editMode) return
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !cmdDialog && !groupDialog && !confirmDialog) {
+      if (e.key === 'Escape' && !confirmDialog) {
         cancelEditMode()
       }
     }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
-  }, [editMode, cmdDialog, groupDialog, confirmDialog, cancelEditMode])
+  }, [editMode, confirmDialog, cancelEditMode])
 
   // ─── コマンド/グループ操作 ────────────────────────────────
   const upsertCommand = useCallback(
-    (data: CommandDialogSaveData) => {
-      const { description, commandText, key, layout, targetGroupEditId } = data
+    (payload: EditCommandSavePayload) => {
+      const {
+        _editId,
+        dbId,
+        isNew,
+        description,
+        commandText,
+        key,
+        layout,
+        targetGroupEditId,
+      } = payload
       const newItem: EditCommandData = {
-        _editId: cmdDialog?.item?._editId ?? crypto.randomUUID(),
-        id: cmdDialog?.item?.id,
+        _editId,
+        id: dbId,
         description: description.trim() || undefined,
         command: isShortcuts ? key.trim() : commandText,
         layout:
@@ -267,25 +273,24 @@ export const CheatSheet = () => {
 
       setEditBlocks((prev) => {
         let next: EditBlock[]
-        if (cmdDialog?.isNew) {
+        if (isNew) {
           next = [...prev]
         } else {
           // 既存アイテムを現在の位置から削除
-          const targetId = cmdDialog!.item!._editId
           next = prev
             .map((block) => {
               if (isEditGroup(block)) {
                 return {
                   ...block,
                   commandlist: block.commandlist.filter(
-                    (it) => it._editId !== targetId,
+                    (it) => it._editId !== _editId,
                   ),
                 }
               }
               return block
             })
             .filter(
-              (block) => isEditGroup(block) || block._editId !== targetId,
+              (block) => isEditGroup(block) || block._editId !== _editId,
             ) as EditBlock[]
         }
         // 新しい位置に挿入
@@ -299,35 +304,30 @@ export const CheatSheet = () => {
         }
         return [...next, newItem]
       })
-      setCmdDialog(null)
     },
-    [cmdDialog, isShortcuts],
+    [isShortcuts],
   )
 
-  const upsertGroup = useCallback(
-    (name: string) => {
-      if (groupDialog?.isNew) {
-        const newGroup: EditGroupData = {
-          _editId: crypto.randomUUID(),
-          group: name,
-          commandlist: [],
-        }
-        setEditBlocks((prev) => [...prev, newGroup])
-      } else {
-        const targetId = groupDialog!.group!._editId
-        setEditBlocks((prev) =>
-          prev.map((block) => {
-            if (isEditGroup(block) && block._editId === targetId) {
-              return { ...block, group: name }
-            }
-            return block
-          }),
-        )
+  const upsertGroup = useCallback((payload: EditGroupSavePayload) => {
+    const { _editId, isNew, name } = payload
+    if (isNew) {
+      const newGroup: EditGroupData = {
+        _editId,
+        group: name,
+        commandlist: [],
       }
-      setGroupDialog(null)
-    },
-    [groupDialog],
-  )
+      setEditBlocks((prev) => [...prev, newGroup])
+    } else {
+      setEditBlocks((prev) =>
+        prev.map((block) => {
+          if (isEditGroup(block) && block._editId === _editId) {
+            return { ...block, group: name }
+          }
+          return block
+        }),
+      )
+    }
+  }, [])
 
   const deleteCommand = useCallback((editId: string) => {
     setEditBlocks(
@@ -357,6 +357,132 @@ export const CheatSheet = () => {
     )
     setConfirmDialog(null)
   }, [])
+
+  // ─── 別ウィンドウ編集 ──────────────────────────────────────
+  const upsertCommandRef = useRef(upsertCommand)
+  useEffect(() => {
+    upsertCommandRef.current = upsertCommand
+  }, [upsertCommand])
+
+  const upsertGroupRef = useRef(upsertGroup)
+  useEffect(() => {
+    upsertGroupRef.current = upsertGroup
+  }, [upsertGroup])
+
+  useEffect(() => {
+    if (!editMode) return
+    let unlistenCmd: (() => void) | null = null
+    let unlistenGroup: (() => void) | null = null
+
+    const setup = async () => {
+      const win = getCurrentWebviewWindow()
+      unlistenCmd = await win.listen<EditCommandSavePayload>(
+        Event.EDIT_COMMAND_SAVE,
+        (event) => {
+          upsertCommandRef.current(event.payload)
+        },
+      )
+      unlistenGroup = await win.listen<EditGroupSavePayload>(
+        Event.EDIT_GROUP_SAVE,
+        (event) => {
+          upsertGroupRef.current(event.payload)
+        },
+      )
+    }
+
+    setup()
+
+    return () => {
+      unlistenCmd?.()
+      unlistenGroup?.()
+    }
+  }, [editMode])
+
+  const openCmdEditWindow = useCallback(
+    async (
+      item: EditCommandData | null,
+      initialGroupEditId: string | null,
+      isNew: boolean,
+    ) => {
+      const existing = await WebviewWindow.getByLabel('edit_command')
+      if (existing) {
+        await existing.setFocus()
+        return
+      }
+
+      const win = getCurrentWebviewWindow()
+      const initData: EditCommandInitPayload = {
+        kind: isShortcuts ? 'shortcut' : 'command',
+        item,
+        groups: groupOptions,
+        initialGroupEditId,
+        isNew,
+      }
+      const windowHeight = isShortcuts ? 390 : 570
+
+      await win.once(Event.EDIT_COMMAND_READY, async () => {
+        await win.emitTo('edit_command', Event.EDIT_COMMAND_INIT, initData)
+      })
+
+      const editWin = new WebviewWindow('edit_command', {
+        url: '/edit-command',
+        title: isNew
+          ? isShortcuts
+            ? 'Add Shortcut'
+            : 'Add Command'
+          : isShortcuts
+            ? 'Edit Shortcut'
+            : 'Edit Command',
+        width: 520,
+        height: windowHeight,
+        resizable: false,
+        titleBarStyle: 'overlay',
+        hiddenTitle: true,
+        alwaysOnTop: true,
+      })
+      setEditWindowOpenCount((prev) => prev + 1)
+      editWin.once('tauri://destroyed', () => {
+        setEditWindowOpenCount((prev) => Math.max(0, prev - 1))
+      })
+    },
+    [isShortcuts, groupOptions],
+  )
+
+  const openGroupEditWindow = useCallback(
+    async (group: EditGroupData | null, isNew: boolean) => {
+      const existing = await WebviewWindow.getByLabel('edit_group')
+      if (existing) {
+        await existing.setFocus()
+        return
+      }
+
+      const win = getCurrentWebviewWindow()
+      const initData: EditGroupInitPayload = {
+        group,
+        isNew,
+      }
+
+      await win.once(Event.EDIT_GROUP_READY, async () => {
+        await win.emitTo('edit_group', Event.EDIT_GROUP_INIT, initData)
+      })
+
+      const editWin = new WebviewWindow('edit_group', {
+        url: '/edit-group',
+        title: isNew ? 'Add Group' : 'Rename Group',
+        width: 460,
+        height: 220,
+        resizable: false,
+        titleBarStyle: 'overlay',
+        hiddenTitle: true,
+        alwaysOnTop: true,
+      })
+      setEditWindowOpenCount((prev) => prev + 1)
+      editWin.once('tauri://destroyed', () => {
+        setEditWindowOpenCount((prev) => Math.max(0, prev - 1))
+      })
+    },
+    [],
+  )
 
   // ─── DnD ──────────────────────────────────────────────────
   const performDropWith = useCallback((info: DragInfo, mark: DropMark) => {
@@ -592,12 +718,19 @@ export const CheatSheet = () => {
         debug('[CheatSheet] 0 key: opened sheet switch dropdown')
       },
     },
-    { enabled: !editMode },
+    { enabled: !editMode && !isEditWindowOpen },
   )
 
   // ─── レンダリング ─────────────────────────────────────────
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        pointerEvents: isEditWindowOpen ? 'none' : undefined,
+      }}
+    >
       {/* ドラッグ領域 */}
       <Box
         data-tauri-drag-region
@@ -751,9 +884,7 @@ export const CheatSheet = () => {
                           dropMark?.kind === 'into-group' &&
                           dropMark.groupBlockIndex === blockIndex
                         }
-                        onRename={() =>
-                          setGroupDialog({ group: block, isNew: false })
-                        }
+                        onRename={() => openGroupEditWindow(block, false)}
                         onDelete={() =>
                           setConfirmDialog({
                             title: 'Delete group',
@@ -809,11 +940,11 @@ export const CheatSheet = () => {
                                       dropMark.afterItemIndex === itemIndex
                                     }
                                     onEdit={() =>
-                                      setCmdDialog({
+                                      openCmdEditWindow(
                                         item,
-                                        initialGroupEditId: block._editId,
-                                        isNew: false,
-                                      })
+                                        block._editId,
+                                        false,
+                                      )
                                     }
                                     onDelete={() =>
                                       setConfirmDialog({
@@ -859,11 +990,11 @@ export const CheatSheet = () => {
                                       dropMark.afterItemIndex === itemIndex
                                     }
                                     onEdit={() =>
-                                      setCmdDialog({
+                                      openCmdEditWindow(
                                         item,
-                                        initialGroupEditId: block._editId,
-                                        isNew: false,
-                                      })
+                                        block._editId,
+                                        false,
+                                      )
                                     }
                                     onDelete={() =>
                                       setConfirmDialog({
@@ -931,11 +1062,11 @@ export const CheatSheet = () => {
                               dropMark.afterBlockIndex === blockIndex
                             }
                             onEdit={() =>
-                              setCmdDialog({
-                                item: block as EditCommandData,
-                                initialGroupEditId: null,
-                                isNew: false,
-                              })
+                              openCmdEditWindow(
+                                block as EditCommandData,
+                                null,
+                                false,
+                              )
                             }
                             onDelete={() =>
                               setConfirmDialog({
@@ -978,11 +1109,11 @@ export const CheatSheet = () => {
                               dropMark.afterBlockIndex === blockIndex
                             }
                             onEdit={() =>
-                              setCmdDialog({
-                                item: block as EditCommandData,
-                                initialGroupEditId: null,
-                                isNew: false,
-                              })
+                              openCmdEditWindow(
+                                block as EditCommandData,
+                                null,
+                                false,
+                              )
                             }
                             onDelete={() =>
                               setConfirmDialog({
@@ -1113,40 +1244,14 @@ export const CheatSheet = () => {
             isShortcuts={isShortcuts ?? false}
             editDirty={editDirty}
             isSaving={isSaving}
-            onAddCommand={() =>
-              setCmdDialog({
-                item: null,
-                initialGroupEditId: null,
-                isNew: true,
-              })
-            }
-            onAddGroup={() => setGroupDialog({ group: null, isNew: true })}
+            onAddCommand={() => openCmdEditWindow(null, null, true)}
+            onAddGroup={() => openGroupEditWindow(null, true)}
             onCancel={cancelEditMode}
             onSave={saveEditMode}
           />
         )}
       </Box>
 
-      {/* ダイアログ */}
-      {cmdDialog && (
-        <CommandEditDialog
-          kind={isShortcuts ? 'shortcut' : 'command'}
-          item={cmdDialog.item}
-          initialGroupEditId={cmdDialog.initialGroupEditId}
-          groups={groupOptions}
-          isNew={cmdDialog.isNew}
-          onSave={upsertCommand}
-          onCancel={() => setCmdDialog(null)}
-        />
-      )}
-      {groupDialog && (
-        <GroupEditDialog
-          group={groupDialog.group}
-          isNew={groupDialog.isNew}
-          onSave={upsertGroup}
-          onCancel={() => setGroupDialog(null)}
-        />
-      )}
       {confirmDialog && (
         <DeleteConfirmDialog
           title={confirmDialog.title}
