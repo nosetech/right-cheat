@@ -16,7 +16,6 @@ import { debug, error as logError } from '@tauri-apps/plugin-log'
 import { Event } from '@/common'
 import { CommandField } from '@/components/molecules/CommandField'
 import { CommandFieldGroup } from '@/components/molecules/CommandFieldGroup'
-import { DeleteConfirmDialog } from '@/components/molecules/DeleteConfirmDialog'
 import { EditableCommandRow } from '@/components/molecules/EditableCommandRow'
 import { EditableGroupBox } from '@/components/molecules/EditableGroupBox'
 import { EditableShortcutRow } from '@/components/molecules/EditableShortcutRow'
@@ -28,10 +27,12 @@ import {
 import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { RcDialog } from '@/components/organisms/RcDialog'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useWindowSize } from '@/hooks/useWindowSize'
 import {
   CheatSheetAPI,
@@ -69,13 +70,6 @@ type DropMark =
   | { kind: 'into-group'; groupBlockIndex: number }
   | { kind: 'between-items'; groupBlockIndex: number; afterItemIndex: number }
 
-// ─── ダイアログ型定義 ─────────────────────────────────────────
-type ConfirmState = {
-  title: string
-  message: string
-  onConfirm: () => void
-}
-
 // ─── メインコンポーネント ─────────────────────────────────────
 export const CheatSheet = () => {
   const [cheatSheetTitles, setCheatSheetTitles] = useState<
@@ -89,6 +83,7 @@ export const CheatSheet = () => {
   const theme = useTheme()
   const { isPinned, togglePin } = useWindowSize(selectCheatSheet)
   const { showError } = useNotificationContext() ?? {}
+  const { getConfirmActions } = usePreferencesStore()
 
   const commandFieldRefs = useRef<Array<HTMLDivElement | null>>([])
   const pinButtonRef = useRef<HTMLButtonElement>(null)
@@ -109,7 +104,11 @@ export const CheatSheet = () => {
   const [editBlocks, setEditBlocks] = useState<EditBlock[]>([])
   const [editSnapshot, setEditSnapshot] = useState<EditBlock[] | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [confirmDialog, setConfirmDialog] = useState<ConfirmState | null>(null)
+
+  // Confirm before actions 設定（Cancel/Save 時の確認ダイアログ表示制御）
+  const [confirmActions, setConfirmActions] = useState<boolean>(true)
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false)
 
   // 編集ウィンドウ（edit_command / edit_group）の開閉カウント
   const [editWindowOpenCount, setEditWindowOpenCount] = useState(0)
@@ -186,28 +185,46 @@ export const CheatSheet = () => {
   }, [selectCheatSheet, loadCheatSheetData])
 
   // ─── 編集モード操作 ───────────────────────────────────────
-  const enterEditMode = useCallback(() => {
+  const enterEditMode = useCallback(async () => {
     if (!cheatSheetData) return
+    try {
+      setConfirmActions(await getConfirmActions())
+    } catch (e) {
+      logError(`[CheatSheet] enterEditMode load confirm_actions error: ${e}`)
+    }
     const blocks = toEditBlocks(cheatSheetData.commandlist)
     const snapshot = JSON.parse(JSON.stringify(blocks)) as EditBlock[]
     setEditBlocks(blocks)
     setEditSnapshot(snapshot)
     setEditMode(true)
-  }, [cheatSheetData])
+  }, [cheatSheetData, getConfirmActions])
 
-  const cancelEditMode = useCallback(async () => {
+  // 編集を破棄して編集モードを終了する（確認後の実処理）
+  const doCancel = useCallback(async () => {
+    setConfirmCancelOpen(false)
     await WebviewWindow.getByLabel('edit_command').then((w) => w?.destroy())
     await WebviewWindow.getByLabel('edit_group').then((w) => w?.destroy())
     setEditWindowOpenCount(0)
     if (editSnapshot) setEditBlocks(JSON.parse(JSON.stringify(editSnapshot)))
     setEditSnapshot(null)
     setEditMode(false)
-    setConfirmDialog(null)
     setDragInfo(null)
     setDropMark(null)
   }, [editSnapshot])
 
-  const saveEditMode = useCallback(async () => {
+  // Cancel ボタン/Esc のエントリ。Confirm before actions が有効かつ
+  // 変更がある場合のみ確認ダイアログを表示する。
+  const cancelEditMode = useCallback(() => {
+    if (confirmActions && editDirty) {
+      setConfirmCancelOpen(true)
+    } else {
+      void doCancel()
+    }
+  }, [confirmActions, editDirty, doCancel])
+
+  // 編集内容を保存して編集モードを終了する（確認後の実処理）
+  const doSave = useCallback(async () => {
+    setConfirmSaveOpen(false)
     if (!selectCheatSheet) return
     try {
       setIsSaving(true)
@@ -234,17 +251,27 @@ export const CheatSheet = () => {
     }
   }, [selectCheatSheet, editBlocks, loadCheatSheetData, showError])
 
+  // Save ボタンのエントリ。Confirm before actions が有効な場合のみ
+  // 確認ダイアログを表示する。
+  const saveEditMode = useCallback(() => {
+    if (confirmActions) {
+      setConfirmSaveOpen(true)
+    } else {
+      void doSave()
+    }
+  }, [confirmActions, doSave])
+
   // Esc = Cancel（確認ダイアログが開いていない場合のみ）
   useEffect(() => {
     if (!editMode) return
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !confirmDialog) {
+      if (e.key === 'Escape' && !confirmCancelOpen && !confirmSaveOpen) {
         cancelEditMode()
       }
     }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
-  }, [editMode, confirmDialog, cancelEditMode])
+  }, [editMode, confirmCancelOpen, confirmSaveOpen, cancelEditMode])
 
   // ─── コマンド/グループ操作 ────────────────────────────────
   const upsertCommand = useCallback(
@@ -347,14 +374,12 @@ export const CheatSheet = () => {
             (block) => isEditGroup(block) || block._editId !== editId,
           ) as EditBlock[],
     )
-    setConfirmDialog(null)
   }, [])
 
   const deleteGroup = useCallback((editId: string) => {
     setEditBlocks((prev) =>
       prev.filter((block) => !(isEditGroup(block) && block._editId === editId)),
     )
-    setConfirmDialog(null)
   }, [])
 
   // ─── 別ウィンドウ編集 ──────────────────────────────────────
@@ -903,13 +928,7 @@ export const CheatSheet = () => {
                           dropMark.groupBlockIndex === blockIndex
                         }
                         onRename={() => openGroupEditWindow(block, false)}
-                        onDelete={() =>
-                          setConfirmDialog({
-                            title: 'Delete group',
-                            message: `Delete the group "${block.group}" and its ${block.commandlist.length} command(s)? This action cannot be undone.`,
-                            onConfirm: () => deleteGroup(block._editId),
-                          })
-                        }
+                        onDelete={() => deleteGroup(block._editId)}
                         onPointerDown={(e) => handlePointerDown(e, blockIndex)}
                         onPointerMove={handlePointerMove}
                         onPointerUp={handlePointerUp}
@@ -964,14 +983,7 @@ export const CheatSheet = () => {
                                         false,
                                       )
                                     }
-                                    onDelete={() =>
-                                      setConfirmDialog({
-                                        title: 'Delete shortcut',
-                                        message: `Delete "${item.description || item.command}"? This action cannot be undone.`,
-                                        onConfirm: () =>
-                                          deleteCommand(item._editId),
-                                      })
-                                    }
+                                    onDelete={() => deleteCommand(item._editId)}
                                     onPointerDown={(e) =>
                                       handlePointerDown(
                                         e,
@@ -1014,14 +1026,7 @@ export const CheatSheet = () => {
                                         false,
                                       )
                                     }
-                                    onDelete={() =>
-                                      setConfirmDialog({
-                                        title: 'Delete command',
-                                        message: `Delete "${item.description || item.command}"? This action cannot be undone.`,
-                                        onConfirm: () =>
-                                          deleteCommand(item._editId),
-                                      })
-                                    }
+                                    onDelete={() => deleteCommand(item._editId)}
                                     onPointerDown={(e) =>
                                       handlePointerDown(
                                         e,
@@ -1087,14 +1092,7 @@ export const CheatSheet = () => {
                               )
                             }
                             onDelete={() =>
-                              setConfirmDialog({
-                                title: 'Delete shortcut',
-                                message: `Delete "${(block as EditCommandData).description || (block as EditCommandData).command}"? This action cannot be undone.`,
-                                onConfirm: () =>
-                                  deleteCommand(
-                                    (block as EditCommandData)._editId,
-                                  ),
-                              })
+                              deleteCommand((block as EditCommandData)._editId)
                             }
                             onPointerDown={(e) =>
                               handlePointerDown(e, blockIndex)
@@ -1134,14 +1132,7 @@ export const CheatSheet = () => {
                               )
                             }
                             onDelete={() =>
-                              setConfirmDialog({
-                                title: 'Delete command',
-                                message: `Delete "${(block as EditCommandData).description || (block as EditCommandData).command}"? This action cannot be undone.`,
-                                onConfirm: () =>
-                                  deleteCommand(
-                                    (block as EditCommandData)._editId,
-                                  ),
-                              })
+                              deleteCommand((block as EditCommandData)._editId)
                             }
                             onPointerDown={(e) =>
                               handlePointerDown(e, blockIndex)
@@ -1270,14 +1261,26 @@ export const CheatSheet = () => {
         )}
       </Box>
 
-      {confirmDialog && (
-        <DeleteConfirmDialog
-          title={confirmDialog.title}
-          message={confirmDialog.message}
-          onConfirm={confirmDialog.onConfirm}
-          onCancel={() => setConfirmDialog(null)}
-        />
-      )}
+      <RcDialog
+        open={confirmSaveOpen}
+        variant='confirmation'
+        title='Save Changes'
+        message='Save changes and close edit mode?'
+        onYes={doSave}
+        yesLabel='Save'
+        onNo={() => setConfirmSaveOpen(false)}
+        noLabel='Cancel'
+      />
+      <RcDialog
+        open={confirmCancelOpen}
+        variant='confirmation'
+        title='Discard Changes'
+        message='You have unsaved changes. Discard them?'
+        onYes={doCancel}
+        yesLabel='Discard'
+        onNo={() => setConfirmCancelOpen(false)}
+        noLabel='Keep editing'
+      />
 
       {/* 編集ウィンドウが開いている間のインタラクション遮断オーバーレイ */}
       {isEditWindowOpen && (

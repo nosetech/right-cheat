@@ -1,5 +1,4 @@
 export * from './CommandField'
-export * from './DeleteConfirmDialog'
 export * from './EditableCommandRow'
 export * from './EditableGroupBox'
 export * from './EditableRowBase'
