@@ -728,7 +728,6 @@ export const CheatSheet = () => {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        pointerEvents: isEditWindowOpen ? 'none' : undefined,
       }}
     >
       {/* ドラッグ領域 */}
@@ -1258,6 +1257,22 @@ export const CheatSheet = () => {
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}
           onCancel={() => setConfirmDialog(null)}
+        />
+      )}
+
+      {/* 編集ウィンドウが開いている間のインタラクション遮断オーバーレイ */}
+      {isEditWindowOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor:
+              theme.palette.mode === 'dark'
+                ? 'rgba(0, 0, 0, 0.45)'
+                : 'rgba(0, 0, 0, 0.18)',
+            cursor: 'default',
+          }}
         />
       )}
     </Box>
