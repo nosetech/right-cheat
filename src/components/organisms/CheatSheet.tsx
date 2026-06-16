@@ -718,6 +718,17 @@ export const CheatSheet = () => {
     })
   }, [cheatSheetData])
 
+  // 編集モードでもグループに関わらず連番で番号を振るため、各ブロックの
+  // 先頭フラットインデックスを計算する（通常モードの flatStartIndices と同仕様）
+  const editFlatStartIndices = useMemo(() => {
+    let acc = 0
+    return editBlocks.map((block) => {
+      const start = acc
+      acc += isEditGroup(block) ? block.commandlist.length : 1
+      return start
+    })
+  }, [editBlocks])
+
   useKeyboardShortcuts(
     {
       onPKey: async () => {
@@ -975,7 +986,10 @@ export const CheatSheet = () => {
                                 )}
                                 {isShortcuts ? (
                                   <EditableShortcutRow
-                                    index={itemIndex}
+                                    index={
+                                      editFlatStartIndices[blockIndex] +
+                                      itemIndex
+                                    }
                                     item={item}
                                     isDragging={isItemDragging}
                                     isDropTarget={
@@ -1013,7 +1027,10 @@ export const CheatSheet = () => {
                                   />
                                 ) : (
                                   <EditableCommandRow
-                                    index={itemIndex}
+                                    index={
+                                      editFlatStartIndices[blockIndex] +
+                                      itemIndex
+                                    }
                                     item={item}
                                     layout={
                                       item.layout ??
@@ -1080,11 +1097,7 @@ export const CheatSheet = () => {
                       <>
                         {isShortcuts ? (
                           <EditableShortcutRow
-                            index={
-                              editBlocks
-                                .slice(0, blockIndex)
-                                .filter((b) => !isEditGroup(b)).length
-                            }
+                            index={editFlatStartIndices[blockIndex]}
                             item={block as EditCommandData}
                             isDragging={isBlockDragging}
                             isDropTarget={
@@ -1115,11 +1128,7 @@ export const CheatSheet = () => {
                           />
                         ) : (
                           <EditableCommandRow
-                            index={
-                              editBlocks
-                                .slice(0, blockIndex)
-                                .filter((b) => !isEditGroup(b)).length
-                            }
+                            index={editFlatStartIndices[blockIndex]}
                             item={block as EditCommandData}
                             layout={
                               (block as EditCommandData).layout ??
