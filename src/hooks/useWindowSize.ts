@@ -146,16 +146,30 @@ export const useWindowSize = (selectedTitle: string, editMode = false) => {
 
     const win = getCurrentWindow()
     // 編集モード中は常にリサイズ可。終了時はピン留めなら非リサイズに戻す。
-    const shouldBeResizable = editMode ? true : savedSizeRef.current === null
+    const savedSize = savedSizeRef.current
+    const shouldBeResizable = editMode ? true : savedSize === null
 
-    if (isResizableRef.current === shouldBeResizable) return
+    // 編集モード終了時にピン留めされている場合は、編集中に変更された
+    // ウィンドウサイズをピン留め時のサイズに戻す。
+    const shouldRestoreSize = !editMode && savedSize !== null
+
+    if (isResizableRef.current === shouldBeResizable && !shouldRestoreSize)
+      return
     ;(async () => {
       try {
-        debug(
-          `[useWindowSize] editMode=${editMode}: setResizable(${shouldBeResizable})`,
-        )
-        await win.setResizable(shouldBeResizable)
-        isResizableRef.current = shouldBeResizable
+        if (shouldRestoreSize && savedSize) {
+          debug(
+            `[useWindowSize] editMode end: restore pinned size ${savedSize.width}x${savedSize.height}`,
+          )
+          await win.setSize(new LogicalSize(savedSize.width, savedSize.height))
+        }
+        if (isResizableRef.current !== shouldBeResizable) {
+          debug(
+            `[useWindowSize] editMode=${editMode}: setResizable(${shouldBeResizable})`,
+          )
+          await win.setResizable(shouldBeResizable)
+          isResizableRef.current = shouldBeResizable
+        }
         await restoreFocusAfterWindowOp()
       } catch (e) {
         logError(`[useWindowSize] Failed to toggle resizable: ${e}`)
