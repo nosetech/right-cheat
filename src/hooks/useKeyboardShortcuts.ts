@@ -4,6 +4,7 @@ export type KeyboardShortcutHandlers = {
   onNumberKey?: (index: number) => void
   onZeroKey?: () => void
   onPKey?: () => void
+  onEKey?: () => void
 }
 
 export type UseKeyboardShortcutsOptions = {
@@ -49,6 +50,13 @@ export const useKeyboardShortcuts = (
       if (key === 'p' && handlers.onPKey) {
         event.preventDefault()
         handlers.onPKey()
+        return
+      }
+
+      // eキーの処理（編集モードへ切り替え）
+      if (key === 'e' && handlers.onEKey) {
+        event.preventDefault()
+        handlers.onEKey()
         return
       }
 

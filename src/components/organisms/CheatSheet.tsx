@@ -724,6 +724,11 @@ export const CheatSheet = () => {
           pinButtonRef.current?.focus()
         }
       },
+      onEKey: () => {
+        if (selectCheatSheet) {
+          void enterEditMode()
+        }
+      },
       onNumberKey: (index) => {
         if (isKeyboardShortcutEnabled && index < flatCommandCount) {
           const targetElement = commandFieldRefs.current[index]
@@ -793,7 +798,7 @@ export const CheatSheet = () => {
               onClick={editMode ? cancelEditMode : enterEditMode}
               size='small'
               disabled={!selectCheatSheet}
-              title={editMode ? 'Cancel edit mode (Esc)' : 'Edit mode'}
+              title={editMode ? 'Cancel edit mode (Esc)' : 'Edit mode (e)'}
               sx={{
                 background: editMode
                   ? theme.palette.mode === 'dark'
