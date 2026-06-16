@@ -66,9 +66,7 @@ export default function EditGroupPage() {
   useEffect(() => {
     if (!initPayload) return
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && canSave && !e.isComposing) {
-        handleSave()
-      } else if (e.key === 'Escape') {
+      if (e.key === 'Escape') {
         // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
         e.preventDefault()
         void getCurrentWebviewWindow().destroy()
@@ -76,7 +74,7 @@ export default function EditGroupPage() {
     }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
-  }, [canSave, initPayload, handleSave])
+  }, [initPayload])
 
   if (!initPayload) {
     return null
