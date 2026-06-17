@@ -111,7 +111,8 @@ export default function EditCommandPage() {
   // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
+      if (e.key === 'Escape' && !e.isComposing) {
         e.preventDefault()
         void getCurrentWebviewWindow().destroy()
       }
