@@ -19,6 +19,7 @@ export type CommandFieldProps = StackProps & {
   numberHint?: string
   mode?: 'copy' | 'execute'
   layout: CommandLayout
+  editMode?: boolean
 }
 
 export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
@@ -29,6 +30,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       numberHint,
       mode = 'copy',
       layout,
+      editMode = false,
       tabIndex,
       ...remainProps
     } = props
@@ -61,7 +63,11 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       }
     }
 
-    const handleAction = mode === 'execute' ? handleExecute : copy
+    const handleAction = editMode
+      ? () => {}
+      : mode === 'execute'
+        ? handleExecute
+        : copy
 
     const hasDone = mode === 'execute' ? hasExecuted : hasCopied
     const hasError = mode === 'execute' ? executeError : copyError
@@ -145,11 +151,11 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
     const commandBox = (
       <Box
         ref={ref}
-        tabIndex={tabIndex ?? 0}
+        tabIndex={editMode ? -1 : (tabIndex ?? 0)}
         sx={{
           ...getCommandBoxSx(),
           padding: '5px 8px',
-          cursor: 'pointer',
+          cursor: editMode ? 'default' : 'pointer',
           transition: 'all 0.14s ease',
           display: 'flex',
           justifyContent: 'space-between',

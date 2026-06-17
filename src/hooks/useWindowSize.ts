@@ -42,7 +42,7 @@ const restoreFocusAfterWindowOp = async (): Promise<void> => {
   }
 }
 
-export const useWindowSize = (selectedTitle: string) => {
+export const useWindowSize = (selectedTitle: string, editMode = false) => {
   const [isPinned, setIsPinned] = useState(false)
   const { showError } = useNotificationContext() ?? {}
   const savedSizeRef = useRef<WindowSizeSettings | null>(null)
@@ -134,6 +134,48 @@ export const useWindowSize = (selectedTitle: string) => {
       setIsPinned(false)
     }
   }, [selectedTitle, showError])
+
+  // 編集モードの切り替えに応じてリサイズ可否を制御する。
+  // 編集モード中はピン留め（非リサイズ）でもウィンドウサイズを変更できるようにし、
+  // 編集モード終了時はピン留め状態に応じてリサイズ可否を元に戻す。
+  const prevEditModeRef = useRef(editMode)
+  useEffect(() => {
+    if (prevEditModeRef.current === editMode) return
+    prevEditModeRef.current = editMode
+    if (!selectedTitle) return
+
+    const win = getCurrentWindow()
+    // 編集モード中は常にリサイズ可。終了時はピン留めなら非リサイズに戻す。
+    const savedSize = savedSizeRef.current
+    const shouldBeResizable = editMode ? true : savedSize === null
+
+    // 編集モード終了時にピン留めされている場合は、編集中に変更された
+    // ウィンドウサイズをピン留め時のサイズに戻す。
+    const shouldRestoreSize = !editMode && savedSize !== null
+
+    if (isResizableRef.current === shouldBeResizable && !shouldRestoreSize)
+      return
+    ;(async () => {
+      try {
+        if (shouldRestoreSize && savedSize) {
+          debug(
+            `[useWindowSize] editMode end: restore pinned size ${savedSize.width}x${savedSize.height}`,
+          )
+          await win.setSize(new LogicalSize(savedSize.width, savedSize.height))
+        }
+        if (isResizableRef.current !== shouldBeResizable) {
+          debug(
+            `[useWindowSize] editMode=${editMode}: setResizable(${shouldBeResizable})`,
+          )
+          await win.setResizable(shouldBeResizable)
+          isResizableRef.current = shouldBeResizable
+        }
+        await restoreFocusAfterWindowOp()
+      } catch (e) {
+        logError(`[useWindowSize] Failed to toggle resizable: ${e}`)
+      }
+    })()
+  }, [editMode, selectedTitle])
 
   const togglePin = useCallback(async () => {
     if (!selectedTitle) return

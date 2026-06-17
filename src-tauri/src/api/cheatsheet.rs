@@ -83,12 +83,16 @@ impl fmt::Display for CommandItem {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CommandGroup {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<i64>,
     pub group: String,
     pub commandlist: Vec<Command>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Command {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub command: String,
@@ -400,6 +404,193 @@ pub fn scan_import_conflicts<R: tauri::Runtime>(
         }
         Ok(conflicts)
     })
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NewCommand {
+    pub cheatsheet_title: String,
+    pub group_id: Option<i64>,
+    pub description: Option<String>,
+    pub command_text: String,
+    pub layout: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CommandUpdatePayload {
+    pub id: i64,
+    pub group_id: Option<i64>,
+    pub description: Option<String>,
+    pub command_text: String,
+    pub layout: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NewGroup {
+    pub cheatsheet_title: String,
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GroupUpdatePayload {
+    pub id: i64,
+    pub name: String,
+}
+
+#[tauri::command]
+pub fn add_command<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    payload: NewCommand,
+) -> Result<i64, String> {
+    let new_id = with_db(&app, |conn| {
+        let cheatsheet_id =
+            repository::get_cheatsheet_id_by_title(conn, &payload.cheatsheet_title)?
+                .ok_or_else(|| rusqlite::Error::QueryReturnedNoRows)?;
+
+        let sort_order = if let Some(group_id) = payload.group_id {
+            repository::get_max_command_in_group_sort_order(conn, group_id)? + 1
+        } else {
+            repository::get_max_toplevel_sort_order(conn, cheatsheet_id)? + 1
+        };
+
+        repository::add_command_row(
+            conn,
+            cheatsheet_id,
+            payload.group_id,
+            payload.description.as_deref(),
+            &payload.command_text,
+            payload.layout.as_deref(),
+            sort_order,
+        )
+    })
+    .map_err(|e| {
+        if e.contains("QueryReturnedNoRows") {
+            format!("Cheat sheet '{}' not found", payload.cheatsheet_title)
+        } else {
+            e
+        }
+    })?;
+
+    log::info!(
+        "[cheatsheet] add_command: new id={}, cheatsheet={}",
+        new_id,
+        payload.cheatsheet_title
+    );
+
+    let _ = app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ());
+
+    Ok(new_id)
+}
+
+#[tauri::command]
+pub fn update_command<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    payload: CommandUpdatePayload,
+) -> Result<(), String> {
+    with_db(&app, |conn| {
+        repository::update_command_row(
+            conn,
+            payload.id,
+            payload.group_id,
+            payload.description.as_deref(),
+            &payload.command_text,
+            payload.layout.as_deref(),
+        )
+    })?;
+
+    log::info!("[cheatsheet] update_command: id={}", payload.id);
+
+    let _ = app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ());
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_command<R: tauri::Runtime>(app: AppHandle<R>, command_id: i64) -> Result<(), String> {
+    with_db(&app, |conn| {
+        repository::delete_command_row(conn, command_id)
+    })?;
+
+    log::info!("[cheatsheet] delete_command: id={}", command_id);
+
+    let _ = app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ());
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn add_group<R: tauri::Runtime>(app: AppHandle<R>, payload: NewGroup) -> Result<i64, String> {
+    let new_id = with_db(&app, |conn| {
+        let cheatsheet_id =
+            repository::get_cheatsheet_id_by_title(conn, &payload.cheatsheet_title)?
+                .ok_or_else(|| rusqlite::Error::QueryReturnedNoRows)?;
+
+        let sort_order = repository::get_max_toplevel_sort_order(conn, cheatsheet_id)? + 1;
+
+        repository::add_group_row(conn, cheatsheet_id, &payload.name, sort_order)
+    })
+    .map_err(|e| {
+        if e.contains("QueryReturnedNoRows") {
+            format!("Cheat sheet '{}' not found", payload.cheatsheet_title)
+        } else {
+            e
+        }
+    })?;
+
+    log::info!(
+        "[cheatsheet] add_group: new id={}, cheatsheet={}",
+        new_id,
+        payload.cheatsheet_title
+    );
+
+    let _ = app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ());
+
+    Ok(new_id)
+}
+
+#[tauri::command]
+pub fn update_group<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    payload: GroupUpdatePayload,
+) -> Result<(), String> {
+    with_db(&app, |conn| {
+        repository::update_group_row(conn, payload.id, &payload.name)
+    })?;
+
+    log::info!("[cheatsheet] update_group: id={}", payload.id);
+
+    let _ = app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ());
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_group<R: tauri::Runtime>(app: AppHandle<R>, group_id: i64) -> Result<(), String> {
+    with_db(&app, |conn| repository::delete_group_row(conn, group_id))?;
+
+    log::info!("[cheatsheet] delete_group: id={}", group_id);
+
+    let _ = app.emit_to(EventTarget::app(), common::event::RELOAD_CHEAT_SHEET, ());
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn save_cheat_sheet_commandlist<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    title: &str,
+    commandlist: Vec<CommandItem>,
+) -> Result<(), String> {
+    with_db(&app, |conn| {
+        repository::replace_commandlist_by_title(conn, title, &commandlist)
+    })?;
+
+    log::info!(
+        "[cheatsheet] save_cheat_sheet_commandlist: title={}, items={}",
+        title,
+        commandlist.len()
+    );
+
+    Ok(())
 }
 
 const DEFAULT_SEARCH_LIMIT: u32 = 100;

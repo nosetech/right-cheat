@@ -262,19 +262,20 @@ fn load_commandlist(conn: &Connection, cheatsheet_id: i64) -> Result<Vec<Command
 
     // グループ無しコマンド
     let mut single_stmt = conn.prepare(
-        "SELECT description, command_text, layout, sort_order
+        "SELECT id, description, command_text, layout, sort_order
          FROM commands WHERE cheatsheet_id = ?1 AND group_id IS NULL
          ORDER BY sort_order ASC, id ASC",
     )?;
     let singles: Vec<(i64, CommandItem)> = single_stmt
         .query_map(params![cheatsheet_id], |row| {
-            let sort_order: i64 = row.get(3)?;
+            let sort_order: i64 = row.get(4)?;
             Ok((
                 sort_order,
                 CommandItem::Single(Command {
-                    description: row.get(0)?,
-                    command: row.get(1)?,
-                    layout: row.get(2)?,
+                    id: Some(row.get(0)?),
+                    description: row.get(1)?,
+                    command: row.get(2)?,
+                    layout: row.get(3)?,
                 }),
             ))
         })?
@@ -284,15 +285,16 @@ fn load_commandlist(conn: &Connection, cheatsheet_id: i64) -> Result<Vec<Command
     // グループ
     for &(group_id, ref group_name, group_sort_order) in &groups {
         let mut cmd_stmt = conn.prepare(
-            "SELECT description, command_text, layout
+            "SELECT id, description, command_text, layout
              FROM commands WHERE group_id = ?1 ORDER BY sort_order ASC, id ASC",
         )?;
         let cmds: Vec<Command> = cmd_stmt
             .query_map(params![group_id], |row| {
                 Ok(Command {
-                    description: row.get(0)?,
-                    command: row.get(1)?,
-                    layout: row.get(2)?,
+                    id: Some(row.get(0)?),
+                    description: row.get(1)?,
+                    command: row.get(2)?,
+                    layout: row.get(3)?,
                 })
             })?
             .collect::<Result<Vec<_>>>()?;
@@ -300,6 +302,7 @@ fn load_commandlist(conn: &Connection, cheatsheet_id: i64) -> Result<Vec<Command
         all_items.push((
             group_sort_order,
             CommandItem::Group(CommandGroup {
+                id: Some(group_id),
                 group: group_name.clone(),
                 commandlist: cmds,
             }),
@@ -494,6 +497,170 @@ pub fn get_all_cheatsheets(conn: &Connection) -> Result<Vec<CheatSheet>> {
         }
     }
     Ok(sheets)
+}
+
+/// チートシートタイトルからIDを取得する
+pub fn get_cheatsheet_id_by_title(conn: &Connection, title: &str) -> Result<Option<i64>> {
+    let result = conn.query_row(
+        "SELECT id FROM cheatsheets WHERE title = ?1",
+        params![title],
+        |r| r.get(0),
+    );
+    match result {
+        Ok(id) => Ok(Some(id)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(e),
+    }
+}
+
+/// トップレベルの最大sort_orderを取得（commandsとcommand_groupsの両方を考慮）
+pub fn get_max_toplevel_sort_order(conn: &Connection, cheatsheet_id: i64) -> Result<i64> {
+    let max_cmd: Option<i64> = conn
+        .query_row(
+            "SELECT MAX(sort_order) FROM commands WHERE cheatsheet_id = ?1 AND group_id IS NULL",
+            params![cheatsheet_id],
+            |r| r.get(0),
+        )
+        .unwrap_or(None);
+    let max_grp: Option<i64> = conn
+        .query_row(
+            "SELECT MAX(sort_order) FROM command_groups WHERE cheatsheet_id = ?1",
+            params![cheatsheet_id],
+            |r| r.get(0),
+        )
+        .unwrap_or(None);
+    let max = match (max_cmd, max_grp) {
+        (Some(a), Some(b)) => a.max(b),
+        (Some(a), None) => a,
+        (None, Some(b)) => b,
+        (None, None) => -1,
+    };
+    Ok(max)
+}
+
+/// グループ内コマンドの最大sort_orderを取得
+pub fn get_max_command_in_group_sort_order(conn: &Connection, group_id: i64) -> Result<i64> {
+    let max: Option<i64> = conn
+        .query_row(
+            "SELECT MAX(sort_order) FROM commands WHERE group_id = ?1",
+            params![group_id],
+            |r| r.get(0),
+        )
+        .unwrap_or(None);
+    Ok(max.unwrap_or(-1))
+}
+
+/// コマンドを追加（新規）
+pub fn add_command_row(
+    conn: &Connection,
+    cheatsheet_id: i64,
+    group_id: Option<i64>,
+    description: Option<&str>,
+    command_text: &str,
+    layout: Option<&str>,
+    sort_order: i64,
+) -> Result<i64> {
+    conn.execute(
+        "INSERT INTO commands (cheatsheet_id, group_id, description, command_text, layout, sort_order)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![cheatsheet_id, group_id, description, command_text, layout, sort_order],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+/// コマンドを更新
+pub fn update_command_row(
+    conn: &Connection,
+    id: i64,
+    group_id: Option<i64>,
+    description: Option<&str>,
+    command_text: &str,
+    layout: Option<&str>,
+) -> Result<()> {
+    conn.execute(
+        "UPDATE commands SET group_id = ?1, description = ?2, command_text = ?3, layout = ?4 WHERE id = ?5",
+        params![group_id, description, command_text, layout, id],
+    )?;
+    Ok(())
+}
+
+/// コマンドを削除
+pub fn delete_command_row(conn: &Connection, id: i64) -> Result<()> {
+    conn.execute("DELETE FROM commands WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+/// グループを追加
+pub fn add_group_row(
+    conn: &Connection,
+    cheatsheet_id: i64,
+    name: &str,
+    sort_order: i64,
+) -> Result<i64> {
+    conn.execute(
+        "INSERT INTO command_groups (cheatsheet_id, group_name, sort_order) VALUES (?1, ?2, ?3)",
+        params![cheatsheet_id, name, sort_order],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+/// グループを更新
+pub fn update_group_row(conn: &Connection, id: i64, name: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE command_groups SET group_name = ?1 WHERE id = ?2",
+        params![name, id],
+    )?;
+    Ok(())
+}
+
+/// グループを削除（CASCADEでcommandも削除）
+pub fn delete_group_row(conn: &Connection, id: i64) -> Result<()> {
+    conn.execute("DELETE FROM command_groups WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+/// コマンドリスト全体を置き換え（SAVEPOINTでアトミックに）
+pub fn replace_commandlist_by_title(
+    conn: &Connection,
+    title: &str,
+    commandlist: &[CommandItem],
+) -> Result<()> {
+    conn.execute_batch("SAVEPOINT replace_commandlist")?;
+
+    let result = (|| -> Result<()> {
+        let cheatsheet_id: i64 = conn.query_row(
+            "SELECT id FROM cheatsheets WHERE title = ?1",
+            params![title],
+            |r| r.get(0),
+        )?;
+
+        conn.execute(
+            "DELETE FROM commands WHERE cheatsheet_id = ?1 AND group_id IS NULL",
+            params![cheatsheet_id],
+        )?;
+        conn.execute(
+            "DELETE FROM command_groups WHERE cheatsheet_id = ?1",
+            params![cheatsheet_id],
+        )?;
+        conn.execute(
+            "UPDATE cheatsheets SET updated_at = datetime('now') WHERE id = ?1",
+            params![cheatsheet_id],
+        )?;
+
+        insert_commandlist(conn, cheatsheet_id, commandlist)?;
+        Ok(())
+    })();
+
+    match result {
+        Ok(()) => {
+            conn.execute_batch("RELEASE replace_commandlist")?;
+            Ok(())
+        }
+        Err(e) => {
+            let _ = conn.execute_batch("ROLLBACK TO replace_commandlist");
+            Err(e)
+        }
+    }
 }
 
 /// タイトルごとのコマンド数を返す。将来のエクスポートUI表示用。
