@@ -234,25 +234,11 @@ fn menu_configuration<R: tauri::Runtime>(
             )?,
             &Submenu::with_items(
                 handle,
-                "Edit",
-                true,
-                &[
-                    &PredefinedMenuItem::undo(handle, Some("Undo"))?,
-                    &PredefinedMenuItem::redo(handle, Some("Redo"))?,
-                    &PredefinedMenuItem::separator(handle)?,
-                    &PredefinedMenuItem::cut(handle, Some("Cut"))?,
-                    &PredefinedMenuItem::copy(handle, Some("Copy"))?,
-                    &PredefinedMenuItem::paste(handle, Some("Paste"))?,
-                    &PredefinedMenuItem::select_all(handle, Some("Select All"))?,
-                    &PredefinedMenuItem::separator(handle)?,
-                    &MenuItem::with_id(handle, "id_find", "Find...", true, Some("Cmd+F"))?,
-                ],
-            )?,
-            &Submenu::with_items(
-                handle,
                 "View ", // NOTE: デフォルトメニューにならないよう、Viewの後にスペースを入れている。
                 true,
                 &[
+                    &MenuItem::with_id(handle, "id_find", "Find...", true, Some("Cmd+F"))?,
+                    &PredefinedMenuItem::separator(handle)?,
                     &MenuItem::with_id(
                         handle,
                         "id_toggle_visible",
