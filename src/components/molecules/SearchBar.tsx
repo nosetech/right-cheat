@@ -36,19 +36,18 @@ export const SearchBar = ({ value, onChange, onKeyDown, inputRef }: Props) => {
             : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 3px rgba(0,113,227,0.05)',
         }}
       >
-        <Box
-          component='svg'
+        <svg
           width='16'
           height='16'
           viewBox='0 0 24 24'
           fill='none'
           stroke='currentColor'
           strokeWidth='2.2'
-          sx={{ color: accentSolid, flexShrink: 0 }}
+          style={{ color: accentSolid, flexShrink: 0 }}
         >
           <circle cx='11' cy='11' r='8' />
           <line x1='21' y1='21' x2='16.65' y2='16.65' />
-        </Box>
+        </svg>
         <Box
           component='input'
           ref={inputRef}
