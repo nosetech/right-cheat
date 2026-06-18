@@ -3,7 +3,7 @@ import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { emit } from '@tauri-apps/api/event'
+import { emitTo } from '@tauri-apps/api/event'
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
@@ -45,20 +45,23 @@ export default function SearchPage() {
     }
   }
 
-  // 選択したコマンドの属するチートシートをメインウィンドウに表示して閉じる
+  // 選択したコマンドの属するチートシートをメインウィンドウに表示して閉じる。
+  // 失敗時はウィンドウを閉じず、エラーをログ出力するに留める。
   const openCheatSheet = async (hit: CommandSearchResult) => {
     try {
-      await emit(Event.OPEN_CHEAT_SHEET, { title: hit.cheatsheet_title })
+      await emitTo('main', Event.OPEN_CHEAT_SHEET, {
+        title: hit.cheatsheet_title,
+      })
       debug(`[search] open_cheat_sheet title='${hit.cheatsheet_title}'`)
       const main = await WebviewWindow.getByLabel('main')
       if (main) {
         await main.show()
         await main.setFocus()
       }
+      await getCurrentWindow().close()
     } catch (e) {
       logError(`[search] open_cheat_sheet error: ${String(e)}`)
     }
-    await closeWindow()
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {

@@ -188,6 +188,7 @@ export const CheatSheet = () => {
 
   // ─── 検索ウィンドウからのチートシート切り替え ─────────────
   useEffect(() => {
+    let cancelled = false
     let unlisten: (() => void) | undefined
     ;(async () => {
       unlisten = await listen<{ title: string }>(
@@ -202,8 +203,13 @@ export const CheatSheet = () => {
           }
         },
       )
+      if (cancelled) {
+        unlisten()
+        unlisten = undefined
+      }
     })()
     return () => {
+      cancelled = true
       unlisten?.()
     }
   }, [])

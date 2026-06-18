@@ -1,5 +1,5 @@
 'use client'
-import { Fragment } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 
 import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -136,9 +136,9 @@ const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
       <Box sx={{ display: 'flex', gap: '2px' }}>
-        {chips.map((c, i) => (
+        {chips.map((c) => (
           <Box
-            key={i}
+            key={c}
             component='span'
             sx={{
               fontFamily: FONT_CODE,
@@ -198,10 +198,19 @@ export const SearchResults = ({
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
   const divider = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
+  const listRef = useRef<HTMLDivElement>(null)
+
+  // キーボードで選択行が移動したとき、選択行をリスト表示域内へスクロールする
+  useEffect(() => {
+    if (results.length === 0) return
+    const el = listRef.current?.children[focusIdx] as HTMLElement | undefined
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [focusIdx, results])
 
   return (
     <>
       <Box
+        ref={listRef}
         role='listbox'
         sx={{
           flex: 1,
