@@ -214,8 +214,7 @@ export const SearchResults = ({
         role='listbox'
         sx={{
           flex: 1,
-          maxHeight: '420px',
-          minHeight: '240px',
+          minHeight: 0,
           overflowY: 'auto',
           borderTop: `0.5px solid ${divider}`,
           borderBottom: `0.5px solid ${divider}`,
