@@ -65,6 +65,9 @@ export default function SearchPage() {
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // IME 変換中（日本語入力など）のキー操作は無視する。
+    // 変換確定の Enter で検索結果が開いてしまうのを防ぐ。
+    if (e.nativeEvent.isComposing) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setFocusIdx((i) => Math.min(i + 1, results.length - 1))
