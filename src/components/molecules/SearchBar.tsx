@@ -8,12 +8,21 @@ type Props = {
   value: string
   onChange: (value: string) => void
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void
+  onCompositionStart?: () => void
+  onCompositionEnd?: () => void
   inputRef?: RefObject<HTMLInputElement | null>
 }
 
 // 検索入力欄（RightCheat Mockup v16 / Search 画面に準拠）。
 // 左に虫眼鏡アイコン、入力があるとき右端にクリアボタンを表示する。
-export const SearchBar = ({ value, onChange, onKeyDown, inputRef }: Props) => {
+export const SearchBar = ({
+  value,
+  onChange,
+  onKeyDown,
+  onCompositionStart,
+  onCompositionEnd,
+  inputRef,
+}: Props) => {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
   const accentSolid = isDark ? '#64b4ff' : '#0071e3'
@@ -56,6 +65,8 @@ export const SearchBar = ({ value, onChange, onKeyDown, inputRef }: Props) => {
             onChange(e.target.value)
           }
           onKeyDown={onKeyDown}
+          onCompositionStart={onCompositionStart}
+          onCompositionEnd={onCompositionEnd}
           placeholder='Search commands and descriptions…'
           autoFocus
           sx={{

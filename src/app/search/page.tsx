@@ -25,6 +25,14 @@ export default function SearchPage() {
   const { query, setQuery, debouncedQuery, results } = useCommandSearch('')
   const [focusIdx, setFocusIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  // IME 変換中フラグ。macOS の WKWebView では変換確定 Enter の keydown 時に
+  // nativeEvent.isComposing が false になることがあるため、compositionstart /
+  // compositionend で状態を自前管理する（確定 Enter の keydown は compositionend
+  // より前に発火するため、この ref はまだ true のまま）。
+  const isComposingRef = useRef(false)
+  // compositionend が keydown より先に発火する順序（この場合 isComposingRef は
+  // 既に false）に備え、確定直後の Enter をタイムスタンプでもガードする。
+  const lastCompositionEndAtRef = useRef(0)
 
   // ヒットしたチートシート数
   const sheetCount = useMemo(
@@ -67,7 +75,7 @@ export default function SearchPage() {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     // IME 変換中（日本語入力など）のキー操作は無視する。
     // 変換確定の Enter で検索結果が開いてしまうのを防ぐ。
-    if (e.nativeEvent.isComposing) return
+    if (isComposingRef.current || e.nativeEvent.isComposing) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setFocusIdx((i) => Math.min(i + 1, results.length - 1))
@@ -76,6 +84,8 @@ export default function SearchPage() {
       setFocusIdx((i) => Math.max(i - 1, 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
+      // 変換確定直後（compositionend 直後）の Enter は無視する
+      if (Date.now() - lastCompositionEndAtRef.current < 100) return
       const hit = results[focusIdx]
       if (hit) void openCheatSheet(hit)
     } else if (e.key === 'Escape') {
@@ -112,6 +122,13 @@ export default function SearchPage() {
           value={query}
           onChange={setQuery}
           onKeyDown={handleKeyDown}
+          onCompositionStart={() => {
+            isComposingRef.current = true
+          }}
+          onCompositionEnd={() => {
+            isComposingRef.current = false
+            lastCompositionEndAtRef.current = Date.now()
+          }}
           inputRef={inputRef}
         />
 
