@@ -410,6 +410,82 @@ fn like_search_escapes_special_chars() {
     assert_eq!(underscore_results[0].command_text, "echo file_name");
 }
 
+#[test]
+fn fts_search_multi_keyword_and() {
+    let conn = setup();
+    insert_sheet_with_commands(
+        &conn,
+        "MultiSheet",
+        &[
+            ("Commit changes", "git commit message"),
+            ("Show status", "git status"),
+        ],
+    );
+
+    // すべての語が3文字以上 → FTS。"git" AND "commit" の両方を含むコマンドのみヒット
+    let results = search_commands(&conn, "git commit", 100).unwrap();
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].command_text, "git commit message");
+
+    // 語順を入れ替えても結果は同じ（AND 検索）
+    let reversed = search_commands(&conn, "commit git", 100).unwrap();
+    assert_eq!(reversed.len(), 1);
+    assert_eq!(reversed[0].command_text, "git commit message");
+}
+
+#[test]
+fn fts_search_multi_keyword_across_columns() {
+    let conn = setup();
+    insert_sheet_with_commands(
+        &conn,
+        "CrossSheet",
+        &[("Push branch to remote", "git push origin")],
+    );
+
+    // 一方は description、もう一方は command_text に含まれる場合もヒットする
+    let results = search_commands(&conn, "branch origin", 100).unwrap();
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].command_text, "git push origin");
+}
+
+#[test]
+fn fts_search_multi_keyword_no_match_when_one_term_absent() {
+    let conn = setup();
+    insert_sheet_with_commands(&conn, "AbsentSheet", &[("Commit changes", "git commit")]);
+
+    // 片方の語が存在しなければ AND 条件によりヒットしない
+    let results = search_commands(&conn, "git deploy", 100).unwrap();
+    assert!(results.is_empty());
+}
+
+#[test]
+fn like_search_multi_keyword_and_with_short_term() {
+    let conn = setup();
+    insert_sheet_with_commands(
+        &conn,
+        "ShortSheet",
+        &[
+            ("List directory", "ls config"),
+            ("List all files", "ls -la"),
+        ],
+    );
+
+    // 2文字の語を含むため LIKE フォールバック。"ls" AND "config" の両方を含むもののみ
+    let results = search_commands(&conn, "ls config", 100).unwrap();
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].command_text, "ls config");
+}
+
+#[test]
+fn search_commands_whitespace_only_returns_empty() {
+    let conn = setup();
+    insert_sheet_with_commands(&conn, "WsSheet", &[("desc", "some command")]);
+
+    // 空白のみのクエリは検索語なしとみなして空配列を返す
+    let results = search_commands(&conn, "   ", 100).unwrap();
+    assert!(results.is_empty());
+}
+
 // ── 新規 CRUD API テスト ─────────────────────────────────────
 //
 // テスト対象: 以下の新規 repository.rs 関数

@@ -100,7 +100,8 @@ const SearchPlaceholder = ({
       >
         {empty ? (
           <Fragment>
-            Searches command text and descriptions.
+            Searches command text and descriptions. Separate keywords with
+            spaces to narrow results.
             <br />
             Use{' '}
             <Box component='span' sx={{ fontFamily: FONT_CODE }}>

@@ -1,5 +1,5 @@
 use crate::api::cheatsheet::{CheatSheet, Command, CommandGroup, CommandItem, WindowSize};
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, params_from_iter, types::ToSql, Connection, Result};
 
 pub struct CheatsheetRow {
     pub id: i64,
@@ -330,18 +330,38 @@ fn escape_like_query(query: &str) -> String {
     format!("%{}%", escaped)
 }
 
+/// クエリを空白で分割して検索語の一覧を得る（連続した空白・前後の空白は無視）。
+fn split_terms(query: &str) -> Vec<&str> {
+    query.split_whitespace().collect()
+}
+
 pub fn search_by_like(conn: &Connection, query: &str, limit: u32) -> Result<Vec<SearchRow>> {
-    let pattern = escape_like_query(query);
-    let mut stmt = conn.prepare(
+    let terms = split_terms(query);
+    // 各検索語ごとに description / command_text のいずれかに含まれることを条件とし、
+    // 語同士は AND で連結する（複数キーワードの絞り込み検索）。
+    let mut conditions = Vec::with_capacity(terms.len());
+    let mut bind: Vec<Box<dyn ToSql>> = Vec::with_capacity(terms.len() + 1);
+    for (i, term) in terms.iter().enumerate() {
+        let n = i + 1;
+        conditions.push(format!(
+            "(c.description LIKE ?{n} ESCAPE '\\' OR c.command_text LIKE ?{n} ESCAPE '\\')"
+        ));
+        bind.push(Box::new(escape_like_query(term)));
+    }
+    let limit_idx = terms.len() + 1;
+    bind.push(Box::new(limit));
+    let sql = format!(
         "SELECT c.id, c.cheatsheet_id, cs.title, COALESCE(c.description, ''), c.command_text
          FROM commands c
          JOIN cheatsheets cs ON c.cheatsheet_id = cs.id
-         WHERE c.description LIKE ?1 ESCAPE '\\' OR c.command_text LIKE ?1 ESCAPE '\\'
+         WHERE {}
          ORDER BY c.cheatsheet_id, c.sort_order
-         LIMIT ?2",
-    )?;
+         LIMIT ?{limit_idx}",
+        conditions.join(" AND ")
+    );
+    let mut stmt = conn.prepare(&sql)?;
     let results = stmt
-        .query_map(params![pattern, limit], |row| {
+        .query_map(params_from_iter(bind.iter()), |row| {
             Ok(SearchRow {
                 id: row.get(0)?,
                 cheatsheet_id: row.get(1)?,
@@ -355,8 +375,13 @@ pub fn search_by_like(conn: &Connection, query: &str, limit: u32) -> Result<Vec<
 }
 
 pub fn search_by_fts(conn: &Connection, query: &str, limit: u32) -> Result<Vec<SearchRow>> {
-    // Double-quote wrap for FTS5 phrase match; escape internal double quotes
-    let fts_query = format!("\"{}\"", query.replace('"', "\"\""));
+    // 各検索語をダブルクォートで囲んでフレーズ化し、空白で連結する。
+    // FTS5 では空白区切りのフレーズは暗黙の AND となるため複数キーワードの絞り込みになる。
+    let fts_query = split_terms(query)
+        .iter()
+        .map(|t| format!("\"{}\"", t.replace('"', "\"\"")))
+        .collect::<Vec<_>>()
+        .join(" ");
     let mut stmt = conn.prepare(
         "SELECT c.id, c.cheatsheet_id, cs.title, COALESCE(c.description, ''), c.command_text
          FROM commands c
@@ -380,10 +405,13 @@ pub fn search_by_fts(conn: &Connection, query: &str, limit: u32) -> Result<Vec<S
 }
 
 pub fn search_commands(conn: &Connection, query: &str, limit: u32) -> Result<Vec<SearchRow>> {
-    if query.is_empty() {
+    let terms = split_terms(query);
+    if terms.is_empty() {
         return Ok(vec![]);
     }
-    if query.chars().count() >= 3 {
+    // 全ての検索語が 3 文字以上なら trigram FTS を使える。
+    // 1 つでも 3 文字未満の語があると FTS では一致しないため LIKE 検索にフォールバックする。
+    if terms.iter().all(|t| t.chars().count() >= 3) {
         search_by_fts(conn, query, limit)
     } else {
         search_by_like(conn, query, limit)
