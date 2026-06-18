@@ -56,7 +56,7 @@ export const SearchBar = ({ value, onChange, onKeyDown, inputRef }: Props) => {
             onChange(e.target.value)
           }
           onKeyDown={onKeyDown}
-          placeholder='Search commands, descriptions, and cheatsheet names…'
+          placeholder='Search commands and descriptions…'
           autoFocus
           sx={{
             flex: 1,

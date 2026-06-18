@@ -100,7 +100,7 @@ const SearchPlaceholder = ({
       >
         {empty ? (
           <Fragment>
-            Searches command text, descriptions, and cheatsheet names.
+            Searches command text and descriptions.
             <br />
             Use{' '}
             <Box component='span' sx={{ fontFamily: FONT_CODE }}>
