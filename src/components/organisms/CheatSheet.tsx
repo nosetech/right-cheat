@@ -186,6 +186,28 @@ export const CheatSheet = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectCheatSheet, loadCheatSheetData])
 
+  // ─── 検索ウィンドウからのチートシート切り替え ─────────────
+  useEffect(() => {
+    let unlisten: (() => void) | undefined
+    ;(async () => {
+      unlisten = await listen<{ title: string }>(
+        Event.OPEN_CHEAT_SHEET,
+        (e) => {
+          // 編集中は切り替えない（編集内容の消失を防ぐ）
+          if (editModeRef.current) return
+          const title = e.payload?.title
+          if (title) {
+            debug(`[CheatSheet] open_cheat_sheet: switch to '${title}'`)
+            setCheatSheet(title)
+          }
+        },
+      )
+    })()
+    return () => {
+      unlisten?.()
+    }
+  }, [])
+
   // ─── 編集モード操作 ───────────────────────────────────────
   const enterEditMode = useCallback(async () => {
     if (!cheatSheetData) return

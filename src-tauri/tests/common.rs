@@ -126,11 +126,19 @@ mod event_constants {
 
     // ブラックボックス: 同値分割 - 有効クラス① (WINDOW_FOCUSED が期待値と等しい)
     // ホワイトボックス: event::WINDOW_FOCUSED を参照するパス
-    // ※ 今回追加された新定数のテスト
     #[test]
     fn window_focused_has_expected_value() {
         // Act & Assert: 定数が期待する値と一致すること
         assert_eq!(event::WINDOW_FOCUSED, "window_focused");
+    }
+
+    // ブラックボックス: 同値分割 - 有効クラス① (OPEN_CHEAT_SHEET が期待値と等しい)
+    // ホワイトボックス: event::OPEN_CHEAT_SHEET を参照するパス
+    // ※ issue #146 (コマンド全文検索 UI) で追加された定数
+    #[test]
+    fn open_cheat_sheet_has_expected_value() {
+        // Act & Assert: 定数が期待する値と一致すること
+        assert_eq!(event::OPEN_CHEAT_SHEET, "open_cheat_sheet");
     }
 
     // ブラックボックス: 境界値分析 - 各定数が空文字列でないこと（最短境界）
@@ -158,6 +166,10 @@ mod event_constants {
             !event::WINDOW_FOCUSED.is_empty(),
             "WINDOW_FOCUSED は空文字列であってはならない"
         );
+        assert!(
+            !event::OPEN_CHEAT_SHEET.is_empty(),
+            "OPEN_CHEAT_SHEET は空文字列であってはならない"
+        );
     }
 
     // ブラックボックス: 同値分割 - 有効クラス② (event 定数同士が互いに異なる)
@@ -172,6 +184,7 @@ mod event_constants {
             event::THEME_CHANGED,
             event::FONT_SIZE_CHANGED,
             event::WINDOW_FOCUSED,
+            event::OPEN_CHEAT_SHEET,
         ];
 
         // Act: 重複チェック（O(n^2) だが定数数が少ないため許容）
@@ -216,6 +229,11 @@ mod event_constants {
             event::WINDOW_FOCUSED,
             event::WINDOW_FOCUSED.trim(),
             "WINDOW_FOCUSED に前後の空白が含まれていないこと"
+        );
+        assert_eq!(
+            event::OPEN_CHEAT_SHEET,
+            event::OPEN_CHEAT_SHEET.trim(),
+            "OPEN_CHEAT_SHEET に前後の空白が含まれていないこと"
         );
     }
 }
