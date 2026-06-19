@@ -2,6 +2,7 @@ export class Event {
   static readonly WINDOW_VISIABLE_TOGGLE = 'window_visible_toggle'
   static readonly RELOAD_CHEAT_SHEET = 'reload_cheat_sheet'
   static readonly WINDOW_FOCUSED = 'window_focused'
+  static readonly OPEN_CHEAT_SHEET = 'open_cheat_sheet'
   static readonly EDIT_COMMAND_READY = 'edit-command-ready'
   static readonly EDIT_COMMAND_INIT = 'edit-command-init'
   static readonly EDIT_COMMAND_SAVE = 'edit-command-save'

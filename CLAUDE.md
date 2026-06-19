@@ -186,7 +186,9 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[useThemeStore]` - `src/hooks/useThemeStore.ts`
 - `[useFontSize]` - `src/hooks/useFontSize.ts`
 - `[useWindowSize]` - `src/hooks/useWindowSize.ts`
+- `[useCommandSearch]` - `src/hooks/useCommandSearch.ts`
 - `[page]` - `src/app/page.tsx`
+- `[search]` - `src/app/search/page.tsx`
 
 **バックエンド (Rust)**:
 - `[lib]` - `src-tauri/src/lib.rs`

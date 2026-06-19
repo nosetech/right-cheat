@@ -237,6 +237,8 @@ fn menu_configuration<R: tauri::Runtime>(
                 "View ", // NOTE: デフォルトメニューにならないよう、Viewの後にスペースを入れている。
                 true,
                 &[
+                    &MenuItem::with_id(handle, "id_find", "Find...", true, Some("Cmd+F"))?,
+                    &PredefinedMenuItem::separator(handle)?,
                     &MenuItem::with_id(
                         handle,
                         "id_toggle_visible",
@@ -426,6 +428,24 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             .title("Export Cheatsheets")
             .inner_size(480.0, 480.0)
             .min_inner_size(360.0, 320.0)
+            .title_bar_style(tauri::TitleBarStyle::Overlay)
+            .hidden_title(true)
+            .build();
+        }
+        "id_find" => {
+            // 既に検索ウィンドウが開いている場合はフォーカスのみ移す
+            if let Some(win) = handle.get_webview_window("search") {
+                let _ = win.set_focus();
+                return;
+            }
+            let _ = tauri::webview::WebviewWindowBuilder::new(
+                handle,
+                "search",
+                tauri::WebviewUrl::App("/search".into()),
+            )
+            .title("Search")
+            .inner_size(600.0, 560.0)
+            .min_inner_size(480.0, 420.0)
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
             .build();
