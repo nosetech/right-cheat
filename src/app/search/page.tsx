@@ -59,8 +59,11 @@ export default function SearchPage() {
     try {
       await emitTo('main', Event.OPEN_CHEAT_SHEET, {
         title: hit.cheatsheet_title,
+        commandId: hit.id,
       })
-      debug(`[search] open_cheat_sheet title='${hit.cheatsheet_title}'`)
+      debug(
+        `[search] open_cheat_sheet title='${hit.cheatsheet_title}' commandId=${hit.id}`,
+      )
       const main = await WebviewWindow.getByLabel('main')
       if (main) {
         await main.show()
