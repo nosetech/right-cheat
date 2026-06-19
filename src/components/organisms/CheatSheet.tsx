@@ -28,6 +28,7 @@ import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { RcDialog } from '@/components/organisms/RcDialog'
+import { FOCUS_FALLBACK_ID } from '@/constants/focus'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
@@ -882,6 +883,23 @@ export const CheatSheet = () => {
         height: '100%',
       }}
     >
+      {/* ウィンドウ操作（setResizable / setSize）後に WKWebView の native
+          first responder を取り戻すためのフォールバックフォーカス要素。
+          Tab では到達せず、フォーカス可能な要素が無いときの focus 退避先となる。 */}
+      <Box
+        id={FOCUS_FALLBACK_ID}
+        tabIndex={-1}
+        aria-hidden
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: 0,
+          height: 0,
+          outline: 'none',
+        }}
+      />
+
       {/* ドラッグ領域 */}
       <Box
         data-tauri-drag-region

@@ -9,6 +9,7 @@ import {
 } from '@tauri-apps/api/window'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
+import { FOCUS_FALLBACK_ID } from '@/constants/focus'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { WindowSizeAPI, WindowSizeSettings } from '@/types/api/WindowSize'
 
@@ -39,6 +40,14 @@ const restoreFocusAfterWindowOp = async (): Promise<void> => {
   if (target) {
     target.blur()
     target.focus()
+  } else {
+    // フォーカス可能な要素が無い場合（通常表示や編集モード突入直後は
+    // activeElement が body に戻る）でも、ルートに常設したフォールバック要素へ
+    // フォーカスして WKWebView の native first responder を取り戻す。
+    // setFocus() 単独では first responder が復元されず、以降のキーイベント
+    // （Esc など）が document に届かずネイティブのビープ音だけ鳴るため。
+    const fallback = document.getElementById(FOCUS_FALLBACK_ID)
+    fallback?.focus()
   }
 }
 
