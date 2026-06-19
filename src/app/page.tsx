@@ -8,6 +8,7 @@ import { error } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { CheatSheet } from '@/components/organisms/CheatSheet'
+import { FOCUS_FALLBACK_ID } from '@/constants/focus'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 
@@ -74,6 +75,11 @@ export default function Home() {
         ) {
           focused.blur()
           focused.focus()
+        } else {
+          // フォーカス可能な要素が無い場合（編集モード突入直後など activeElement が
+          // body に戻っているケース）でも、ルートに常設したフォールバック要素へ
+          // フォーカスして WKWebView の native first responder を取り戻す。
+          document.getElementById(FOCUS_FALLBACK_ID)?.focus()
         }
       })
       if (cancelled) {
