@@ -462,7 +462,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: 14,
+              fontSize: 'calc(14px * var(--font-scale))',
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -474,11 +474,20 @@ export default function Page() {
           <Box sx={{ pl: '14px', py: '8px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Typography
-                sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}
+                sx={{
+                  fontSize: 'calc(13px * var(--font-scale))',
+                  fontWeight: 500,
+                  color: 'text.primary',
+                }}
               >
                 Toggle Visible
               </Typography>
-              <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: 'calc(13px * var(--font-scale))',
+                }}
+              >
                 :
               </Typography>
               {toggleVisibleShortcut && (
@@ -492,7 +501,7 @@ export default function Page() {
                     borderRadius: '6px',
                     padding: '4px 11px',
                     fontFamily: 'monospace',
-                    fontSize: 12,
+                    fontSize: 'calc(12px * var(--font-scale))',
                     color: 'text.primary',
                     boxShadow: !isDark
                       ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
@@ -539,7 +548,9 @@ export default function Page() {
                       },
                     }}
                   >
-                    <SettingsOutlinedIcon sx={{ fontSize: 14 }} />
+                    <SettingsOutlinedIcon
+                      sx={{ fontSize: 'calc(14px * var(--font-scale))' }}
+                    />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -553,7 +564,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: 14,
+              fontSize: 'calc(14px * var(--font-scale))',
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -577,7 +588,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: 14,
+              fontSize: 'calc(14px * var(--font-scale))',
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -614,7 +625,12 @@ export default function Page() {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <RowDot />
-                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                  <Typography
+                    sx={{
+                      fontSize: 'calc(13px * var(--font-scale))',
+                      color: 'text.primary',
+                    }}
+                  >
                     Visible on all workspaces
                   </Typography>
                 </Box>
@@ -637,7 +653,12 @@ export default function Page() {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <RowDot />
-                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                  <Typography
+                    sx={{
+                      fontSize: 'calc(13px * var(--font-scale))',
+                      color: 'text.primary',
+                    }}
+                  >
                     Confirm before actions
                   </Typography>
                 </Box>
@@ -660,7 +681,12 @@ export default function Page() {
                   }}
                 >
                   <RowDot />
-                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                  <Typography
+                    sx={{
+                      fontSize: 'calc(13px * var(--font-scale))',
+                      color: 'text.primary',
+                    }}
+                  >
                     CheatSheet DB
                   </Typography>
                   <Chip
@@ -669,7 +695,7 @@ export default function Page() {
                     sx={{
                       height: 'auto',
                       py: '2px',
-                      fontSize: '9.5px',
+                      fontSize: 'calc(9.5px * var(--font-scale))',
                       fontFamily: 'monospace',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
@@ -713,7 +739,9 @@ export default function Page() {
                         },
                       }}
                     >
-                      <InsertDriveFileOutlinedIcon sx={{ fontSize: 14 }} />
+                      <InsertDriveFileOutlinedIcon
+                        sx={{ fontSize: 'calc(14px * var(--font-scale))' }}
+                      />
                     </IconButton>
                   </Tooltip>
                   <Box
@@ -737,7 +765,7 @@ export default function Page() {
                       component='span'
                       sx={{
                         fontFamily: 'monospace',
-                        fontSize: '11px',
+                        fontSize: 'calc(11px * var(--font-scale))',
                         display: 'block',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -769,7 +797,12 @@ export default function Page() {
                     sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
                     <RowDot />
-                    <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                    <Typography
+                      sx={{
+                        fontSize: 'calc(13px * var(--font-scale))',
+                        color: 'text.primary',
+                      }}
+                    >
                       Log
                     </Typography>
                     <Chip
@@ -778,7 +811,7 @@ export default function Page() {
                       sx={{
                         height: 'auto',
                         py: '2px',
-                        fontSize: '9.5px',
+                        fontSize: 'calc(9.5px * var(--font-scale))',
                         fontFamily: 'monospace',
                         letterSpacing: '0.06em',
                         textTransform: 'uppercase',
@@ -814,7 +847,9 @@ export default function Page() {
                           },
                         }}
                       >
-                        <ArticleOutlinedIcon sx={{ fontSize: 13 }} />
+                        <ArticleOutlinedIcon
+                          sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
+                        />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title='Edit log settings'>
@@ -838,7 +873,9 @@ export default function Page() {
                           },
                         }}
                       >
-                        <EditOutlinedIcon sx={{ fontSize: 13 }} />
+                        <EditOutlinedIcon
+                          sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
+                        />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -945,7 +982,7 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
     >
       <Typography
         sx={{
-          fontSize: 11,
+          fontSize: 'calc(11px * var(--font-scale))',
           flexShrink: 0,
           width: 110,
           fontWeight: 500,
@@ -957,7 +994,7 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
       <Typography
         title={value}
         sx={{
-          fontSize: 11,
+          fontSize: 'calc(11px * var(--font-scale))',
           fontFamily: 'monospace',
           color: 'text.primary',
           overflow: 'hidden',
@@ -1006,7 +1043,7 @@ function NumberInputField({
     <Box>
       <Typography
         sx={{
-          fontSize: 11,
+          fontSize: 'calc(11px * var(--font-scale))',
           fontWeight: 500,
           mb: '6px',
           color: 'text.secondary',
@@ -1044,7 +1081,7 @@ function NumberInputField({
             border: 'none',
             outline: 'none',
             fontFamily: 'monospace',
-            fontSize: 12,
+            fontSize: 'calc(12px * var(--font-scale))',
             color: 'text.primary',
             caretColor: theme.palette.primary.main,
             padding: '2px 0',
@@ -1057,7 +1094,7 @@ function NumberInputField({
           component='span'
           sx={{
             fontFamily: 'monospace',
-            fontSize: 10,
+            fontSize: 'calc(10px * var(--font-scale))',
             color: 'text.disabled',
             ml: '6px',
             flexShrink: 0,
@@ -1070,7 +1107,7 @@ function NumberInputField({
       {hint && (
         <Typography
           sx={{
-            fontSize: 10.5,
+            fontSize: 'calc(10.5px * var(--font-scale))',
             color: 'error.main',
             mt: '4px',
             lineHeight: 1.4,
@@ -1123,7 +1160,9 @@ function Keycap({ children, big = false, active = true }: KeycapProps) {
             : '0 1px 0 rgba(0,0,30,0.08), inset 0 0.5px 0 rgba(255,255,255,0.9)'
           : 'none',
         fontFamily: 'monospace',
-        fontSize: big ? 15 : 12,
+        fontSize: big
+          ? 'calc(15px * var(--font-scale))'
+          : 'calc(12px * var(--font-scale))',
         fontWeight: 600,
         color: active ? 'text.primary' : 'text.secondary',
         textAlign: 'center',
@@ -1240,7 +1279,7 @@ function ShortcutCheckbox({
       <Keycap active={checked}>{symbol}</Keycap>
       <Typography
         sx={{
-          fontSize: 13,
+          fontSize: 'calc(13px * var(--font-scale))',
           color: checked ? 'text.primary' : 'text.secondary',
         }}
       >
@@ -1292,7 +1331,7 @@ function HotkeyInput({ value, onChange, invalid }: HotkeyInputProps) {
         borderRadius: '7px',
         padding: '7px 8px',
         fontFamily: 'monospace',
-        fontSize: 16,
+        fontSize: 'calc(16px * var(--font-scale))',
         fontWeight: 600,
         color: 'text.primary',
         caretColor: theme.palette.primary.main,
@@ -1378,7 +1417,7 @@ function ShortcutSettingsDialog({
       <DialogTitle
         sx={{
           padding: '14px 18px 12px',
-          fontSize: 14,
+          fontSize: 'calc(14px * var(--font-scale))',
           fontWeight: 600,
           borderBottom: `0.5px solid ${theme.palette.divider}`,
         }}
@@ -1409,7 +1448,7 @@ function ShortcutSettingsDialog({
         >
           <InfoOutlinedIcon
             sx={{
-              fontSize: 14,
+              fontSize: 'calc(14px * var(--font-scale))',
               mt: '1px',
               flexShrink: 0,
               color: isDark ? '#f5c46b' : '#a87a00',
@@ -1419,7 +1458,7 @@ function ShortcutSettingsDialog({
             sx={{
               lineHeight: 1.5,
               color: isDark ? '#f5c46b' : '#8a6300',
-              fontSize: '11.5px',
+              fontSize: 'calc(11.5px * var(--font-scale))',
             }}
           >
             Changing the global shortcut takes effect after restarting
@@ -1445,7 +1484,7 @@ function ShortcutSettingsDialog({
         >
           <Typography
             sx={{
-              fontSize: 10.5,
+              fontSize: 'calc(10.5px * var(--font-scale))',
               fontWeight: 600,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
@@ -1464,7 +1503,11 @@ function ShortcutSettingsDialog({
             </Box>
           ) : (
             <Typography
-              sx={{ fontSize: 13, color: 'text.secondary', p: '7px 0' }}
+              sx={{
+                fontSize: 'calc(13px * var(--font-scale))',
+                color: 'text.secondary',
+                p: '7px 0',
+              }}
             >
               Not set
             </Typography>
@@ -1475,7 +1518,7 @@ function ShortcutSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 'calc(11px * var(--font-scale))',
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1528,7 +1571,7 @@ function ShortcutSettingsDialog({
           {showError && !hasModifier && (
             <Typography
               sx={{
-                fontSize: 10.5,
+                fontSize: 'calc(10.5px * var(--font-scale))',
                 color: theme.palette.error.main,
                 mt: '2px',
               }}
@@ -1542,7 +1585,7 @@ function ShortcutSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 'calc(11px * var(--font-scale))',
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1560,19 +1603,28 @@ function ShortcutSettingsDialog({
               }}
               invalid={showError && !hasHotkey}
             />
-            <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+            <Typography
+              sx={{
+                fontSize: 'calc(11.5px * var(--font-scale))',
+                color: 'text.secondary',
+              }}
+            >
               Type a key to set it
             </Typography>
           </Box>
           <Typography
-            sx={{ fontSize: 10.5, color: 'text.disabled', lineHeight: 1.4 }}
+            sx={{
+              fontSize: 'calc(10.5px * var(--font-scale))',
+              color: 'text.disabled',
+              lineHeight: 1.4,
+            }}
           >
             A single character — letters (A–Z, a–z) or digits (0–9) only.
           </Typography>
           {showError && !hasHotkey && (
             <Typography
               sx={{
-                fontSize: 10.5,
+                fontSize: 'calc(10.5px * var(--font-scale))',
                 color: theme.palette.error.main,
                 mt: '2px',
               }}
@@ -1596,7 +1648,7 @@ function ShortcutSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: 12,
+            fontSize: 'calc(12px * var(--font-scale))',
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
@@ -1620,7 +1672,7 @@ function ShortcutSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: 12,
+            fontSize: 'calc(12px * var(--font-scale))',
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
@@ -1737,7 +1789,7 @@ function LogSettingsDialog({
       <DialogTitle
         sx={{
           padding: '14px 18px 12px',
-          fontSize: 14,
+          fontSize: 'calc(14px * var(--font-scale))',
           fontWeight: 600,
           borderBottom: `0.5px solid ${theme.palette.divider}`,
         }}
@@ -1768,7 +1820,7 @@ function LogSettingsDialog({
         >
           <InfoOutlinedIcon
             sx={{
-              fontSize: 14,
+              fontSize: 'calc(14px * var(--font-scale))',
               mt: '1px',
               flexShrink: 0,
               color: isDark ? '#f5c46b' : '#a87a00',
@@ -1778,7 +1830,7 @@ function LogSettingsDialog({
             sx={{
               lineHeight: 1.5,
               color: isDark ? '#f5c46b' : '#8a6300',
-              fontSize: '11.5px',
+              fontSize: 'calc(11.5px * var(--font-scale))',
             }}
           >
             Log settings only take effect after restarting RightCheat.
@@ -1789,7 +1841,7 @@ function LogSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 'calc(11px * var(--font-scale))',
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1819,7 +1871,9 @@ function LogSettingsDialog({
                   },
                 }}
               >
-                <FolderOutlinedIcon sx={{ fontSize: 14 }} />
+                <FolderOutlinedIcon
+                  sx={{ fontSize: 'calc(14px * var(--font-scale))' }}
+                />
               </IconButton>
             </Tooltip>
             <Box
@@ -1842,7 +1896,7 @@ function LogSettingsDialog({
                 dir='ltr'
                 sx={{
                   fontFamily: 'monospace',
-                  fontSize: '11.5px',
+                  fontSize: 'calc(11.5px * var(--font-scale))',
                   display: 'block',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -1901,7 +1955,7 @@ function LogSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: 12,
+            fontSize: 'calc(12px * var(--font-scale))',
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
@@ -1925,7 +1979,7 @@ function LogSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: 12,
+            fontSize: 'calc(12px * var(--font-scale))',
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',

@@ -57,7 +57,7 @@ export function ThemeToggle({
               padding: '5px 14px',
               cursor: disabled ? 'default' : 'pointer',
               fontFamily: 'monospace',
-              fontSize: 11,
+              fontSize: 'calc(11px * var(--font-scale))',
               fontWeight: selected ? 700 : 400,
               color: selected
                 ? theme.palette.primary.main

@@ -243,7 +243,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                     border: 'none',
                     outline: 'none',
                     fontFamily: 'inherit',
-                    fontSize: '12px',
+                    fontSize: 'calc(12px * var(--font-scale))',
                     color: theme.palette.text.primary,
                   }}
                 />
@@ -292,7 +292,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                 <Typography
                   sx={{
                     padding: '10px 16px',
-                    fontSize: '12px',
+                    fontSize: 'calc(12px * var(--font-scale))',
                     color: theme.palette.text.disabled,
                     textAlign: 'center',
                   }}
@@ -363,7 +363,7 @@ const SheetDropdownItem = forwardRef<HTMLDivElement, DropdownItemProps>(
         sx={{
           padding: '7px 12px',
           cursor: 'pointer',
-          fontSize: '13px',
+          fontSize: 'calc(13px * var(--font-scale))',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',

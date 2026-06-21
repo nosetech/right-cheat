@@ -47,6 +47,14 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
     [],
   )
 
+  // Sync --font-scale CSS custom property for components with hardcoded px font sizes
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--font-scale',
+      String(fontSizeSettings.scale),
+    )
+  }, [fontSizeSettings.scale])
+
   // Update theme when stored theme mode or font size changes
   useEffect(() => {
     if (!isLoading) {

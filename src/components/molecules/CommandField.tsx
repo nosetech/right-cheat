@@ -137,7 +137,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           <Typography
             sx={{
               fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-              fontSize: '9.5px',
+              fontSize: 'calc(9.5px * var(--font-scale))',
               color: numberHintColor,
               transition: 'color 0.14s',
             }}
@@ -180,7 +180,9 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: isMultiLine ? '10px' : '11.5px',
+            fontSize: isMultiLine
+              ? 'calc(10px * var(--font-scale))'
+              : 'calc(11.5px * var(--font-scale))',
             color: hasDone ? accentColor : theme.palette.text.primary,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
@@ -248,7 +250,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
             <TruncatedText
               text={description}
               sx={{
-                fontSize: '11px',
+                fontSize: 'calc(11px * var(--font-scale))',
                 color: isFocused
                   ? theme.palette.text.primary
                   : theme.palette.text.secondary,

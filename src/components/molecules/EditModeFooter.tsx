@@ -85,7 +85,7 @@ export function EditModeFooter({
           {editDirty ? (
             <Box
               sx={{
-                fontSize: '11px',
+                fontSize: 'calc(11px * var(--font-scale))',
                 color: 'text.secondary',
                 fontStyle: 'italic',
               }}
@@ -93,7 +93,12 @@ export function EditModeFooter({
               Unsaved changes
             </Box>
           ) : (
-            <Box sx={{ fontSize: '11px', color: 'text.disabled' }}>
+            <Box
+              sx={{
+                fontSize: 'calc(11px * var(--font-scale))',
+                color: 'text.disabled',
+              }}
+            >
               No changes
             </Box>
           )}

@@ -58,7 +58,9 @@ export function EditableCommandRow({
         component='pre'
         sx={{
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          fontSize: isMultiLine ? '10px' : '11.5px',
+          fontSize: isMultiLine
+            ? 'calc(10px * var(--font-scale))'
+            : 'calc(11.5px * var(--font-scale))',
           color: theme.palette.text.primary,
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-all',
@@ -103,12 +105,15 @@ export function EditableCommandRow({
           {item.description ? (
             <TruncatedText
               text={item.description}
-              sx={{ fontSize: '11px', color: theme.palette.text.secondary }}
+              sx={{
+                fontSize: 'calc(11px * var(--font-scale))',
+                color: theme.palette.text.secondary,
+              }}
             />
           ) : (
             <Typography
               sx={{
-                fontSize: '11px',
+                fontSize: 'calc(11px * var(--font-scale))',
                 color: theme.palette.text.disabled,
                 fontStyle: 'italic',
               }}
@@ -142,7 +147,7 @@ export function EditableCommandRow({
         <TruncatedText
           text={item.description!}
           sx={{
-            fontSize: '11px',
+            fontSize: 'calc(11px * var(--font-scale))',
             color: theme.palette.text.secondary,
             flexShrink: 1,
           }}

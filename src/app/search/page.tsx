@@ -148,7 +148,7 @@ export default function SearchPage() {
           <Box
             sx={{
               fontFamily: FONT_UI,
-              fontSize: '11px',
+              fontSize: 'calc(11px * var(--font-scale))',
               color: theme.palette.text.secondary,
               display: 'flex',
               alignItems: 'center',

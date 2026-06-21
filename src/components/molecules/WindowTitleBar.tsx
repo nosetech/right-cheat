@@ -58,7 +58,7 @@ export const WindowTitleBar = ({ title, rightControls }: Props) => {
         >
           <Typography
             sx={{
-              fontSize: '12px',
+              fontSize: 'calc(12px * var(--font-scale))',
               fontWeight: 600,
               color: theme.palette.text.secondary,
               letterSpacing: '0.02em',

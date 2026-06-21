@@ -46,7 +46,7 @@ export function FooterButton({ onClick, primary, disabled, children }: Props) {
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: '12px',
+        fontSize: 'calc(12px * var(--font-scale))',
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: disabled ? 'not-allowed' : 'pointer',

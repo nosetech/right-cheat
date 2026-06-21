@@ -82,7 +82,7 @@ const SearchPlaceholder = ({
       <Box
         sx={{
           fontFamily: FONT_UI,
-          fontSize: '13px',
+          fontSize: 'calc(13px * var(--font-scale))',
           fontWeight: 600,
           color: theme.palette.text.primary,
         }}
@@ -92,7 +92,7 @@ const SearchPlaceholder = ({
       <Box
         sx={{
           fontFamily: FONT_UI,
-          fontSize: '11.5px',
+          fontSize: 'calc(11.5px * var(--font-scale))',
           color: theme.palette.text.secondary,
           maxWidth: '340px',
           lineHeight: 1.55,
@@ -143,7 +143,7 @@ const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
             component='span'
             sx={{
               fontFamily: FONT_CODE,
-              fontSize: '10px',
+              fontSize: 'calc(10px * var(--font-scale))',
               fontWeight: 500,
               color: theme.palette.text.primary,
               background: isDark
@@ -169,7 +169,7 @@ const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
         component='span'
         sx={{
           fontFamily: FONT_UI,
-          fontSize: '10.5px',
+          fontSize: 'calc(10.5px * var(--font-scale))',
           color: theme.palette.text.secondary,
           letterSpacing: '0.01em',
         }}

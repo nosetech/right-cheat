@@ -92,7 +92,7 @@ function ActionButton({ variant, onClick, children }: ActionButtonProps) {
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: '12px',
+        fontSize: 'calc(12px * var(--font-scale))',
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: 'pointer',
@@ -139,7 +139,7 @@ function SecondaryButton({ onClick, children }: SecondaryButtonProps) {
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: '12px',
+        fontSize: 'calc(12px * var(--font-scale))',
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: 'pointer',
@@ -274,7 +274,7 @@ export function RcDialog({
             <Box
               id='rc-dialog-title'
               sx={{
-                fontSize: '14.5px',
+                fontSize: 'calc(14.5px * var(--font-scale))',
                 fontWeight: 600,
                 color: 'text.primary',
                 mb: '6px',
@@ -287,7 +287,7 @@ export function RcDialog({
             <Box
               id='rc-dialog-description'
               sx={{
-                fontSize: '12.5px',
+                fontSize: 'calc(12.5px * var(--font-scale))',
                 lineHeight: 1.65,
                 color: 'text.secondary',
                 whiteSpace: 'pre-line',

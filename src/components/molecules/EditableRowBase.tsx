@@ -123,7 +123,7 @@ export function EditableRowBase({
       <Typography
         sx={{
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          fontSize: '9.5px',
+          fontSize: 'calc(9.5px * var(--font-scale))',
           color: theme.palette.text.disabled,
           minWidth: '16px',
           textAlign: 'right',

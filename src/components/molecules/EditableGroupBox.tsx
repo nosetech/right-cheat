@@ -117,7 +117,7 @@ export function EditableGroupBox({
           variant='caption'
           sx={{
             color: theme.palette.text.secondary,
-            fontSize: '11px',
+            fontSize: 'calc(11px * var(--font-scale))',
             lineHeight: 1,
             userSelect: 'none',
           }}
@@ -176,7 +176,7 @@ export function EditableGroupBox({
         {isEmpty ? (
           <Typography
             sx={{
-              fontSize: '11px',
+              fontSize: 'calc(11px * var(--font-scale))',
               color: theme.palette.text.disabled,
               fontStyle: 'italic',
               textAlign: 'center',

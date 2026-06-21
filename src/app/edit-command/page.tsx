@@ -156,7 +156,7 @@ export default function EditCommandPage() {
             value={groupEditId}
             onChange={(e) => setGroupEditId(e.target.value)}
             size='small'
-            sx={{ fontSize: '13px' }}
+            sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
             displayEmpty
           >
             <MenuItem value=''>
@@ -182,7 +182,7 @@ export default function EditCommandPage() {
             }
             size='small'
             fullWidth
-            sx={{ fontSize: '13px' }}
+            sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
           />
         </FieldRow>
 
@@ -216,7 +216,7 @@ export default function EditCommandPage() {
                 sx={{
                   '& textarea': {
                     fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                    fontSize: '12px',
+                    fontSize: 'calc(12px * var(--font-scale))',
                   },
                 }}
               />
@@ -226,7 +226,7 @@ export default function EditCommandPage() {
                 value={layout}
                 onChange={(e) => setLayout(e.target.value as CommandLayout)}
                 size='small'
-                sx={{ fontSize: '13px' }}
+                sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
               >
                 {LAYOUT_OPTIONS.map((o) => (
                   <MenuItem key={o.value} value={o.value}>
@@ -279,7 +279,7 @@ function FieldRow({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
       <Box
         sx={{
-          fontSize: '11px',
+          fontSize: 'calc(11px * var(--font-scale))',
           fontWeight: 600,
           color: 'text.secondary',
           letterSpacing: '0.01em',
@@ -291,7 +291,7 @@ function FieldRow({
       {hint && (
         <Box
           sx={{
-            fontSize: '10.5px',
+            fontSize: 'calc(10.5px * var(--font-scale))',
             color: theme.palette.text.disabled,
             lineHeight: 1.4,
           }}

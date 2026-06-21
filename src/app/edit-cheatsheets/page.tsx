@@ -253,7 +253,7 @@ function TypeBadge({
           borderRadius: 999,
           padding: '2px 8px 2px 7px',
           fontFamily: theme.typography.fontFamily,
-          fontSize: 9.5,
+          fontSize: 'calc(9.5px * var(--font-scale))',
           fontWeight: 600,
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
@@ -344,7 +344,7 @@ function TypeBadge({
           >
             <div
               style={{
-                fontSize: 9.5,
+                fontSize: 'calc(9.5px * var(--font-scale))',
                 fontWeight: 600,
                 color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)',
                 letterSpacing: '0.12em',
@@ -409,7 +409,7 @@ function TypeBadge({
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontSize: 12.5,
+                        fontSize: 'calc(12.5px * var(--font-scale))',
                         fontWeight: 500,
                         color: isDark
                           ? 'rgba(255,255,255,0.92)'
@@ -420,7 +420,7 @@ function TypeBadge({
                     </div>
                     <div
                       style={{
-                        fontSize: 10.5,
+                        fontSize: 'calc(10.5px * var(--font-scale))',
                         color: isDark
                           ? 'rgba(255,255,255,0.45)'
                           : 'rgba(0,0,0,0.45)',
@@ -538,7 +538,7 @@ function LayoutBadge({
           borderRadius: 6,
           padding: '2px 6px',
           fontFamily: theme.typography.fontFamily,
-          fontSize: 11,
+          fontSize: 'calc(11px * var(--font-scale))',
           fontWeight: 500,
           color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)',
           cursor: locked ? 'default' : 'pointer',
@@ -564,7 +564,7 @@ function LayoutBadge({
         <span
           style={{
             fontFamily: '"JetBrains Mono","Fira Code","SF Mono",monospace',
-            fontSize: 10.5,
+            fontSize: 'calc(10.5px * var(--font-scale))',
             color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)',
             letterSpacing: '0.01em',
             flex: 1,
@@ -637,7 +637,7 @@ function LayoutBadge({
           >
             <div
               style={{
-                fontSize: 9.5,
+                fontSize: 'calc(9.5px * var(--font-scale))',
                 fontWeight: 600,
                 color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)',
                 letterSpacing: '0.12em',
@@ -712,7 +712,7 @@ function LayoutBadge({
                       style={{
                         fontFamily:
                           '"JetBrains Mono","Fira Code","SF Mono",monospace',
-                        fontSize: 12,
+                        fontSize: 'calc(12px * var(--font-scale))',
                         fontWeight: 500,
                         color: isDark
                           ? 'rgba(255,255,255,0.92)'
@@ -723,7 +723,7 @@ function LayoutBadge({
                     </div>
                     <div
                       style={{
-                        fontSize: 10.5,
+                        fontSize: 'calc(10.5px * var(--font-scale))',
                         color: isDark
                           ? 'rgba(255,255,255,0.45)'
                           : 'rgba(0,0,0,0.45)',
@@ -941,7 +941,7 @@ function EditRow({
             width: 18,
             flexShrink: 0,
             fontFamily: '"JetBrains Mono","Fira Code","SF Mono",monospace',
-            fontSize: 10,
+            fontSize: 'calc(10px * var(--font-scale))',
             color: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.28)',
             textAlign: 'right',
             userSelect: 'none',
@@ -991,7 +991,7 @@ function EditRow({
                 borderRadius: 6,
                 padding: '4px 8px',
                 fontFamily: theme.typography.fontFamily,
-                fontSize: 13,
+                fontSize: 'calc(13px * var(--font-scale))',
                 fontWeight: 500,
                 color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)',
                 caretColor: accent,
@@ -1008,7 +1008,7 @@ function EditRow({
                 style={{
                   fontFamily:
                     '"JetBrains Mono","Fira Code","SF Mono",monospace',
-                  fontSize: 10,
+                  fontSize: 'calc(10px * var(--font-scale))',
                   color: error.tooLong
                     ? '#ff6b6b'
                     : isDark
@@ -1027,7 +1027,7 @@ function EditRow({
             <div
               style={{
                 fontFamily: theme.typography.fontFamily,
-                fontSize: 10.5,
+                fontSize: 'calc(10.5px * var(--font-scale))',
                 color: '#ff6b6b',
                 paddingLeft: 9,
                 lineHeight: 1.4,
@@ -1412,7 +1412,7 @@ export default function EditCheatsheetsPage() {
             <Box
               sx={{
                 padding: '16px',
-                fontSize: '12px',
+                fontSize: 'calc(12px * var(--font-scale))',
                 color: theme.palette.text.secondary,
               }}
             >
@@ -1422,7 +1422,7 @@ export default function EditCheatsheetsPage() {
             <Box
               sx={{
                 padding: '16px',
-                fontSize: '12px',
+                fontSize: 'calc(12px * var(--font-scale))',
                 color: theme.palette.text.secondary,
               }}
             >
@@ -1503,7 +1503,7 @@ export default function EditCheatsheetsPage() {
                 padding: '8px 10px',
                 cursor: 'pointer',
                 fontFamily: theme.typography.fontFamily,
-                fontSize: '12px',
+                fontSize: 'calc(12px * var(--font-scale))',
                 fontWeight: 500,
                 color: accent,
                 transition: 'all 0.14s',
@@ -1563,7 +1563,7 @@ export default function EditCheatsheetsPage() {
                     component='span'
                     sx={{
                       fontFamily: theme.typography.fontFamily,
-                      fontSize: '11px',
+                      fontSize: 'calc(11px * var(--font-scale))',
                       color: '#ff6b6b',
                       fontWeight: 500,
                     }}
@@ -1576,7 +1576,7 @@ export default function EditCheatsheetsPage() {
                   component='span'
                   sx={{
                     fontFamily: theme.typography.fontFamily,
-                    fontSize: '11px',
+                    fontSize: 'calc(11px * var(--font-scale))',
                     color: theme.palette.text.secondary,
                     fontStyle: 'italic',
                   }}
@@ -1588,7 +1588,7 @@ export default function EditCheatsheetsPage() {
                   component='span'
                   sx={{
                     fontFamily: theme.typography.fontFamily,
-                    fontSize: '11px',
+                    fontSize: 'calc(11px * var(--font-scale))',
                     color: isDark
                       ? 'rgba(255,255,255,0.22)'
                       : 'rgba(0,0,0,0.28)',

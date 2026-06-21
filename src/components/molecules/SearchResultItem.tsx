@@ -71,7 +71,7 @@ const SheetBadge = ({
         alignItems: 'center',
         gap: '4px',
         fontFamily: FONT_UI,
-        fontSize: '10.5px',
+        fontSize: 'calc(10.5px * var(--font-scale))',
         fontWeight: 500,
         letterSpacing: '0.01em',
         color: focused ? accentSolid : theme.palette.text.secondary,
@@ -191,7 +191,7 @@ export const SearchResultItem = ({
             component='span'
             sx={{
               fontFamily: FONT_UI,
-              fontSize: '13px',
+              fontSize: 'calc(13px * var(--font-scale))',
               fontWeight: 600,
               color: theme.palette.text.primary,
               overflow: 'hidden',
@@ -228,7 +228,7 @@ export const SearchResultItem = ({
         <Box
           sx={{
             fontFamily: FONT_CODE,
-            fontSize: '11.5px',
+            fontSize: 'calc(11.5px * var(--font-scale))',
             color: focused
               ? theme.palette.text.primary
               : theme.palette.text.secondary,

@@ -31,7 +31,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: '11.5px',
+            fontSize: 'calc(11.5px * var(--font-scale))',
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',
             lineHeight: 1.55,
@@ -43,7 +43,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
       <TruncatedText
         text={description}
         sx={{
-          fontSize: '11px',
+          fontSize: 'calc(11px * var(--font-scale))',
           color: theme.palette.text.secondary,
         }}
       />
