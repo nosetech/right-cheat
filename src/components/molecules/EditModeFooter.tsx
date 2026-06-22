@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box, CircularProgress } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -85,7 +86,7 @@ export function EditModeFooter({
           {editDirty ? (
             <Box
               sx={{
-                fontSize: '11px',
+                fontSize: scaledPx(11),
                 color: 'text.secondary',
                 fontStyle: 'italic',
               }}
@@ -93,7 +94,12 @@ export function EditModeFooter({
               Unsaved changes
             </Box>
           ) : (
-            <Box sx={{ fontSize: '11px', color: 'text.disabled' }}>
+            <Box
+              sx={{
+                fontSize: scaledPx(11),
+                color: 'text.disabled',
+              }}
+            >
               No changes
             </Box>
           )}

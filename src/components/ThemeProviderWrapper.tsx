@@ -10,13 +10,13 @@ import {
 } from '@/theme/default'
 import { ThemeProvider } from '@mui/material/styles'
 import { listen } from '@tauri-apps/api/event'
-import { error } from '@tauri-apps/plugin-log'
+import { debug, error } from '@tauri-apps/plugin-log'
 import { ReactNode, useCallback, useEffect, useState } from 'react'
 
 export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
   const { themeMode: storedThemeMode, isLoading } = useThemeStore()
   const { getThemeMode } = usePreferencesStore()
-  const { fontSizeSettings } = useFontSize()
+  const { fontSizeSettings, isFontSizeLoaded } = useFontSize()
   const [currentTheme, setCurrentTheme] = useState(lightTheme)
 
   const getSystemTheme = (): 'light' | 'dark' => {
@@ -47,12 +47,25 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
     [],
   )
 
-  // Update theme when stored theme mode or font size changes
+  // Sync --font-scale CSS custom property and update MUI theme together to avoid double repaint
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && isFontSizeLoaded) {
+      document.documentElement.style.setProperty(
+        '--font-scale',
+        String(fontSizeSettings.scale),
+      )
+      debug(
+        `[ThemeProviderWrapper] Applying font scale: ${fontSizeSettings.scale}, theme: ${storedThemeMode}`,
+      )
       updateTheme(storedThemeMode, fontSizeSettings.scale)
     }
-  }, [storedThemeMode, isLoading, fontSizeSettings.scale, updateTheme])
+  }, [
+    storedThemeMode,
+    isLoading,
+    isFontSizeLoaded,
+    fontSizeSettings.scale,
+    updateTheme,
+  ])
 
   // Listen for system theme changes when mode is 'system'
   useEffect(() => {
@@ -86,6 +99,9 @@ export function ThemeProviderWrapper({ children }: { children: ReactNode }) {
   }, [getThemeMode, fontSizeSettings.scale, updateTheme])
 
   return (
-    !isLoading && <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>
+    !isLoading &&
+    isFontSizeLoaded && (
+      <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>
+    )
   )
 }

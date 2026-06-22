@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Fragment, useState } from 'react'
 
 import { Box } from '@mui/material'
@@ -71,7 +72,7 @@ const SheetBadge = ({
         alignItems: 'center',
         gap: '4px',
         fontFamily: FONT_UI,
-        fontSize: '10.5px',
+        fontSize: scaledPx(10.5),
         fontWeight: 500,
         letterSpacing: '0.01em',
         color: focused ? accentSolid : theme.palette.text.secondary,
@@ -191,7 +192,7 @@ export const SearchResultItem = ({
             component='span'
             sx={{
               fontFamily: FONT_UI,
-              fontSize: '13px',
+              fontSize: scaledPx(13),
               fontWeight: 600,
               color: theme.palette.text.primary,
               overflow: 'hidden',
@@ -228,7 +229,7 @@ export const SearchResultItem = ({
         <Box
           sx={{
             fontFamily: FONT_CODE,
-            fontSize: '11.5px',
+            fontSize: scaledPx(11.5),
             color: focused
               ? theme.palette.text.primary
               : theme.palette.text.secondary,

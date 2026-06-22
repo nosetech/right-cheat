@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Fragment, useEffect, useRef } from 'react'
 
 import { Box } from '@mui/material'
@@ -82,7 +83,7 @@ const SearchPlaceholder = ({
       <Box
         sx={{
           fontFamily: FONT_UI,
-          fontSize: '13px',
+          fontSize: scaledPx(13),
           fontWeight: 600,
           color: theme.palette.text.primary,
         }}
@@ -92,7 +93,7 @@ const SearchPlaceholder = ({
       <Box
         sx={{
           fontFamily: FONT_UI,
-          fontSize: '11.5px',
+          fontSize: scaledPx(11.5),
           color: theme.palette.text.secondary,
           maxWidth: '340px',
           lineHeight: 1.55,
@@ -143,7 +144,7 @@ const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
             component='span'
             sx={{
               fontFamily: FONT_CODE,
-              fontSize: '10px',
+              fontSize: scaledPx(10),
               fontWeight: 500,
               color: theme.palette.text.primary,
               background: isDark
@@ -169,7 +170,7 @@ const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
         component='span'
         sx={{
           fontFamily: FONT_UI,
-          fontSize: '10.5px',
+          fontSize: scaledPx(10.5),
           color: theme.palette.text.secondary,
           letterSpacing: '0.01em',
         }}

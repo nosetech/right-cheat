@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { ReactNode } from 'react'
 
 import { Box, Typography } from '@mui/material'
@@ -58,7 +59,7 @@ export const WindowTitleBar = ({ title, rightControls }: Props) => {
         >
           <Typography
             sx={{
-              fontSize: '12px',
+              fontSize: scaledPx(12),
               fontWeight: 600,
               color: theme.palette.text.secondary,
               letterSpacing: '0.02em',

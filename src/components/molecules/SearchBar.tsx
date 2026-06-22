@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { KeyboardEvent, RefObject } from 'react'
 
 import { Box } from '@mui/material'
@@ -77,7 +78,7 @@ export const SearchBar = ({
             outline: 'none',
             fontFamily:
               '"Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif',
-            fontSize: '15px',
+            fontSize: scaledPx(15),
             fontWeight: 500,
             color: theme.palette.text.primary,
             caretColor: accentSolid,

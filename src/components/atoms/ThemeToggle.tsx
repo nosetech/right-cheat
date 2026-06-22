@@ -1,6 +1,7 @@
 'use client'
 
 import { type ThemeMode } from '@/hooks/useThemeStore'
+import { scaledPx } from '@/utils/css'
 import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -57,7 +58,7 @@ export function ThemeToggle({
               padding: '5px 14px',
               cursor: disabled ? 'default' : 'pointer',
               fontFamily: 'monospace',
-              fontSize: 11,
+              fontSize: scaledPx(11),
               fontWeight: selected ? 700 : 400,
               color: selected
                 ? theme.palette.primary.main

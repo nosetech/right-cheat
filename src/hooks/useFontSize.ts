@@ -18,6 +18,7 @@ export const useFontSize = () => {
   const [fontSizeSettings, setFontSizeSettings] = useState<FontSizeSettings>(
     DEFAULT_FONT_SIZE_SETTINGS,
   )
+  const [isFontSizeLoaded, setIsFontSizeLoaded] = useState(false)
 
   useEffect(() => {
     // Load initial font size settings
@@ -32,6 +33,8 @@ export const useFontSize = () => {
         error(
           `[useFontSize] Failed to load font size settings: ${errorMessage}`,
         )
+      } finally {
+        setIsFontSizeLoaded(true)
       }
     }
 
@@ -88,6 +91,7 @@ export const useFontSize = () => {
 
   return {
     fontSizeSettings,
+    isFontSizeLoaded,
     increaseFontSize,
     decreaseFontSize,
     resetFontSize,

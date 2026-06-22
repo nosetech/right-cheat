@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Box, TextField } from '@mui/material'
@@ -109,7 +110,7 @@ export default function EditGroupPage() {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Box
             sx={{
-              fontSize: '11px',
+              fontSize: scaledPx(11),
               fontWeight: 600,
               color: 'text.secondary',
             }}

@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -28,7 +29,7 @@ export function AddRowButton({ label, onClick, icon }: Props) {
         borderRadius: '7px',
         color: theme.palette.text.secondary,
         fontFamily: theme.typography.fontFamily,
-        fontSize: '11.5px',
+        fontSize: scaledPx(11.5),
         cursor: 'pointer',
         transition: 'all 0.14s',
         '&:hover': {

@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useState } from 'react'
@@ -123,7 +124,7 @@ export function EditableRowBase({
       <Typography
         sx={{
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          fontSize: '9.5px',
+          fontSize: scaledPx(9.5),
           color: theme.palette.text.disabled,
           minWidth: '16px',
           textAlign: 'right',

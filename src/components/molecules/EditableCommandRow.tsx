@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -58,7 +59,7 @@ export function EditableCommandRow({
         component='pre'
         sx={{
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          fontSize: isMultiLine ? '10px' : '11.5px',
+          fontSize: isMultiLine ? scaledPx(10) : scaledPx(11.5),
           color: theme.palette.text.primary,
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-all',
@@ -103,12 +104,15 @@ export function EditableCommandRow({
           {item.description ? (
             <TruncatedText
               text={item.description}
-              sx={{ fontSize: '11px', color: theme.palette.text.secondary }}
+              sx={{
+                fontSize: scaledPx(11),
+                color: theme.palette.text.secondary,
+              }}
             />
           ) : (
             <Typography
               sx={{
-                fontSize: '11px',
+                fontSize: scaledPx(11),
                 color: theme.palette.text.disabled,
                 fontStyle: 'italic',
               }}
@@ -142,7 +146,7 @@ export function EditableCommandRow({
         <TruncatedText
           text={item.description!}
           sx={{
-            fontSize: '11px',
+            fontSize: scaledPx(11),
             color: theme.palette.text.secondary,
             flexShrink: 1,
           }}

@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -31,7 +32,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: '11.5px',
+            fontSize: scaledPx(11.5),
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',
             lineHeight: 1.55,
@@ -43,7 +44,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
       <TruncatedText
         text={description}
         sx={{
-          fontSize: '11px',
+          fontSize: scaledPx(11),
           color: theme.palette.text.secondary,
         }}
       />

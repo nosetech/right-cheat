@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -67,7 +68,7 @@ export function EditableShortcutRow({
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: '11.5px',
+            fontSize: scaledPx(11.5),
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',
             lineHeight: 1.55,
@@ -82,12 +83,15 @@ export function EditableShortcutRow({
         {item.description ? (
           <TruncatedText
             text={item.description}
-            sx={{ fontSize: '11px', color: theme.palette.text.secondary }}
+            sx={{
+              fontSize: scaledPx(11),
+              color: theme.palette.text.secondary,
+            }}
           />
         ) : (
           <Typography
             sx={{
-              fontSize: '11px',
+              fontSize: scaledPx(11),
               color: theme.palette.text.disabled,
               fontStyle: 'italic',
             }}
