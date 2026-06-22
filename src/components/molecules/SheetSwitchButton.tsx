@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import {
   forwardRef,
   useCallback,
@@ -243,7 +244,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                     border: 'none',
                     outline: 'none',
                     fontFamily: 'inherit',
-                    fontSize: 'calc(12px * var(--font-scale))',
+                    fontSize: scaledPx(12),
                     color: theme.palette.text.primary,
                   }}
                 />
@@ -292,7 +293,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                 <Typography
                   sx={{
                     padding: '10px 16px',
-                    fontSize: 'calc(12px * var(--font-scale))',
+                    fontSize: scaledPx(12),
                     color: theme.palette.text.disabled,
                     textAlign: 'center',
                   }}
@@ -363,7 +364,7 @@ const SheetDropdownItem = forwardRef<HTMLDivElement, DropdownItemProps>(
         sx={{
           padding: '7px 12px',
           cursor: 'pointer',
-          fontSize: 'calc(13px * var(--font-scale))',
+          fontSize: scaledPx(13),
           display: 'flex',
           alignItems: 'center',
           gap: '8px',

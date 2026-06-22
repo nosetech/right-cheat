@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -46,7 +47,7 @@ export function FooterButton({ onClick, primary, disabled, children }: Props) {
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: 'calc(12px * var(--font-scale))',
+        fontSize: scaledPx(12),
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: disabled ? 'not-allowed' : 'pointer',

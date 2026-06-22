@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { forwardRef, useState } from 'react'
 
 import { Box, Stack, StackProps, Typography } from '@mui/material'
@@ -137,7 +138,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           <Typography
             sx={{
               fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-              fontSize: 'calc(9.5px * var(--font-scale))',
+              fontSize: scaledPx(9.5),
               color: numberHintColor,
               transition: 'color 0.14s',
             }}
@@ -180,9 +181,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: isMultiLine
-              ? 'calc(10px * var(--font-scale))'
-              : 'calc(11.5px * var(--font-scale))',
+            fontSize: isMultiLine ? scaledPx(10) : scaledPx(11.5),
             color: hasDone ? accentColor : theme.palette.text.primary,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
@@ -250,7 +249,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
             <TruncatedText
               text={description}
               sx={{
-                fontSize: 'calc(11px * var(--font-scale))',
+                fontSize: scaledPx(11),
                 color: isFocused
                   ? theme.palette.text.primary
                   : theme.palette.text.secondary,

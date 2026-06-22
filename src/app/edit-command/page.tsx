@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { useEffect, useRef, useState } from 'react'
 
 import { Box, MenuItem, Select, TextField } from '@mui/material'
@@ -156,7 +157,7 @@ export default function EditCommandPage() {
             value={groupEditId}
             onChange={(e) => setGroupEditId(e.target.value)}
             size='small'
-            sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
+            sx={{ fontSize: scaledPx(13) }}
             displayEmpty
           >
             <MenuItem value=''>
@@ -182,7 +183,7 @@ export default function EditCommandPage() {
             }
             size='small'
             fullWidth
-            sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
+            sx={{ fontSize: scaledPx(13) }}
           />
         </FieldRow>
 
@@ -216,7 +217,7 @@ export default function EditCommandPage() {
                 sx={{
                   '& textarea': {
                     fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                    fontSize: 'calc(12px * var(--font-scale))',
+                    fontSize: scaledPx(12),
                   },
                 }}
               />
@@ -226,7 +227,7 @@ export default function EditCommandPage() {
                 value={layout}
                 onChange={(e) => setLayout(e.target.value as CommandLayout)}
                 size='small'
-                sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
+                sx={{ fontSize: scaledPx(13) }}
               >
                 {LAYOUT_OPTIONS.map((o) => (
                   <MenuItem key={o.value} value={o.value}>
@@ -279,7 +280,7 @@ function FieldRow({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
       <Box
         sx={{
-          fontSize: 'calc(11px * var(--font-scale))',
+          fontSize: scaledPx(11),
           fontWeight: 600,
           color: 'text.secondary',
           letterSpacing: '0.01em',
@@ -291,7 +292,7 @@ function FieldRow({
       {hint && (
         <Box
           sx={{
-            fontSize: 'calc(10.5px * var(--font-scale))',
+            fontSize: scaledPx(10.5),
             color: theme.palette.text.disabled,
             lineHeight: 1.4,
           }}

@@ -1,5 +1,6 @@
 'use client'
 
+import { scaledPx } from '@/utils/css'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
@@ -92,7 +93,7 @@ function ActionButton({ variant, onClick, children }: ActionButtonProps) {
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: 'calc(12px * var(--font-scale))',
+        fontSize: scaledPx(12),
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: 'pointer',
@@ -139,7 +140,7 @@ function SecondaryButton({ onClick, children }: SecondaryButtonProps) {
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: 'calc(12px * var(--font-scale))',
+        fontSize: scaledPx(12),
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: 'pointer',
@@ -274,7 +275,7 @@ export function RcDialog({
             <Box
               id='rc-dialog-title'
               sx={{
-                fontSize: 'calc(14.5px * var(--font-scale))',
+                fontSize: scaledPx(14.5),
                 fontWeight: 600,
                 color: 'text.primary',
                 mb: '6px',
@@ -287,7 +288,7 @@ export function RcDialog({
             <Box
               id='rc-dialog-description'
               sx={{
-                fontSize: 'calc(12.5px * var(--font-scale))',
+                fontSize: scaledPx(12.5),
                 lineHeight: 1.65,
                 color: 'text.secondary',
                 whiteSpace: 'pre-line',

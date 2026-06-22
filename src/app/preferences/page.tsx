@@ -1,5 +1,6 @@
 'use client'
 
+import { scaledPx } from '@/utils/css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ThemedSwitch, ThemeToggle } from '@/components/atoms'
@@ -462,7 +463,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: 'calc(14px * var(--font-scale))',
+              fontSize: scaledPx(14),
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -475,7 +476,7 @@ export default function Page() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Typography
                 sx={{
-                  fontSize: 'calc(13px * var(--font-scale))',
+                  fontSize: scaledPx(13),
                   fontWeight: 500,
                   color: 'text.primary',
                 }}
@@ -485,7 +486,7 @@ export default function Page() {
               <Typography
                 sx={{
                   color: 'text.secondary',
-                  fontSize: 'calc(13px * var(--font-scale))',
+                  fontSize: scaledPx(13),
                 }}
               >
                 :
@@ -501,7 +502,7 @@ export default function Page() {
                     borderRadius: '6px',
                     padding: '4px 11px',
                     fontFamily: 'monospace',
-                    fontSize: 'calc(12px * var(--font-scale))',
+                    fontSize: scaledPx(12),
                     color: 'text.primary',
                     boxShadow: !isDark
                       ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
@@ -562,7 +563,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: 'calc(14px * var(--font-scale))',
+              fontSize: scaledPx(14),
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -586,7 +587,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: 'calc(14px * var(--font-scale))',
+              fontSize: scaledPx(14),
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -625,7 +626,7 @@ export default function Page() {
                   <RowDot />
                   <Typography
                     sx={{
-                      fontSize: 'calc(13px * var(--font-scale))',
+                      fontSize: scaledPx(13),
                       color: 'text.primary',
                     }}
                   >
@@ -653,7 +654,7 @@ export default function Page() {
                   <RowDot />
                   <Typography
                     sx={{
-                      fontSize: 'calc(13px * var(--font-scale))',
+                      fontSize: scaledPx(13),
                       color: 'text.primary',
                     }}
                   >
@@ -681,7 +682,7 @@ export default function Page() {
                   <RowDot />
                   <Typography
                     sx={{
-                      fontSize: 'calc(13px * var(--font-scale))',
+                      fontSize: scaledPx(13),
                       color: 'text.primary',
                     }}
                   >
@@ -693,7 +694,7 @@ export default function Page() {
                     sx={{
                       height: 'auto',
                       py: '2px',
-                      fontSize: 'calc(9.5px * var(--font-scale))',
+                      fontSize: scaledPx(9.5),
                       fontFamily: 'monospace',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
@@ -761,7 +762,7 @@ export default function Page() {
                       component='span'
                       sx={{
                         fontFamily: 'monospace',
-                        fontSize: 'calc(11px * var(--font-scale))',
+                        fontSize: scaledPx(11),
                         display: 'block',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -795,7 +796,7 @@ export default function Page() {
                     <RowDot />
                     <Typography
                       sx={{
-                        fontSize: 'calc(13px * var(--font-scale))',
+                        fontSize: scaledPx(13),
                         color: 'text.primary',
                       }}
                     >
@@ -807,7 +808,7 @@ export default function Page() {
                       sx={{
                         height: 'auto',
                         py: '2px',
-                        fontSize: 'calc(9.5px * var(--font-scale))',
+                        fontSize: scaledPx(9.5),
                         fontFamily: 'monospace',
                         letterSpacing: '0.06em',
                         textTransform: 'uppercase',
@@ -974,7 +975,7 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
     >
       <Typography
         sx={{
-          fontSize: 'calc(11px * var(--font-scale))',
+          fontSize: scaledPx(11),
           flexShrink: 0,
           width: 110,
           fontWeight: 500,
@@ -986,7 +987,7 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
       <Typography
         title={value}
         sx={{
-          fontSize: 'calc(11px * var(--font-scale))',
+          fontSize: scaledPx(11),
           fontFamily: 'monospace',
           color: 'text.primary',
           overflow: 'hidden',
@@ -1035,7 +1036,7 @@ function NumberInputField({
     <Box>
       <Typography
         sx={{
-          fontSize: 'calc(11px * var(--font-scale))',
+          fontSize: scaledPx(11),
           fontWeight: 500,
           mb: '6px',
           color: 'text.secondary',
@@ -1073,7 +1074,7 @@ function NumberInputField({
             border: 'none',
             outline: 'none',
             fontFamily: 'monospace',
-            fontSize: 'calc(12px * var(--font-scale))',
+            fontSize: scaledPx(12),
             color: 'text.primary',
             caretColor: theme.palette.primary.main,
             padding: '2px 0',
@@ -1086,7 +1087,7 @@ function NumberInputField({
           component='span'
           sx={{
             fontFamily: 'monospace',
-            fontSize: 'calc(10px * var(--font-scale))',
+            fontSize: scaledPx(10),
             color: 'text.disabled',
             ml: '6px',
             flexShrink: 0,
@@ -1099,7 +1100,7 @@ function NumberInputField({
       {hint && (
         <Typography
           sx={{
-            fontSize: 'calc(10.5px * var(--font-scale))',
+            fontSize: scaledPx(10.5),
             color: 'error.main',
             mt: '4px',
             lineHeight: 1.4,
@@ -1152,9 +1153,7 @@ function Keycap({ children, big = false, active = true }: KeycapProps) {
             : '0 1px 0 rgba(0,0,30,0.08), inset 0 0.5px 0 rgba(255,255,255,0.9)'
           : 'none',
         fontFamily: 'monospace',
-        fontSize: big
-          ? 'calc(15px * var(--font-scale))'
-          : 'calc(12px * var(--font-scale))',
+        fontSize: big ? scaledPx(15) : scaledPx(12),
         fontWeight: 600,
         color: active ? 'text.primary' : 'text.secondary',
         textAlign: 'center',
@@ -1271,7 +1270,7 @@ function ShortcutCheckbox({
       <Keycap active={checked}>{symbol}</Keycap>
       <Typography
         sx={{
-          fontSize: 'calc(13px * var(--font-scale))',
+          fontSize: scaledPx(13),
           color: checked ? 'text.primary' : 'text.secondary',
         }}
       >
@@ -1323,7 +1322,7 @@ function HotkeyInput({ value, onChange, invalid }: HotkeyInputProps) {
         borderRadius: '7px',
         padding: '7px 8px',
         fontFamily: 'monospace',
-        fontSize: 'calc(16px * var(--font-scale))',
+        fontSize: scaledPx(16),
         fontWeight: 600,
         color: 'text.primary',
         caretColor: theme.palette.primary.main,
@@ -1409,7 +1408,7 @@ function ShortcutSettingsDialog({
       <DialogTitle
         sx={{
           padding: '14px 18px 12px',
-          fontSize: 'calc(14px * var(--font-scale))',
+          fontSize: scaledPx(14),
           fontWeight: 600,
           borderBottom: `0.5px solid ${theme.palette.divider}`,
         }}
@@ -1450,7 +1449,7 @@ function ShortcutSettingsDialog({
             sx={{
               lineHeight: 1.5,
               color: isDark ? '#f5c46b' : '#8a6300',
-              fontSize: 'calc(11.5px * var(--font-scale))',
+              fontSize: scaledPx(11.5),
             }}
           >
             Changing the global shortcut takes effect after restarting
@@ -1476,7 +1475,7 @@ function ShortcutSettingsDialog({
         >
           <Typography
             sx={{
-              fontSize: 'calc(10.5px * var(--font-scale))',
+              fontSize: scaledPx(10.5),
               fontWeight: 600,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
@@ -1496,7 +1495,7 @@ function ShortcutSettingsDialog({
           ) : (
             <Typography
               sx={{
-                fontSize: 'calc(13px * var(--font-scale))',
+                fontSize: scaledPx(13),
                 color: 'text.secondary',
                 p: '7px 0',
               }}
@@ -1510,7 +1509,7 @@ function ShortcutSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: 'calc(11px * var(--font-scale))',
+              fontSize: scaledPx(11),
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1563,7 +1562,7 @@ function ShortcutSettingsDialog({
           {showError && !hasModifier && (
             <Typography
               sx={{
-                fontSize: 'calc(10.5px * var(--font-scale))',
+                fontSize: scaledPx(10.5),
                 color: theme.palette.error.main,
                 mt: '2px',
               }}
@@ -1577,7 +1576,7 @@ function ShortcutSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: 'calc(11px * var(--font-scale))',
+              fontSize: scaledPx(11),
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1597,7 +1596,7 @@ function ShortcutSettingsDialog({
             />
             <Typography
               sx={{
-                fontSize: 'calc(11.5px * var(--font-scale))',
+                fontSize: scaledPx(11.5),
                 color: 'text.secondary',
               }}
             >
@@ -1606,7 +1605,7 @@ function ShortcutSettingsDialog({
           </Box>
           <Typography
             sx={{
-              fontSize: 'calc(10.5px * var(--font-scale))',
+              fontSize: scaledPx(10.5),
               color: 'text.disabled',
               lineHeight: 1.4,
             }}
@@ -1616,7 +1615,7 @@ function ShortcutSettingsDialog({
           {showError && !hasHotkey && (
             <Typography
               sx={{
-                fontSize: 'calc(10.5px * var(--font-scale))',
+                fontSize: scaledPx(10.5),
                 color: theme.palette.error.main,
                 mt: '2px',
               }}
@@ -1640,7 +1639,7 @@ function ShortcutSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: 'calc(12px * var(--font-scale))',
+            fontSize: scaledPx(12),
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
@@ -1664,7 +1663,7 @@ function ShortcutSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: 'calc(12px * var(--font-scale))',
+            fontSize: scaledPx(12),
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
@@ -1781,7 +1780,7 @@ function LogSettingsDialog({
       <DialogTitle
         sx={{
           padding: '14px 18px 12px',
-          fontSize: 'calc(14px * var(--font-scale))',
+          fontSize: scaledPx(14),
           fontWeight: 600,
           borderBottom: `0.5px solid ${theme.palette.divider}`,
         }}
@@ -1822,7 +1821,7 @@ function LogSettingsDialog({
             sx={{
               lineHeight: 1.5,
               color: isDark ? '#f5c46b' : '#8a6300',
-              fontSize: 'calc(11.5px * var(--font-scale))',
+              fontSize: scaledPx(11.5),
             }}
           >
             Log settings only take effect after restarting RightCheat.
@@ -1833,7 +1832,7 @@ function LogSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: 'calc(11px * var(--font-scale))',
+              fontSize: scaledPx(11),
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1886,7 +1885,7 @@ function LogSettingsDialog({
                 dir='ltr'
                 sx={{
                   fontFamily: 'monospace',
-                  fontSize: 'calc(11.5px * var(--font-scale))',
+                  fontSize: scaledPx(11.5),
                   display: 'block',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -1945,7 +1944,7 @@ function LogSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: 'calc(12px * var(--font-scale))',
+            fontSize: scaledPx(12),
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
@@ -1969,7 +1968,7 @@ function LogSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: 'calc(12px * var(--font-scale))',
+            fontSize: scaledPx(12),
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',

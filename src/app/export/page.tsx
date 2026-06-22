@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { useCallback, useEffect, useState } from 'react'
 
 import { Box, Typography } from '@mui/material'
@@ -150,7 +151,7 @@ function ExportRow({
         sx={{
           flex: 1,
           minWidth: 0,
-          fontSize: 'calc(13px * var(--font-scale))',
+          fontSize: scaledPx(13),
           fontWeight: sheet.checked ? 500 : 400,
           color: sheet.checked
             ? theme.palette.text.primary
@@ -275,7 +276,7 @@ function ResultModal({
 
         <Typography
           sx={{
-            fontSize: 'calc(13.5px * var(--font-scale))',
+            fontSize: scaledPx(13.5),
             fontWeight: 600,
             color: theme.palette.text.primary,
             textAlign: 'center',
@@ -288,7 +289,7 @@ function ResultModal({
           <>
             <Typography
               sx={{
-                fontSize: 'calc(11px * var(--font-scale))',
+                fontSize: scaledPx(11),
                 color: theme.palette.text.secondary,
                 textAlign: 'center',
                 lineHeight: 1.5,
@@ -300,7 +301,7 @@ function ResultModal({
             <Box
               sx={{
                 fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                fontSize: 'calc(10.5px * var(--font-scale))',
+                fontSize: scaledPx(10.5),
                 color: theme.palette.text.primary,
                 background: isDark ? 'rgba(0,0,0,0.30)' : 'rgba(0,0,0,0.04)',
                 border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
@@ -330,7 +331,7 @@ function ResultModal({
             borderRadius: '7px',
             padding: '6px 22px',
             fontFamily: theme.typography.fontFamily,
-            fontSize: 'calc(12.5px * var(--font-scale))',
+            fontSize: scaledPx(12.5),
             fontWeight: 600,
             cursor: 'pointer',
             alignSelf: 'stretch',
@@ -484,7 +485,7 @@ export default function ExportPage() {
           >
             <Typography
               sx={{
-                fontSize: 'calc(12.5px * var(--font-scale))',
+                fontSize: scaledPx(12.5),
                 fontWeight: 600,
                 color: theme.palette.text.primary,
               }}
@@ -493,7 +494,7 @@ export default function ExportPage() {
             </Typography>
             <Typography
               sx={{
-                fontSize: 'calc(10.5px * var(--font-scale))',
+                fontSize: scaledPx(10.5),
                 color: theme.palette.text.secondary,
               }}
             >
@@ -504,7 +505,7 @@ export default function ExportPage() {
           <Box
             sx={{
               fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-              fontSize: 'calc(10px * var(--font-scale))',
+              fontSize: scaledPx(10),
               color: noneOn
                 ? isDark
                   ? 'rgba(255,255,255,0.25)'
@@ -557,7 +558,7 @@ export default function ExportPage() {
             <Typography
               sx={{
                 padding: '16px',
-                fontSize: 'calc(12px * var(--font-scale))',
+                fontSize: scaledPx(12),
                 color: theme.palette.text.secondary,
               }}
             >
@@ -567,7 +568,7 @@ export default function ExportPage() {
             <Typography
               sx={{
                 padding: '16px',
-                fontSize: 'calc(12px * var(--font-scale))',
+                fontSize: scaledPx(12),
                 color: theme.palette.text.secondary,
               }}
             >
@@ -626,7 +627,7 @@ export default function ExportPage() {
             </svg>
             <Typography
               sx={{
-                fontSize: 'calc(11px * var(--font-scale))',
+                fontSize: scaledPx(11),
                 color: theme.palette.text.secondary,
               }}
             >

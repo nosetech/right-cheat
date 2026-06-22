@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useState } from 'react'
@@ -117,7 +118,7 @@ export function EditableGroupBox({
           variant='caption'
           sx={{
             color: theme.palette.text.secondary,
-            fontSize: 'calc(11px * var(--font-scale))',
+            fontSize: scaledPx(11),
             lineHeight: 1,
             userSelect: 'none',
           }}
@@ -176,7 +177,7 @@ export function EditableGroupBox({
         {isEmpty ? (
           <Typography
             sx={{
-              fontSize: 'calc(11px * var(--font-scale))',
+              fontSize: scaledPx(11),
               color: theme.palette.text.disabled,
               fontStyle: 'italic',
               textAlign: 'center',

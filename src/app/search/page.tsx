@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Box } from '@mui/material'
@@ -148,7 +149,7 @@ export default function SearchPage() {
           <Box
             sx={{
               fontFamily: FONT_UI,
-              fontSize: 'calc(11px * var(--font-scale))',
+              fontSize: scaledPx(11),
               color: theme.palette.text.secondary,
               display: 'flex',
               alignItems: 'center',

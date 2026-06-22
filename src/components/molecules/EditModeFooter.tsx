@@ -1,4 +1,5 @@
 'use client'
+import { scaledPx } from '@/utils/css'
 import { Box, CircularProgress } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -85,7 +86,7 @@ export function EditModeFooter({
           {editDirty ? (
             <Box
               sx={{
-                fontSize: 'calc(11px * var(--font-scale))',
+                fontSize: scaledPx(11),
                 color: 'text.secondary',
                 fontStyle: 'italic',
               }}
@@ -95,7 +96,7 @@ export function EditModeFooter({
           ) : (
             <Box
               sx={{
-                fontSize: 'calc(11px * var(--font-scale))',
+                fontSize: scaledPx(11),
                 color: 'text.disabled',
               }}
             >
