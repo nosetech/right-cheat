@@ -548,9 +548,7 @@ export default function Page() {
                       },
                     }}
                   >
-                    <SettingsOutlinedIcon
-                      sx={{ fontSize: 'calc(14px * var(--font-scale))' }}
-                    />
+                    <SettingsOutlinedIcon sx={{ fontSize: '14px' }} />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -739,9 +737,7 @@ export default function Page() {
                         },
                       }}
                     >
-                      <InsertDriveFileOutlinedIcon
-                        sx={{ fontSize: 'calc(14px * var(--font-scale))' }}
-                      />
+                      <InsertDriveFileOutlinedIcon sx={{ fontSize: '14px' }} />
                     </IconButton>
                   </Tooltip>
                   <Box
@@ -847,9 +843,7 @@ export default function Page() {
                           },
                         }}
                       >
-                        <ArticleOutlinedIcon
-                          sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
-                        />
+                        <ArticleOutlinedIcon sx={{ fontSize: '13px' }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title='Edit log settings'>
@@ -873,9 +867,7 @@ export default function Page() {
                           },
                         }}
                       >
-                        <EditOutlinedIcon
-                          sx={{ fontSize: 'calc(13px * var(--font-scale))' }}
-                        />
+                        <EditOutlinedIcon sx={{ fontSize: '13px' }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -1448,7 +1440,7 @@ function ShortcutSettingsDialog({
         >
           <InfoOutlinedIcon
             sx={{
-              fontSize: 'calc(14px * var(--font-scale))',
+              fontSize: '14px',
               mt: '1px',
               flexShrink: 0,
               color: isDark ? '#f5c46b' : '#a87a00',
@@ -1820,7 +1812,7 @@ function LogSettingsDialog({
         >
           <InfoOutlinedIcon
             sx={{
-              fontSize: 'calc(14px * var(--font-scale))',
+              fontSize: '14px',
               mt: '1px',
               flexShrink: 0,
               color: isDark ? '#f5c46b' : '#a87a00',
@@ -1871,9 +1863,7 @@ function LogSettingsDialog({
                   },
                 }}
               >
-                <FolderOutlinedIcon
-                  sx={{ fontSize: 'calc(14px * var(--font-scale))' }}
-                />
+                <FolderOutlinedIcon sx={{ fontSize: '14px' }} />
               </IconButton>
             </Tooltip>
             <Box
