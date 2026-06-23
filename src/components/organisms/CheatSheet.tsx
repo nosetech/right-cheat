@@ -136,6 +136,9 @@ export const CheatSheet = () => {
   const editBlocksRef = useRef<EditBlock[]>([])
   const dragInfoRef = useRef<DragInfo | null>(null)
   const dropMarkRef = useRef<DropMark | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const autoScrollSpeedRef = useRef(0)
+  const autoScrollRafRef = useRef<number | null>(null)
 
   useEffect(() => {
     editBlocksRef.current = editBlocks
@@ -702,28 +705,31 @@ export const CheatSheet = () => {
   const computeDropMark = useCallback((clientY: number): DropMark | null => {
     const blocks = editBlocksRef.current
     const dragging = dragInfoRef.current
+    const isDraggingGroup = dragging?.type === 'group'
 
-    // グループ内アイテムを先にチェック（より具体的なターゲット）
-    for (const [editId, el] of itemRefsMap.current.entries()) {
-      const rect = el.getBoundingClientRect()
-      if (clientY < rect.top || clientY > rect.bottom) continue
+    // グループ内アイテムを先にチェック（グループをドラッグ中はスキップ: グループはグループ内に入れられない）
+    if (!isDraggingGroup) {
+      for (const [editId, el] of itemRefsMap.current.entries()) {
+        const rect = el.getBoundingClientRect()
+        if (clientY < rect.top || clientY > rect.bottom) continue
 
-      for (let bi = 0; bi < blocks.length; bi++) {
-        const block = blocks[bi]
-        if (!isEditGroup(block)) continue
-        const itemIdx = block.commandlist.findIndex(
-          (it) => it._editId === editId,
-        )
-        if (itemIdx === -1) continue
+        for (let bi = 0; bi < blocks.length; bi++) {
+          const block = blocks[bi]
+          if (!isEditGroup(block)) continue
+          const itemIdx = block.commandlist.findIndex(
+            (it) => it._editId === editId,
+          )
+          if (itemIdx === -1) continue
 
-        if (dragging?.blockIndex === bi && dragging.itemIndex === itemIdx)
-          continue
+          if (dragging?.blockIndex === bi && dragging.itemIndex === itemIdx)
+            continue
 
-        const isAfter = clientY > rect.top + rect.height / 2
-        return {
-          kind: 'between-items',
-          groupBlockIndex: bi,
-          afterItemIndex: isAfter ? itemIdx : itemIdx - 1,
+          const isAfter = clientY > rect.top + rect.height / 2
+          return {
+            kind: 'between-items',
+            groupBlockIndex: bi,
+            afterItemIndex: isAfter ? itemIdx : itemIdx - 1,
+          }
         }
       }
     }
@@ -749,7 +755,9 @@ export const CheatSheet = () => {
         if (bodyEl) {
           const bodyRect = bodyEl.getBoundingClientRect()
           if (clientY >= bodyRect.top && clientY <= bodyRect.bottom) {
-            return { kind: 'into-group', groupBlockIndex: bi }
+            if (!isDraggingGroup) {
+              return { kind: 'into-group', groupBlockIndex: bi }
+            }
           }
         }
       }
@@ -764,6 +772,32 @@ export const CheatSheet = () => {
     return null
   }, [])
 
+  const autoScrollLoop = useCallback(() => {
+    if (autoScrollSpeedRef.current === 0) {
+      autoScrollRafRef.current = null
+      return
+    }
+    const scrollEl = scrollContainerRef.current
+    if (scrollEl) {
+      scrollEl.scrollTop += autoScrollSpeedRef.current
+    }
+    autoScrollRafRef.current = requestAnimationFrame(autoScrollLoop)
+  }, [])
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollRafRef.current !== null) {
+      cancelAnimationFrame(autoScrollRafRef.current)
+      autoScrollRafRef.current = null
+    }
+    autoScrollSpeedRef.current = 0
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      stopAutoScroll()
+    }
+  }, [stopAutoScroll])
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, blockIndex: number, itemIndex?: number) => {
       const info: DragInfo = {
@@ -775,6 +809,7 @@ export const CheatSheet = () => {
       setDragInfo(info)
       dropMarkRef.current = null
       setDropMark(null)
+      autoScrollSpeedRef.current = 0
     },
     [],
   )
@@ -785,8 +820,27 @@ export const CheatSheet = () => {
       const mark = computeDropMark(e.clientY)
       dropMarkRef.current = mark
       setDropMark(mark)
+
+      const autoScrollThreshold = 60
+      const maxSpeed = 12
+      const scrollEl = scrollContainerRef.current
+      if (scrollEl) {
+        const { top, bottom } = scrollEl.getBoundingClientRect()
+        const distFromTop = e.clientY - top
+        const distFromBottom = bottom - e.clientY
+        let speed = 0
+        if (distFromTop < autoScrollThreshold) {
+          speed = -maxSpeed * (1 - distFromTop / autoScrollThreshold)
+        } else if (distFromBottom < autoScrollThreshold) {
+          speed = maxSpeed * (1 - distFromBottom / autoScrollThreshold)
+        }
+        autoScrollSpeedRef.current = speed
+        if (speed !== 0 && autoScrollRafRef.current === null) {
+          autoScrollRafRef.current = requestAnimationFrame(autoScrollLoop)
+        }
+      }
     },
-    [computeDropMark],
+    [computeDropMark, autoScrollLoop],
   )
 
   const handlePointerUp = useCallback(() => {
@@ -796,15 +850,17 @@ export const CheatSheet = () => {
     dropMarkRef.current = null
     setDragInfo(null)
     setDropMark(null)
+    stopAutoScroll()
     if (info && mark) performDropWith(info, mark)
-  }, [performDropWith])
+  }, [performDropWith, stopAutoScroll])
 
   const handlePointerCancel = useCallback(() => {
     dragInfoRef.current = null
     dropMarkRef.current = null
     setDragInfo(null)
     setDropMark(null)
-  }, [])
+    stopAutoScroll()
+  }, [stopAutoScroll])
 
   // ─── 通常モード計算 ───────────────────────────────────────
   const isKeyboardShortcutEnabled =
@@ -1014,7 +1070,7 @@ export const CheatSheet = () => {
           overflow: 'hidden',
         }}
       >
-        <Box sx={{ flex: 1, overflow: 'auto', p: 1 }}>
+        <Box ref={scrollContainerRef} sx={{ flex: 1, overflow: 'auto', p: 1 }}>
           {errorMessage ? (
             <Alert
               severity='error'
