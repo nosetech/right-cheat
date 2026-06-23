@@ -234,6 +234,20 @@ fn menu_configuration<R: tauri::Runtime>(
             )?,
             &Submenu::with_items(
                 handle,
+                "Edit",
+                true,
+                &[
+                    &PredefinedMenuItem::undo(handle, None)?,
+                    &PredefinedMenuItem::redo(handle, None)?,
+                    &PredefinedMenuItem::separator(handle)?,
+                    &PredefinedMenuItem::cut(handle, None)?,
+                    &PredefinedMenuItem::copy(handle, None)?,
+                    &PredefinedMenuItem::paste(handle, None)?,
+                    &PredefinedMenuItem::select_all(handle, None)?,
+                ],
+            )?,
+            &Submenu::with_items(
+                handle,
                 "View ", // NOTE: デフォルトメニューにならないよう、Viewの後にスペースを入れている。
                 true,
                 &[
