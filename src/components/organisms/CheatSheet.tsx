@@ -136,6 +136,9 @@ export const CheatSheet = () => {
   const editBlocksRef = useRef<EditBlock[]>([])
   const dragInfoRef = useRef<DragInfo | null>(null)
   const dropMarkRef = useRef<DropMark | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const autoScrollSpeedRef = useRef(0)
+  const autoScrollRafRef = useRef<number | null>(null)
 
   useEffect(() => {
     editBlocksRef.current = editBlocks
@@ -749,7 +752,9 @@ export const CheatSheet = () => {
         if (bodyEl) {
           const bodyRect = bodyEl.getBoundingClientRect()
           if (clientY >= bodyRect.top && clientY <= bodyRect.bottom) {
-            return { kind: 'into-group', groupBlockIndex: bi }
+            if (dragging?.type !== 'group') {
+              return { kind: 'into-group', groupBlockIndex: bi }
+            }
           }
         }
       }
@@ -764,6 +769,22 @@ export const CheatSheet = () => {
     return null
   }, [])
 
+  const autoScrollLoop = useCallback(() => {
+    const scrollEl = scrollContainerRef.current
+    if (scrollEl && autoScrollSpeedRef.current !== 0) {
+      scrollEl.scrollTop += autoScrollSpeedRef.current
+    }
+    autoScrollRafRef.current = requestAnimationFrame(autoScrollLoop)
+  }, [])
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollRafRef.current !== null) {
+      cancelAnimationFrame(autoScrollRafRef.current)
+      autoScrollRafRef.current = null
+    }
+    autoScrollSpeedRef.current = 0
+  }, [])
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, blockIndex: number, itemIndex?: number) => {
       const info: DragInfo = {
@@ -775,8 +796,10 @@ export const CheatSheet = () => {
       setDragInfo(info)
       dropMarkRef.current = null
       setDropMark(null)
+      autoScrollSpeedRef.current = 0
+      autoScrollRafRef.current = requestAnimationFrame(autoScrollLoop)
     },
-    [],
+    [autoScrollLoop],
   )
 
   const handlePointerMove = useCallback(
@@ -785,6 +808,24 @@ export const CheatSheet = () => {
       const mark = computeDropMark(e.clientY)
       dropMarkRef.current = mark
       setDropMark(mark)
+
+      const autoScrollThreshold = 60
+      const maxSpeed = 12
+      const scrollEl = scrollContainerRef.current
+      if (scrollEl) {
+        const { top, bottom } = scrollEl.getBoundingClientRect()
+        const distFromTop = e.clientY - top
+        const distFromBottom = bottom - e.clientY
+        if (distFromTop < autoScrollThreshold) {
+          autoScrollSpeedRef.current =
+            -maxSpeed * (1 - distFromTop / autoScrollThreshold)
+        } else if (distFromBottom < autoScrollThreshold) {
+          autoScrollSpeedRef.current =
+            maxSpeed * (1 - distFromBottom / autoScrollThreshold)
+        } else {
+          autoScrollSpeedRef.current = 0
+        }
+      }
     },
     [computeDropMark],
   )
@@ -796,15 +837,17 @@ export const CheatSheet = () => {
     dropMarkRef.current = null
     setDragInfo(null)
     setDropMark(null)
+    stopAutoScroll()
     if (info && mark) performDropWith(info, mark)
-  }, [performDropWith])
+  }, [performDropWith, stopAutoScroll])
 
   const handlePointerCancel = useCallback(() => {
     dragInfoRef.current = null
     dropMarkRef.current = null
     setDragInfo(null)
     setDropMark(null)
-  }, [])
+    stopAutoScroll()
+  }, [stopAutoScroll])
 
   // ─── 通常モード計算 ───────────────────────────────────────
   const isKeyboardShortcutEnabled =
@@ -1014,7 +1057,7 @@ export const CheatSheet = () => {
           overflow: 'hidden',
         }}
       >
-        <Box sx={{ flex: 1, overflow: 'auto', p: 1 }}>
+        <Box ref={scrollContainerRef} sx={{ flex: 1, overflow: 'auto', p: 1 }}>
           {errorMessage ? (
             <Alert
               severity='error'
