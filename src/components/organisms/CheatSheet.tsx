@@ -705,28 +705,31 @@ export const CheatSheet = () => {
   const computeDropMark = useCallback((clientY: number): DropMark | null => {
     const blocks = editBlocksRef.current
     const dragging = dragInfoRef.current
+    const isDraggingGroup = dragging?.type === 'group'
 
-    // グループ内アイテムを先にチェック（より具体的なターゲット）
-    for (const [editId, el] of itemRefsMap.current.entries()) {
-      const rect = el.getBoundingClientRect()
-      if (clientY < rect.top || clientY > rect.bottom) continue
+    // グループ内アイテムを先にチェック（グループをドラッグ中はスキップ: グループはグループ内に入れられない）
+    if (!isDraggingGroup) {
+      for (const [editId, el] of itemRefsMap.current.entries()) {
+        const rect = el.getBoundingClientRect()
+        if (clientY < rect.top || clientY > rect.bottom) continue
 
-      for (let bi = 0; bi < blocks.length; bi++) {
-        const block = blocks[bi]
-        if (!isEditGroup(block)) continue
-        const itemIdx = block.commandlist.findIndex(
-          (it) => it._editId === editId,
-        )
-        if (itemIdx === -1) continue
+        for (let bi = 0; bi < blocks.length; bi++) {
+          const block = blocks[bi]
+          if (!isEditGroup(block)) continue
+          const itemIdx = block.commandlist.findIndex(
+            (it) => it._editId === editId,
+          )
+          if (itemIdx === -1) continue
 
-        if (dragging?.blockIndex === bi && dragging.itemIndex === itemIdx)
-          continue
+          if (dragging?.blockIndex === bi && dragging.itemIndex === itemIdx)
+            continue
 
-        const isAfter = clientY > rect.top + rect.height / 2
-        return {
-          kind: 'between-items',
-          groupBlockIndex: bi,
-          afterItemIndex: isAfter ? itemIdx : itemIdx - 1,
+          const isAfter = clientY > rect.top + rect.height / 2
+          return {
+            kind: 'between-items',
+            groupBlockIndex: bi,
+            afterItemIndex: isAfter ? itemIdx : itemIdx - 1,
+          }
         }
       }
     }
@@ -752,7 +755,7 @@ export const CheatSheet = () => {
         if (bodyEl) {
           const bodyRect = bodyEl.getBoundingClientRect()
           if (clientY >= bodyRect.top && clientY <= bodyRect.bottom) {
-            if (dragging?.type !== 'group') {
+            if (!isDraggingGroup) {
               return { kind: 'into-group', groupBlockIndex: bi }
             }
           }
