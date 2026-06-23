@@ -770,8 +770,12 @@ export const CheatSheet = () => {
   }, [])
 
   const autoScrollLoop = useCallback(() => {
+    if (autoScrollSpeedRef.current === 0) {
+      autoScrollRafRef.current = null
+      return
+    }
     const scrollEl = scrollContainerRef.current
-    if (scrollEl && autoScrollSpeedRef.current !== 0) {
+    if (scrollEl) {
       scrollEl.scrollTop += autoScrollSpeedRef.current
     }
     autoScrollRafRef.current = requestAnimationFrame(autoScrollLoop)
@@ -785,6 +789,12 @@ export const CheatSheet = () => {
     autoScrollSpeedRef.current = 0
   }, [])
 
+  useEffect(() => {
+    return () => {
+      stopAutoScroll()
+    }
+  }, [stopAutoScroll])
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, blockIndex: number, itemIndex?: number) => {
       const info: DragInfo = {
@@ -797,9 +807,8 @@ export const CheatSheet = () => {
       dropMarkRef.current = null
       setDropMark(null)
       autoScrollSpeedRef.current = 0
-      autoScrollRafRef.current = requestAnimationFrame(autoScrollLoop)
     },
-    [autoScrollLoop],
+    [],
   )
 
   const handlePointerMove = useCallback(
@@ -816,18 +825,19 @@ export const CheatSheet = () => {
         const { top, bottom } = scrollEl.getBoundingClientRect()
         const distFromTop = e.clientY - top
         const distFromBottom = bottom - e.clientY
+        let speed = 0
         if (distFromTop < autoScrollThreshold) {
-          autoScrollSpeedRef.current =
-            -maxSpeed * (1 - distFromTop / autoScrollThreshold)
+          speed = -maxSpeed * (1 - distFromTop / autoScrollThreshold)
         } else if (distFromBottom < autoScrollThreshold) {
-          autoScrollSpeedRef.current =
-            maxSpeed * (1 - distFromBottom / autoScrollThreshold)
-        } else {
-          autoScrollSpeedRef.current = 0
+          speed = maxSpeed * (1 - distFromBottom / autoScrollThreshold)
+        }
+        autoScrollSpeedRef.current = speed
+        if (speed !== 0 && autoScrollRafRef.current === null) {
+          autoScrollRafRef.current = requestAnimationFrame(autoScrollLoop)
         }
       }
     },
-    [computeDropMark],
+    [computeDropMark, autoScrollLoop],
   )
 
   const handlePointerUp = useCallback(() => {
