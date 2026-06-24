@@ -1,5 +1,7 @@
 pub mod application;
 pub mod cheatsheet;
+#[cfg(target_os = "macos")]
+pub mod clipboard_monitor;
 pub mod db_settings;
 pub mod font_size;
 pub mod global_shortcut;

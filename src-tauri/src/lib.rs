@@ -108,6 +108,15 @@ pub fn run() {
             api::log_settings::init_log_settings(app.handle())?;
             api::db_settings::init_db_settings(app.handle())?;
 
+            #[cfg(target_os = "macos")]
+            {
+                let monitor = api::clipboard_monitor::ClipboardMonitor::new();
+                monitor.start();
+                // Keep the monitor alive for the duration of the app by leaking it.
+                // In the final implementation this would be stored in Tauri State.
+                std::mem::forget(monitor);
+            }
+
             if let Some(main_window) = app.get_webview_window("main") {
                 let main_window_clone = main_window.clone();
                 main_window.on_window_event(move |event| {
