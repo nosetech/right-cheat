@@ -293,6 +293,17 @@ fn menu_configuration<R: tauri::Runtime>(
             )?,
             &Submenu::with_items(
                 handle,
+                "Window",
+                true,
+                &[
+                    &PredefinedMenuItem::minimize(handle, None)?,
+                    &PredefinedMenuItem::maximize(handle, None)?,
+                    &PredefinedMenuItem::separator(handle)?,
+                    &PredefinedMenuItem::fullscreen(handle, None)?,
+                ],
+            )?,
+            &Submenu::with_items(
+                handle,
                 "Help",
                 true,
                 &[&MenuItem::with_id(
