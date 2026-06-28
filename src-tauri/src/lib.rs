@@ -298,7 +298,6 @@ fn menu_configuration<R: tauri::Runtime>(
                 &[
                     &PredefinedMenuItem::minimize(handle, None)?,
                     &PredefinedMenuItem::maximize(handle, None)?,
-                    &PredefinedMenuItem::separator(handle)?,
                     &PredefinedMenuItem::fullscreen(handle, None)?,
                 ],
             )?,
