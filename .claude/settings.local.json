@@ -27,7 +27,8 @@
       "Bash(unzip *)",
       "Bash(yarn lint:eslint *)",
       "Bash(gh pr *)",
-      "Bash(cargo doc *)"
+      "Bash(cargo doc *)",
+      "Bash(osascript -e ' *)"
     ],
     "deny": [],
     "ask": []
