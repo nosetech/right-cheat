@@ -106,6 +106,20 @@ pub fn run() {
                 }
             }
             global_shortcut_configuration(app)?;
+            #[cfg(target_os = "macos")]
+            {
+                use objc2_app_kit::NSApplication;
+                use objc2_foundation::MainThreadMarker;
+                let mtm = unsafe { MainThreadMarker::new_unchecked() };
+                let ns_app = NSApplication::sharedApplication(mtm);
+                match unsafe { ns_app.windowsMenu() } {
+                    Some(m) => log::debug!(
+                        "[lib] NSApp.windowsMenu() = Some, numberOfItems={}",
+                        unsafe { m.numberOfItems() }
+                    ),
+                    None => log::debug!("[lib] NSApp.windowsMenu() = None"),
+                }
+            }
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
             api::log_settings::init_log_settings(app.handle())?;
             api::db_settings::init_db_settings(app.handle())?;
