@@ -106,33 +106,6 @@ pub fn run() {
                 }
             }
             global_shortcut_configuration(app)?;
-            #[cfg(target_os = "macos")]
-            {
-                use objc2_app_kit::NSApplication;
-                use objc2_foundation::MainThreadMarker;
-                let mtm = unsafe { MainThreadMarker::new_unchecked() };
-                let ns_app = NSApplication::sharedApplication(mtm);
-                if let Some(m) = unsafe { ns_app.windowsMenu() } {
-                    let count = unsafe { m.numberOfItems() };
-                    log::debug!("[lib] NSApp.windowsMenu() = Some, numberOfItems={}", count);
-                    for i in 0..count {
-                        if let Some(item) = unsafe { m.itemAtIndex(i) } {
-                            let title = unsafe { item.title() }.to_string();
-                            let hidden = unsafe { item.isHidden() };
-                            let separator = unsafe { item.isSeparatorItem() };
-                            log::debug!(
-                                "[lib]   item[{}]: title={:?} hidden={} separator={}",
-                                i,
-                                title,
-                                hidden,
-                                separator
-                            );
-                        }
-                    }
-                } else {
-                    log::debug!("[lib] NSApp.windowsMenu() = None");
-                }
-            }
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
             api::log_settings::init_log_settings(app.handle())?;
             api::db_settings::init_db_settings(app.handle())?;
@@ -145,20 +118,6 @@ pub fn run() {
                         main_window_clone
                             .emit(common::event::WINDOW_FOCUSED, ())
                             .ok();
-                        #[cfg(target_os = "macos")]
-                        {
-                            use objc2_app_kit::NSApplication;
-                            use objc2_foundation::MainThreadMarker;
-                            let mtm = unsafe { MainThreadMarker::new_unchecked() };
-                            let ns_app = NSApplication::sharedApplication(mtm);
-                            match unsafe { ns_app.windowsMenu() } {
-                                Some(m) => log::debug!(
-                                    "[lib] (on focus) NSApp.windowsMenu() = Some, numberOfItems={}",
-                                    unsafe { m.numberOfItems() }
-                                ),
-                                None => log::debug!("[lib] (on focus) NSApp.windowsMenu() = None"),
-                            }
-                        }
                     }
                 });
             }
@@ -210,7 +169,7 @@ pub fn run() {
 fn menu_configuration<R: tauri::Runtime>(
     handle: &tauri::AppHandle<R>,
     toggle_visible_shortcut: String,
-) -> Result<(Menu<R>, Submenu<R>), tauri::Error> {
+) -> Result<Menu<R>, tauri::Error> {
     let window_submenu = Submenu::with_id_and_items(
         handle,
         WINDOW_SUBMENU_ID,
@@ -360,7 +319,7 @@ fn menu_configuration<R: tauri::Runtime>(
             )?,
         ],
     )?;
-    Ok((menu, window_submenu))
+    Ok(menu)
 }
 
 fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, event: MenuEvent) {
@@ -575,14 +534,31 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
 
             app.global_shortcut().register(window_visible_shortcut)?;
 
-            let (menu, window_submenu) =
-                menu_configuration(app.handle(), settings.to_shortcut_for_menu()?)?;
+            let menu = menu_configuration(app.handle(), settings.to_shortcut_for_menu()?)?;
             app.set_menu(menu)?;
             #[cfg(target_os = "macos")]
             {
-                log::debug!("[lib] Calling set_as_windows_menu_for_nsapp");
-                if let Err(e) = window_submenu.set_as_windows_menu_for_nsapp() {
-                    log::error!("[lib] set_as_windows_menu_for_nsapp failed: {:?}", e);
+                // Tauri's init_app_menu already calls setWindowsMenu: via WINDOW_SUBMENU_ID,
+                // but it passes the Submenu's internal ns_menu (created at Submenu construction
+                // time), which is a different NSMenu object from the one actually rendered in
+                // the menu bar (created later in create_ns_item_for_submenu). We override it
+                // here by fetching the real Window NSMenu directly from NSApp.mainMenu().
+                use objc2_app_kit::NSApplication;
+                use objc2_foundation::MainThreadMarker;
+                let mtm = unsafe { MainThreadMarker::new_unchecked() };
+                let ns_app = NSApplication::sharedApplication(mtm);
+                if let Some(main_menu) = unsafe { ns_app.mainMenu() } {
+                    let count = unsafe { main_menu.numberOfItems() };
+                    for i in 0..count {
+                        if let Some(item) = unsafe { main_menu.itemAtIndex(i) } {
+                            if unsafe { item.title() }.to_string() == "Window" {
+                                if let Some(window_ns_menu) = unsafe { item.submenu() } {
+                                    unsafe { ns_app.setWindowsMenu(Some(&window_ns_menu)) };
+                                }
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
