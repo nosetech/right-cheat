@@ -169,8 +169,19 @@ pub fn run() {
 fn menu_configuration<R: tauri::Runtime>(
     handle: &tauri::AppHandle<R>,
     toggle_visible_shortcut: String,
-) -> Result<Menu<R>, tauri::Error> {
-    Menu::with_items(
+) -> Result<(Menu<R>, Submenu<R>), tauri::Error> {
+    let window_submenu = Submenu::with_id_and_items(
+        handle,
+        WINDOW_SUBMENU_ID,
+        "Window",
+        true,
+        &[
+            &PredefinedMenuItem::minimize(handle, None)?,
+            &PredefinedMenuItem::maximize(handle, None)?,
+            &PredefinedMenuItem::fullscreen(handle, None)?,
+        ],
+    )?;
+    let menu = Menu::with_items(
         handle,
         &[
             &Submenu::with_items(
@@ -293,17 +304,7 @@ fn menu_configuration<R: tauri::Runtime>(
                     )?,
                 ],
             )?,
-            &Submenu::with_id_and_items(
-                handle,
-                WINDOW_SUBMENU_ID,
-                "Window",
-                true,
-                &[
-                    &PredefinedMenuItem::minimize(handle, None)?,
-                    &PredefinedMenuItem::maximize(handle, None)?,
-                    &PredefinedMenuItem::fullscreen(handle, None)?,
-                ],
-            )?,
+            &window_submenu,
             &Submenu::with_items(
                 handle,
                 "Help",
@@ -317,7 +318,8 @@ fn menu_configuration<R: tauri::Runtime>(
                 )?],
             )?,
         ],
-    )
+    )?;
+    Ok((menu, window_submenu))
 }
 
 fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, event: MenuEvent) {
@@ -532,8 +534,16 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
 
             app.global_shortcut().register(window_visible_shortcut)?;
 
-            let menu = menu_configuration(app.handle(), settings.to_shortcut_for_menu()?)?;
+            let (menu, window_submenu) =
+                menu_configuration(app.handle(), settings.to_shortcut_for_menu()?)?;
             app.set_menu(menu)?;
+            #[cfg(target_os = "macos")]
+            {
+                log::debug!("[lib] Calling set_as_windows_menu_for_nsapp");
+                if let Err(e) = window_submenu.set_as_windows_menu_for_nsapp() {
+                    log::error!("[lib] set_as_windows_menu_for_nsapp failed: {:?}", e);
+                }
+            }
         }
     }
     Ok(())
