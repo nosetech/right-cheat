@@ -26,7 +26,9 @@
       "Bash(sqlite3 :memory: *)",
       "Bash(unzip *)",
       "Bash(yarn lint:eslint *)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(cargo doc *)",
+      "Bash(osascript -e ' *)"
     ],
     "deny": [],
     "ask": []

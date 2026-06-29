@@ -6,7 +6,9 @@ pub mod settings_store;
 use db::DbConnection;
 use settings_store::{SettingsStore, TauriSettingsStore};
 use tauri::image::Image;
-use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::menu::{
+    AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu, WINDOW_SUBMENU_ID,
+};
 use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
@@ -168,7 +170,18 @@ fn menu_configuration<R: tauri::Runtime>(
     handle: &tauri::AppHandle<R>,
     toggle_visible_shortcut: String,
 ) -> Result<Menu<R>, tauri::Error> {
-    Menu::with_items(
+    let window_submenu = Submenu::with_id_and_items(
+        handle,
+        WINDOW_SUBMENU_ID,
+        "Window",
+        true,
+        &[
+            &PredefinedMenuItem::minimize(handle, None)?,
+            &PredefinedMenuItem::maximize(handle, None)?,
+            &PredefinedMenuItem::fullscreen(handle, None)?,
+        ],
+    )?;
+    let menu = Menu::with_items(
         handle,
         &[
             &Submenu::with_items(
@@ -291,6 +304,7 @@ fn menu_configuration<R: tauri::Runtime>(
                     )?,
                 ],
             )?,
+            &window_submenu,
             &Submenu::with_items(
                 handle,
                 "Help",
@@ -304,7 +318,8 @@ fn menu_configuration<R: tauri::Runtime>(
                 )?],
             )?,
         ],
-    )
+    )?;
+    Ok(menu)
 }
 
 fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, event: MenuEvent) {
@@ -521,6 +536,31 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
 
             let menu = menu_configuration(app.handle(), settings.to_shortcut_for_menu()?)?;
             app.set_menu(menu)?;
+            #[cfg(target_os = "macos")]
+            {
+                // Tauri's init_app_menu already calls setWindowsMenu: via WINDOW_SUBMENU_ID,
+                // but it passes the Submenu's internal ns_menu (created at Submenu construction
+                // time), which is a different NSMenu object from the one actually rendered in
+                // the menu bar (created later in create_ns_item_for_submenu). We override it
+                // here by fetching the real Window NSMenu directly from NSApp.mainMenu().
+                use objc2_app_kit::NSApplication;
+                use objc2_foundation::MainThreadMarker;
+                let mtm = unsafe { MainThreadMarker::new_unchecked() };
+                let ns_app = NSApplication::sharedApplication(mtm);
+                if let Some(main_menu) = unsafe { ns_app.mainMenu() } {
+                    let count = unsafe { main_menu.numberOfItems() };
+                    for i in 0..count {
+                        if let Some(item) = unsafe { main_menu.itemAtIndex(i) } {
+                            if unsafe { item.title() }.to_string() == "Window" {
+                                if let Some(window_ns_menu) = unsafe { item.submenu() } {
+                                    unsafe { ns_app.setWindowsMenu(Some(&window_ns_menu)) };
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     Ok(())
