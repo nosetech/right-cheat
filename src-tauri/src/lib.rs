@@ -132,6 +132,20 @@ pub fn run() {
                         main_window_clone
                             .emit(common::event::WINDOW_FOCUSED, ())
                             .ok();
+                        #[cfg(target_os = "macos")]
+                        {
+                            use objc2_app_kit::NSApplication;
+                            use objc2_foundation::MainThreadMarker;
+                            let mtm = unsafe { MainThreadMarker::new_unchecked() };
+                            let ns_app = NSApplication::sharedApplication(mtm);
+                            match unsafe { ns_app.windowsMenu() } {
+                                Some(m) => log::debug!(
+                                    "[lib] (on focus) NSApp.windowsMenu() = Some, numberOfItems={}",
+                                    unsafe { m.numberOfItems() }
+                                ),
+                                None => log::debug!("[lib] (on focus) NSApp.windowsMenu() = None"),
+                            }
+                        }
                     }
                 });
             }
