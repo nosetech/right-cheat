@@ -6,7 +6,9 @@ pub mod settings_store;
 use db::DbConnection;
 use settings_store::{SettingsStore, TauriSettingsStore};
 use tauri::image::Image;
-use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::menu::{
+    AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu, WINDOW_SUBMENU_ID,
+};
 use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
@@ -291,8 +293,9 @@ fn menu_configuration<R: tauri::Runtime>(
                     )?,
                 ],
             )?,
-            &Submenu::with_items(
+            &Submenu::with_id_and_items(
                 handle,
+                WINDOW_SUBMENU_ID,
                 "Window",
                 true,
                 &[
