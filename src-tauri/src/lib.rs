@@ -112,12 +112,25 @@ pub fn run() {
                 use objc2_foundation::MainThreadMarker;
                 let mtm = unsafe { MainThreadMarker::new_unchecked() };
                 let ns_app = NSApplication::sharedApplication(mtm);
-                match unsafe { ns_app.windowsMenu() } {
-                    Some(m) => log::debug!(
-                        "[lib] NSApp.windowsMenu() = Some, numberOfItems={}",
-                        unsafe { m.numberOfItems() }
-                    ),
-                    None => log::debug!("[lib] NSApp.windowsMenu() = None"),
+                if let Some(m) = unsafe { ns_app.windowsMenu() } {
+                    let count = unsafe { m.numberOfItems() };
+                    log::debug!("[lib] NSApp.windowsMenu() = Some, numberOfItems={}", count);
+                    for i in 0..count {
+                        if let Some(item) = unsafe { m.itemAtIndex(i) } {
+                            let title = unsafe { item.title() }.to_string();
+                            let hidden = unsafe { item.isHidden() };
+                            let separator = unsafe { item.isSeparatorItem() };
+                            log::debug!(
+                                "[lib]   item[{}]: title={:?} hidden={} separator={}",
+                                i,
+                                title,
+                                hidden,
+                                separator
+                            );
+                        }
+                    }
+                } else {
+                    log::debug!("[lib] NSApp.windowsMenu() = None");
                 }
             }
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
