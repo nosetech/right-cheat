@@ -72,7 +72,7 @@ function ExportCheckbox({
         transition: 'background 0.12s, border-color 0.12s',
         '&:hover': {
           boxShadow: active
-            ? `0 0 0 6px ${alpha(theme.palette.accent.main, 0.10)}`
+            ? `0 0 0 6px ${alpha(theme.palette.accent.main, 0.1)}`
             : `0 0 0 6px ${isDark ? 'rgba(255,255,255,0.04)' : alpha(theme.palette.accent.main, 0.06)}`,
           borderColor: active
             ? accentSolid
@@ -504,12 +504,10 @@ export default function ExportPage() {
             sx={{
               fontFamily: '"JetBrains Mono", "Fira Code", monospace',
               fontSize: scaledPx(10),
-              color: noneOn
-                ? theme.palette.text.disabled
-                : accentSolid,
+              color: noneOn ? theme.palette.text.disabled : accentSolid,
               background: noneOn
                 ? theme.palette.surface.hover
-                : alpha(theme.palette.accent.main, isDark ? 0.12 : 0.10),
+                : alpha(theme.palette.accent.main, isDark ? 0.12 : 0.1),
               border: `0.5px solid ${
                 noneOn
                   ? theme.palette.divider

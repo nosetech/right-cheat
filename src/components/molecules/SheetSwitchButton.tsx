@@ -117,7 +117,9 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
 
     const dropdownBg = theme.palette.glass.overlay
     const borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'
-    const inputBg = isDark ? theme.palette.glass.field : theme.palette.surface.hover
+    const inputBg = isDark
+      ? theme.palette.glass.field
+      : theme.palette.surface.hover
 
     return (
       <Box ref={containerRef} sx={{ position: 'relative' }}>

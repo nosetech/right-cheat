@@ -59,7 +59,9 @@ export function EditableCommandRow({
         component='pre'
         sx={{
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          fontSize: isMultiLine ? scaledPx(10) : scaledPx(theme.custom.fontSize.caption),
+          fontSize: isMultiLine
+            ? scaledPx(10)
+            : scaledPx(theme.custom.fontSize.caption),
           color: theme.palette.text.primary,
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-all',

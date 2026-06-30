@@ -24,7 +24,9 @@ export function ThemeToggle({
 }: ThemeToggleProps) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const borderColor = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.72)'
+  const borderColor = isDark
+    ? 'rgba(255,255,255,0.10)'
+    : 'rgba(255,255,255,0.72)'
 
   return (
     <Box sx={{ display: 'flex' }} role='group' aria-label='Theme selection'>
@@ -54,7 +56,9 @@ export function ThemeToggle({
               fontFamily: 'monospace',
               fontSize: scaledPx(theme.custom.fontSize.captionSm),
               fontWeight: selected ? 700 : 400,
-              color: selected ? theme.palette.primary.main : theme.palette.text.disabled,
+              color: selected
+                ? theme.palette.primary.main
+                : theme.palette.text.disabled,
               transition: 'color 0.14s, background 0.14s, box-shadow 0.14s',
               borderRadius,
               boxShadow:

@@ -88,7 +88,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       if (hasDone) {
         return {
           background: alpha(theme.palette.accent.main, isDark ? 0.09 : 0.06),
-          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.32 : 0.30)}`,
+          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)}`,
           borderRadius: 1,
         }
       }

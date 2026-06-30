@@ -537,7 +537,10 @@ export default function Page() {
                       height: 28,
                       borderRadius: '7px',
                       border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
-                      backgroundColor: alpha(theme.palette.accent.main, isDark ? 0.10 : 0.07),
+                      backgroundColor: alpha(
+                        theme.palette.accent.main,
+                        isDark ? 0.1 : 0.07,
+                      ),
                       color: theme.palette.text.disabled,
                       '&:hover': {
                         borderColor: theme.palette.primary.main,
@@ -718,7 +721,10 @@ export default function Page() {
                         borderRadius: '7px',
                         flexShrink: 0,
                         border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
-                        backgroundColor: alpha(theme.palette.accent.main, isDark ? 0.10 : 0.07),
+                        backgroundColor: alpha(
+                          theme.palette.accent.main,
+                          isDark ? 0.1 : 0.07,
+                        ),
                         color: theme.palette.text.disabled,
                         '&:hover': {
                           borderColor: theme.palette.primary.main,
@@ -816,7 +822,10 @@ export default function Page() {
                           height: 28,
                           borderRadius: '7px',
                           border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
-                          backgroundColor: alpha(theme.palette.accent.main, isDark ? 0.10 : 0.07),
+                          backgroundColor: alpha(
+                            theme.palette.accent.main,
+                            isDark ? 0.1 : 0.07,
+                          ),
                           color: theme.palette.text.disabled,
                           '&:hover': {
                             borderColor: theme.palette.primary.main,
@@ -836,7 +845,10 @@ export default function Page() {
                           height: 28,
                           borderRadius: '7px',
                           border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
-                          backgroundColor: alpha(theme.palette.accent.main, isDark ? 0.10 : 0.07),
+                          backgroundColor: alpha(
+                            theme.palette.accent.main,
+                            isDark ? 0.1 : 0.07,
+                          ),
                           color: theme.palette.text.disabled,
                           '&:hover': {
                             borderColor: theme.palette.primary.main,
@@ -1128,7 +1140,9 @@ function Keycap({ children, big = false, active = true }: KeycapProps) {
             : '0 1px 0 rgba(0,0,30,0.08), inset 0 0.5px 0 rgba(255,255,255,0.9)'
           : 'none',
         fontFamily: 'monospace',
-        fontSize: big ? scaledPx(theme.custom.fontSize.searchInput) : scaledPx(theme.custom.fontSize.body),
+        fontSize: big
+          ? scaledPx(theme.custom.fontSize.searchInput)
+          : scaledPx(theme.custom.fontSize.body),
         fontWeight: 600,
         color: active ? 'text.primary' : 'text.secondary',
         textAlign: 'center',
@@ -1188,13 +1202,13 @@ function ShortcutCheckbox({
           outlineOffset: '2px',
         },
         backgroundColor: checked
-          ? alpha(theme.palette.accent.main, isDark ? 0.10 : 0.06)
+          ? alpha(theme.palette.accent.main, isDark ? 0.1 : 0.06)
           : hovered
             ? theme.palette.surface.hover
             : 'transparent',
         border: `0.5px solid ${
           checked
-            ? alpha(theme.palette.accent.main, isDark ? 0.30 : 0.22)
+            ? alpha(theme.palette.accent.main, isDark ? 0.3 : 0.22)
             : hovered
               ? theme.palette.divider
               : 'transparent'
@@ -1297,7 +1311,7 @@ function HotkeyInput({ value, onChange, invalid }: HotkeyInputProps) {
         caretColor: theme.palette.primary.main,
         outline: 'none',
         boxShadow: focused
-          ? `0 0 0 3px ${alpha(theme.palette.accent.main, isDark ? 0.13 : 0.10)}`
+          ? `0 0 0 3px ${alpha(theme.palette.accent.main, isDark ? 0.13 : 0.1)}`
           : !isDark
             ? 'inset 0 1px 2px rgba(0,0,0,0.04)'
             : 'none',

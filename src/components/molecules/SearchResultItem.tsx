@@ -73,7 +73,9 @@ const SheetBadge = ({
         fontSize: scaledPx(theme.custom.fontSize.hint),
         fontWeight: 500,
         letterSpacing: '0.01em',
-        color: focused ? theme.palette.accent.main : theme.palette.text.secondary,
+        color: focused
+          ? theme.palette.accent.main
+          : theme.palette.text.secondary,
         background: focused
           ? alpha(theme.palette.accent.main, isDark ? 0.14 : 0.08)
           : theme.palette.glass.field,
@@ -95,7 +97,9 @@ const SheetBadge = ({
           width: '6px',
           height: '6px',
           borderRadius: '50%',
-          background: focused ? theme.palette.accent.main : theme.palette.text.disabled,
+          background: focused
+            ? theme.palette.accent.main
+            : theme.palette.text.disabled,
           flexShrink: 0,
           transition: 'background 0.14s',
         }}
@@ -236,7 +240,9 @@ export const SearchResultItem = ({
           opacity: focused ? 0.85 : active ? 0.35 : 0,
           transition: 'opacity 0.14s',
           paddingTop: '6px',
-          color: focused ? theme.palette.accent.main : theme.palette.text.disabled,
+          color: focused
+            ? theme.palette.accent.main
+            : theme.palette.text.disabled,
           display: 'flex',
           alignItems: 'center',
         }}

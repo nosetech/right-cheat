@@ -25,14 +25,14 @@ const VARIANT_DEFS: Record<DialogVariant, VariantDef> = {
     colorDark: '#64b4ff',
     colorLight: '#0071e3',
     bgAlpha: 0.13,
-    borderAlpha: 0.30,
+    borderAlpha: 0.3,
   },
   warning: {
     Icon: WarningAmberIcon,
     colorDark: '#ffb74d',
     colorLight: '#ed6c02',
     bgAlpha: 0.13,
-    borderAlpha: 0.30,
+    borderAlpha: 0.3,
   },
   error: {
     Icon: ErrorOutlineIcon,
@@ -46,7 +46,7 @@ const VARIANT_DEFS: Record<DialogVariant, VariantDef> = {
     colorDark: '#c084fc',
     colorLight: '#7c3aed',
     bgAlpha: 0.13,
-    borderAlpha: 0.30,
+    borderAlpha: 0.3,
   },
 }
 

@@ -36,7 +36,7 @@ export const SearchBar = ({
           alignItems: 'center',
           gap: '10px',
           background: theme.palette.glass.field,
-          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.30 : 0.25)}`,
+          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.3 : 0.25)}`,
           borderRadius: '10px',
           padding: '8px 12px',
           boxShadow: isDark

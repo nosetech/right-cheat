@@ -56,7 +56,7 @@ export function EditableRowBase({
         padding: '5px 6px',
         borderRadius: '6px',
         background: isDropTarget
-          ? alpha(theme.palette.accent.main, isDark ? 0.10 : 0.07)
+          ? alpha(theme.palette.accent.main, isDark ? 0.1 : 0.07)
           : isHovered
             ? theme.palette.surface.hover
             : 'transparent',

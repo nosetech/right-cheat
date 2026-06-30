@@ -1,7 +1,7 @@
 'use client'
 import { scaledPx } from '@/utils/css'
 import { Box } from '@mui/material'
-import { alpha, useTheme } from '@mui/material/styles'
+import { useTheme } from '@mui/material/styles'
 
 type Props = {
   onClick?: () => void
@@ -30,9 +30,7 @@ export function FooterButton({ onClick, primary, disabled, children }: Props) {
             ? '#fff'
             : theme.palette.text.primary,
         border: `0.5px solid ${
-          primary && !disabled
-            ? 'transparent'
-            : theme.palette.divider
+          primary && !disabled ? 'transparent' : theme.palette.divider
         }`,
         borderRadius: '7px',
         padding: '5px 16px',

@@ -40,7 +40,7 @@ const SearchPlaceholder = ({
           width: '44px',
           height: '44px',
           borderRadius: '50%',
-          background: alpha(theme.palette.accent.main, isDark ? 0.10 : 0.07),
+          background: alpha(theme.palette.accent.main, isDark ? 0.1 : 0.07),
           border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.22 : 0.16)}`,
           display: 'flex',
           alignItems: 'center',

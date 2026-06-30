@@ -834,7 +834,7 @@ function EditRow({
             height: 2,
             background: accent,
             borderRadius: 2,
-            boxShadow: `0 0 0 2px ${alpha(theme.palette.accent.main, isDark ? 0.20 : 0.18)}`,
+            boxShadow: `0 0 0 2px ${alpha(theme.palette.accent.main, isDark ? 0.2 : 0.18)}`,
             pointerEvents: 'none',
             zIndex: 2,
           }}
@@ -1484,7 +1484,7 @@ export default function EditCheatsheetsPage() {
                 ;(e.currentTarget as HTMLButtonElement).style.background =
                   'transparent'
                 ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-                  alpha(theme.palette.accent.main, isDark ? 0.32 : 0.30)
+                  alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)
               }}
               sx={{
                 width: '100%',
@@ -1493,7 +1493,7 @@ export default function EditCheatsheetsPage() {
                 justifyContent: 'center',
                 gap: '6px',
                 background: 'transparent',
-                border: `1px dashed ${alpha(theme.palette.accent.main, isDark ? 0.32 : 0.30)}`,
+                border: `1px dashed ${alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)}`,
                 borderRadius: '8px',
                 padding: '8px 10px',
                 cursor: 'pointer',
