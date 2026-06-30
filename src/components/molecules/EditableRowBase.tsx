@@ -1,7 +1,7 @@
 'use client'
 import { scaledPx } from '@/utils/css'
 import { Box, Typography } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { useState } from 'react'
 
 import { EditIconButton } from '@/components/atoms/EditIconButton'
@@ -43,8 +43,6 @@ export function EditableRowBase({
   const isDark = theme.palette.mode === 'dark'
   const [isHovered, setIsHovered] = useState(false)
   const [grabbing, setGrabbing] = useState(false)
-  const accent = isDark ? '#64b4ff' : '#0071e3'
-
   return (
     <Box
       ref={rowRef}
@@ -58,21 +56,15 @@ export function EditableRowBase({
         padding: '5px 6px',
         borderRadius: '6px',
         background: isDropTarget
-          ? isDark
-            ? 'rgba(100,180,255,0.10)'
-            : 'rgba(0,113,227,0.07)'
+          ? alpha(theme.palette.accent.main, isDark ? 0.1 : 0.07)
           : isHovered
-            ? isDark
-              ? 'rgba(255,255,255,0.05)'
-              : 'rgba(0,0,0,0.03)'
+            ? theme.palette.surface.hover
             : 'transparent',
         border: `0.5px solid ${
           isDropTarget
-            ? accent
+            ? theme.palette.accent.main
             : isHovered
-              ? isDark
-                ? 'rgba(255,255,255,0.08)'
-                : 'rgba(0,0,0,0.08)'
+              ? theme.palette.divider
               : 'transparent'
         }`,
         opacity: isDragging ? 0.35 : 1,
@@ -124,7 +116,7 @@ export function EditableRowBase({
       <Typography
         sx={{
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          fontSize: scaledPx(9.5),
+          fontSize: scaledPx(theme.custom.fontSize.numberHint),
           color: theme.palette.text.disabled,
           minWidth: '16px',
           textAlign: 'right',

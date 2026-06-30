@@ -3,7 +3,7 @@ import { scaledPx } from '@/utils/css'
 import { forwardRef, useState } from 'react'
 
 import { Box, Stack, StackProps, Typography } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { error as logError } from '@tauri-apps/plugin-log'
 
@@ -87,34 +87,24 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       }
       if (hasDone) {
         return {
-          background: isDark
-            ? 'rgba(100,180,255,0.09)'
-            : 'rgba(0,113,227,0.06)',
-          border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.32)' : 'rgba(0,113,227,0.30)'}`,
+          background: alpha(theme.palette.accent.main, isDark ? 0.09 : 0.06),
+          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)}`,
           borderRadius: 1,
         }
       }
       if (isFocused) {
         return {
-          background: isDark
-            ? 'rgba(255,255,255,0.06)'
-            : 'rgba(255,255,255,0.78)',
-          border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.22)'}`,
+          background: theme.palette.glass.field,
+          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.22)}`,
           borderLeft: `2.5px solid ${accentColor}`,
           borderRadius: '0 4px 4px 0',
         }
       }
       return {
         background: isHovered
-          ? isDark
-            ? 'rgba(255,255,255,0.10)'
-            : 'rgba(255,255,255,0.78)'
-          : isDark
-            ? 'rgba(255,255,255,0.055)'
-            : 'rgba(255,255,255,0.48)',
-        border: `0.5px solid ${
-          isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
-        }`,
+          ? theme.palette.glass.field
+          : theme.palette.glass.panel,
+        border: `0.5px solid ${theme.palette.divider}`,
         borderRadius: 1,
       }
     }
@@ -138,7 +128,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           <Typography
             sx={{
               fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-              fontSize: scaledPx(9.5),
+              fontSize: scaledPx(theme.custom.fontSize.numberHint),
               color: numberHintColor,
               transition: 'color 0.14s',
             }}
@@ -181,7 +171,9 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: isMultiLine ? scaledPx(10) : scaledPx(11.5),
+            fontSize: isMultiLine
+              ? scaledPx(theme.custom.fontSize.commandMultiline)
+              : scaledPx(theme.custom.fontSize.caption),
             color: hasDone ? accentColor : theme.palette.text.primary,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
@@ -249,7 +241,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
             <TruncatedText
               text={description}
               sx={{
-                fontSize: scaledPx(11),
+                fontSize: scaledPx(theme.custom.fontSize.captionSm),
                 color: isFocused
                   ? theme.palette.text.primary
                   : theme.palette.text.secondary,

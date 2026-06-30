@@ -3,7 +3,7 @@ import { scaledPx } from '@/utils/css'
 import { Fragment, useEffect, useRef } from 'react'
 
 import { Box } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 
 import { SearchResultItem } from '@/components/molecules/SearchResultItem'
 import { CommandSearchResult } from '@/types/api/CheatSheet'
@@ -22,7 +22,6 @@ const SearchPlaceholder = ({
 }) => {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const accentSolid = isDark ? '#64b4ff' : '#0071e3'
   const empty = kind === 'empty'
 
   return (
@@ -41,16 +40,12 @@ const SearchPlaceholder = ({
           width: '44px',
           height: '44px',
           borderRadius: '50%',
-          background: isDark
-            ? 'rgba(100,180,255,0.10)'
-            : 'rgba(0,113,227,0.07)',
-          border: `0.5px solid ${
-            isDark ? 'rgba(100,180,255,0.22)' : 'rgba(0,113,227,0.16)'
-          }`,
+          background: alpha(theme.palette.accent.main, isDark ? 0.1 : 0.07),
+          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.22 : 0.16)}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: accentSolid,
+          color: theme.palette.accent.main,
         }}
       >
         {empty ? (
@@ -83,7 +78,7 @@ const SearchPlaceholder = ({
       <Box
         sx={{
           fontFamily: FONT_UI,
-          fontSize: scaledPx(13),
+          fontSize: scaledPx(theme.custom.fontSize.label),
           fontWeight: 600,
           color: theme.palette.text.primary,
         }}
@@ -93,7 +88,7 @@ const SearchPlaceholder = ({
       <Box
         sx={{
           fontFamily: FONT_UI,
-          fontSize: scaledPx(11.5),
+          fontSize: scaledPx(theme.custom.fontSize.caption),
           color: theme.palette.text.secondary,
           maxWidth: '340px',
           lineHeight: 1.55,
@@ -147,12 +142,8 @@ const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
               fontSize: scaledPx(10),
               fontWeight: 500,
               color: theme.palette.text.primary,
-              background: isDark
-                ? 'rgba(255,255,255,0.07)'
-                : 'rgba(255,255,255,0.78)',
-              border: `0.5px solid ${
-                isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)'
-              }`,
+              background: theme.palette.glass.field,
+              border: `0.5px solid ${theme.palette.divider}`,
               borderRadius: '4px',
               padding: '1px 5px',
               minWidth: '16px',
@@ -170,7 +161,7 @@ const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
         component='span'
         sx={{
           fontFamily: FONT_UI,
-          fontSize: scaledPx(10.5),
+          fontSize: scaledPx(theme.custom.fontSize.hint),
           color: theme.palette.text.secondary,
           letterSpacing: '0.01em',
         }}
@@ -199,7 +190,7 @@ export const SearchResults = ({
 }: Props) => {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const divider = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
+  const divider = theme.palette.divider
   const listRef = useRef<HTMLDivElement>(null)
 
   // キーボードで選択行が移動したとき、選択行をリスト表示域内へスクロールする
@@ -249,9 +240,7 @@ export const SearchResults = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.30)',
+          background: theme.palette.glass.panel,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '14px' }}>

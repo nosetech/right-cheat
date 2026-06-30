@@ -277,6 +277,73 @@ if (saved) {
 - **イベント駆動**: ウィンドウの表示切り替えとリロードに Tauri イベントを使用
 - **型安全性**: フロントエンドとバックエンド間通信で TypeScript 型を共有
 
+### フロントエンドのテーマ管理（フォントサイズ・色）
+
+**ルール: フォントサイズと色は必ず `src/theme/default.ts` の MUI テーマで一元管理する。コンポーネントへのハードコーディングは禁止。**
+
+#### フォントサイズ
+
+`scaledPx()` にリテラル数値を直接渡してはいけない。必ず `theme.custom.fontSize.*` を経由する。
+
+```tsx
+// NG
+fontSize: scaledPx(11)
+
+// OK
+const theme = useTheme()
+fontSize: scaledPx(theme.custom.fontSize.captionSm)
+```
+
+`src/theme/default.ts` の `FONT_SIZE_SCALE` に定義されたキーと対応する用途:
+
+| キー | px値 | 用途 |
+|-----|------|------|
+| `numberHint` | 9.5 | 行番号ヒント（1〜9） |
+| `commandMultiline` | 10 | 複数行コマンドテキスト |
+| `hint` | 10.5 | エラーヒント・補足説明 |
+| `captionSm` | 11 | 説明文・ラベル（小） |
+| `caption` | 11.5 | コマンドテキスト（1行）・バッジ |
+| `body` | 12 | 標準ボディ |
+| `dialogMessage` | 12.5 | ダイアログ本文 |
+| `label` | 13 | 主要ラベル・リストアイテム |
+| `sectionHeader` | 14 | セクションヘッダー |
+| `dialogTitle` | 14.5 | ダイアログタイトル |
+| `searchInput` | 15 | 検索入力フィールド |
+| `hotkeyChar` | 16 | ホットキー入力フィールド |
+
+新しいフォントサイズが必要な場合は `FONT_SIZE_SCALE` と TypeScript 型定義（`Theme['custom']['fontSize']`）の両方に追加する。
+
+#### 色
+
+コンポーネントでは以下のテーマトークンを使用する。`rgba()` や `#xxxxxx` の直書きは禁止。
+
+**アクセントカラー**（ライト: `#0071e3` / ダーク: `#64b4ff`）:
+```tsx
+// 単色
+color: theme.palette.accent.main
+
+// アルファバリアント
+import { alpha } from '@mui/material/styles'
+backgroundColor: alpha(theme.palette.accent.main, isDark ? 0.10 : 0.07)
+```
+
+**セマンティックカラートークン** (`theme.palette.*`):
+
+| トークン | 用途 |
+|--------|------|
+| `glass.panel` | カード・パネル・フッター背景 |
+| `glass.field` | 入力フィールド・ホバー背景 |
+| `glass.overlay` | ドロップダウン・ポップオーバー背景 |
+| `surface.hover` | ホバー時背景 |
+| `surface.selected` | 選択時背景 |
+| `amber.text` | 警告テキスト（"Restart Required" 等） |
+| `amber.background` | 警告ボックス背景 |
+| `amber.border` | 警告ボックスボーダー |
+| `divider` | 汎用ボーダー（MUI 標準） |
+| `text.disabled` | 無効・補助的なテキスト色 |
+
+ライト/ダーク両モードの具体的な色値は `src/theme/default.ts` の `getLightPalette()` / `getDarkPalette()` を参照すること。
+
 ### ファイル構造
 - `src/`: Next.js フロントエンドコード
   - `src/app/export/`: チートシートエクスポート選択画面

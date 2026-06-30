@@ -6,7 +6,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { Box, Dialog, SvgIconProps } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import React from 'react'
 
 export type DialogVariant = 'information' | 'warning' | 'error' | 'confirmation'
@@ -15,10 +15,8 @@ type VariantDef = {
   Icon: React.ComponentType<SvgIconProps>
   colorDark: string
   colorLight: string
-  bgDark: string
-  bgLight: string
-  borderDark: string
-  borderLight: string
+  bgAlpha: number
+  borderAlpha: number
 }
 
 const VARIANT_DEFS: Record<DialogVariant, VariantDef> = {
@@ -26,37 +24,29 @@ const VARIANT_DEFS: Record<DialogVariant, VariantDef> = {
     Icon: InfoOutlinedIcon,
     colorDark: '#64b4ff',
     colorLight: '#0071e3',
-    bgDark: 'rgba(100,180,255,0.13)',
-    bgLight: 'rgba(0,113,227,0.08)',
-    borderDark: 'rgba(100,180,255,0.30)',
-    borderLight: 'rgba(0,113,227,0.22)',
+    bgAlpha: 0.13,
+    borderAlpha: 0.3,
   },
   warning: {
     Icon: WarningAmberIcon,
     colorDark: '#ffb74d',
     colorLight: '#ed6c02',
-    bgDark: 'rgba(255,183,77,0.13)',
-    bgLight: 'rgba(237,108,2,0.08)',
-    borderDark: 'rgba(255,183,77,0.30)',
-    borderLight: 'rgba(237,108,2,0.22)',
+    bgAlpha: 0.13,
+    borderAlpha: 0.3,
   },
   error: {
     Icon: ErrorOutlineIcon,
     colorDark: '#ff6b6b',
     colorLight: '#d32f2f',
-    bgDark: 'rgba(255,107,107,0.12)',
-    bgLight: 'rgba(211,47,47,0.08)',
-    borderDark: 'rgba(255,107,107,0.35)',
-    borderLight: 'rgba(211,47,47,0.22)',
+    bgAlpha: 0.12,
+    borderAlpha: 0.35,
   },
   confirmation: {
     Icon: HelpOutlineIcon,
     colorDark: '#c084fc',
     colorLight: '#7c3aed',
-    bgDark: 'rgba(192,132,252,0.13)',
-    bgLight: 'rgba(124,58,237,0.08)',
-    borderDark: 'rgba(192,132,252,0.30)',
-    borderLight: 'rgba(124,58,237,0.22)',
+    bgAlpha: 0.13,
+    borderAlpha: 0.3,
   },
 }
 
@@ -93,7 +83,7 @@ function ActionButton({ variant, onClick, children }: ActionButtonProps) {
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: scaledPx(12),
+        fontSize: scaledPx(theme.custom.fontSize.body),
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: 'pointer',
@@ -132,15 +122,13 @@ function SecondaryButton({ onClick, children }: SecondaryButtonProps) {
       type='button'
       onClick={onClick}
       sx={{
-        background: isDark
-          ? 'rgba(255,255,255,0.06)'
-          : 'rgba(255,255,255,0.75)',
+        background: theme.palette.glass.panel,
         color: theme.palette.text.primary,
-        border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)'}`,
+        border: `0.5px solid ${theme.palette.divider}`,
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: scaledPx(12),
+        fontSize: scaledPx(theme.custom.fontSize.body),
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: 'pointer',
@@ -148,9 +136,7 @@ function SecondaryButton({ onClick, children }: SecondaryButtonProps) {
         minWidth: '78px',
         boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
         '&:hover': {
-          background: isDark
-            ? 'rgba(255,255,255,0.10)'
-            : 'rgba(255,255,255,0.95)',
+          background: theme.palette.glass.field,
         },
       }}
     >
@@ -179,8 +165,8 @@ function DialogIcon({ variant }: DialogIconProps) {
         height: 40,
         borderRadius: '50%',
         flexShrink: 0,
-        background: isDark ? def.bgDark : def.bgLight,
-        border: `0.5px solid ${isDark ? def.borderDark : def.borderLight}`,
+        background: alpha(color, isDark ? def.bgAlpha : 0.08),
+        border: `0.5px solid ${alpha(color, isDark ? def.borderAlpha : 0.22)}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -275,7 +261,7 @@ export function RcDialog({
             <Box
               id='rc-dialog-title'
               sx={{
-                fontSize: scaledPx(14.5),
+                fontSize: scaledPx(theme.custom.fontSize.dialogTitle),
                 fontWeight: 600,
                 color: 'text.primary',
                 mb: '6px',
@@ -288,7 +274,7 @@ export function RcDialog({
             <Box
               id='rc-dialog-description'
               sx={{
-                fontSize: scaledPx(12.5),
+                fontSize: scaledPx(theme.custom.fontSize.dialogMessage),
                 lineHeight: 1.65,
                 color: 'text.secondary',
                 whiteSpace: 'pre-line',
@@ -308,10 +294,8 @@ export function RcDialog({
           alignItems: 'center',
           justifyContent: 'flex-end',
           gap: '8px',
-          background: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.40)',
-          borderTop: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          background: theme.palette.glass.panel,
+          borderTop: `0.5px solid ${theme.palette.divider}`,
         }}
       >
         {isYesNo ? (

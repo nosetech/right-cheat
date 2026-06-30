@@ -29,7 +29,7 @@ export function AddRowButton({ label, onClick, icon }: Props) {
         borderRadius: '7px',
         color: theme.palette.text.secondary,
         fontFamily: theme.typography.fontFamily,
-        fontSize: scaledPx(11.5),
+        fontSize: scaledPx(theme.custom.fontSize.caption),
         cursor: 'pointer',
         transition: 'all 0.14s',
         '&:hover': {

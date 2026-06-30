@@ -3,7 +3,7 @@ import { scaledPx } from '@/utils/css'
 import { useCallback, useEffect, useState } from 'react'
 
 import { Box, Typography } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { save } from '@tauri-apps/plugin-dialog'
@@ -34,7 +34,7 @@ function ExportCheckbox({
 }) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const accentSolid = isDark ? '#64b4ff' : '#0071e3'
+  const accentSolid = theme.palette.accent.main
   const active = checked || !!indeterminate
 
   return (
@@ -72,8 +72,8 @@ function ExportCheckbox({
         transition: 'background 0.12s, border-color 0.12s',
         '&:hover': {
           boxShadow: active
-            ? `0 0 0 6px ${isDark ? 'rgba(100,180,255,0.10)' : 'rgba(0,113,227,0.10)'}`
-            : `0 0 0 6px ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,113,227,0.06)'}`,
+            ? `0 0 0 6px ${alpha(theme.palette.accent.main, 0.1)}`
+            : `0 0 0 6px ${isDark ? 'rgba(255,255,255,0.04)' : alpha(theme.palette.accent.main, 0.06)}`,
           borderColor: active
             ? accentSolid
             : isDark
@@ -140,9 +140,7 @@ function ExportRow({
         transition: 'background 0.1s',
         userSelect: 'none',
         '&:hover': {
-          background: isDark
-            ? 'rgba(255,255,255,0.045)'
-            : 'rgba(255,255,255,0.55)',
+          background: theme.palette.glass.field,
         },
       }}
     >
@@ -151,7 +149,7 @@ function ExportRow({
         sx={{
           flex: 1,
           minWidth: 0,
-          fontSize: scaledPx(13),
+          fontSize: scaledPx(theme.custom.fontSize.label),
           fontWeight: sheet.checked ? 500 : 400,
           color: sheet.checked
             ? theme.palette.text.primary
@@ -182,7 +180,7 @@ function ResultModal({
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
   const ok = kind === 'success'
-  const accentSolid = isDark ? '#64b4ff' : '#0071e3'
+  const accentSolid = theme.palette.accent.main
 
   return (
     <Box
@@ -289,7 +287,7 @@ function ResultModal({
           <>
             <Typography
               sx={{
-                fontSize: scaledPx(11),
+                fontSize: scaledPx(theme.custom.fontSize.captionSm),
                 color: theme.palette.text.secondary,
                 textAlign: 'center',
                 lineHeight: 1.5,
@@ -301,7 +299,7 @@ function ResultModal({
             <Box
               sx={{
                 fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                fontSize: scaledPx(10.5),
+                fontSize: scaledPx(theme.custom.fontSize.hint),
                 color: theme.palette.text.primary,
                 background: isDark ? 'rgba(0,0,0,0.30)' : 'rgba(0,0,0,0.04)',
                 border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
@@ -331,7 +329,7 @@ function ResultModal({
             borderRadius: '7px',
             padding: '6px 22px',
             fontFamily: theme.typography.fontFamily,
-            fontSize: scaledPx(12.5),
+            fontSize: scaledPx(theme.custom.fontSize.dialogMessage),
             fontWeight: 600,
             cursor: 'pointer',
             alignSelf: 'stretch',
@@ -349,7 +347,7 @@ function ResultModal({
 export default function ExportPage() {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const accentSolid = isDark ? '#64b4ff' : '#0071e3'
+  const accentSolid = theme.palette.accent.main
 
   const [sheets, setSheets] = useState<SheetInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -424,7 +422,7 @@ export default function ExportPage() {
   const panelBorder = isDark
     ? 'rgba(255,255,255,0.10)'
     : 'rgba(255,255,255,0.75)'
-  const divider = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
+  const divider = theme.palette.divider
 
   return (
     <>
@@ -485,7 +483,7 @@ export default function ExportPage() {
           >
             <Typography
               sx={{
-                fontSize: scaledPx(12.5),
+                fontSize: scaledPx(theme.custom.fontSize.dialogMessage),
                 fontWeight: 600,
                 color: theme.palette.text.primary,
               }}
@@ -494,7 +492,7 @@ export default function ExportPage() {
             </Typography>
             <Typography
               sx={{
-                fontSize: scaledPx(10.5),
+                fontSize: scaledPx(theme.custom.fontSize.hint),
                 color: theme.palette.text.secondary,
               }}
             >
@@ -506,26 +504,14 @@ export default function ExportPage() {
             sx={{
               fontFamily: '"JetBrains Mono", "Fira Code", monospace',
               fontSize: scaledPx(10),
-              color: noneOn
-                ? isDark
-                  ? 'rgba(255,255,255,0.25)'
-                  : 'rgba(0,0,0,0.28)'
-                : accentSolid,
+              color: noneOn ? theme.palette.text.disabled : accentSolid,
               background: noneOn
-                ? isDark
-                  ? 'rgba(255,255,255,0.06)'
-                  : 'rgba(0,0,0,0.05)'
-                : isDark
-                  ? 'rgba(100,180,255,0.12)'
-                  : 'rgba(0,113,227,0.10)',
+                ? theme.palette.surface.hover
+                : alpha(theme.palette.accent.main, isDark ? 0.12 : 0.1),
               border: `0.5px solid ${
                 noneOn
-                  ? isDark
-                    ? 'rgba(255,255,255,0.08)'
-                    : 'rgba(0,0,0,0.06)'
-                  : isDark
-                    ? 'rgba(100,180,255,0.28)'
-                    : 'rgba(0,113,227,0.22)'
+                  ? theme.palette.divider
+                  : alpha(theme.palette.accent.main, isDark ? 0.28 : 0.22)
               }`,
               padding: '2px 8px',
               borderRadius: '999px',
@@ -558,7 +544,7 @@ export default function ExportPage() {
             <Typography
               sx={{
                 padding: '16px',
-                fontSize: scaledPx(12),
+                fontSize: scaledPx(theme.custom.fontSize.body),
                 color: theme.palette.text.secondary,
               }}
             >
@@ -568,7 +554,7 @@ export default function ExportPage() {
             <Typography
               sx={{
                 padding: '16px',
-                fontSize: scaledPx(12),
+                fontSize: scaledPx(theme.custom.fontSize.body),
                 color: theme.palette.text.secondary,
               }}
             >
@@ -627,7 +613,7 @@ export default function ExportPage() {
             </svg>
             <Typography
               sx={{
-                fontSize: scaledPx(11),
+                fontSize: scaledPx(theme.custom.fontSize.captionSm),
                 color: theme.palette.text.secondary,
               }}
             >

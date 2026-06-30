@@ -68,7 +68,7 @@ export function EditableShortcutRow({
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: scaledPx(11.5),
+            fontSize: scaledPx(theme.custom.fontSize.caption),
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',
             lineHeight: 1.55,
@@ -84,14 +84,14 @@ export function EditableShortcutRow({
           <TruncatedText
             text={item.description}
             sx={{
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               color: theme.palette.text.secondary,
             }}
           />
         ) : (
           <Typography
             sx={{
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               color: theme.palette.text.disabled,
               fontStyle: 'italic',
             }}

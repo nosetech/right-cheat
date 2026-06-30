@@ -110,7 +110,7 @@ export default function EditGroupPage() {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Box
             sx={{
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               fontWeight: 600,
               color: 'text.secondary',
             }}

@@ -33,7 +33,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
@@ -463,7 +463,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: scaledPx(14),
+              fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -476,7 +476,7 @@ export default function Page() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Typography
                 sx={{
-                  fontSize: scaledPx(13),
+                  fontSize: scaledPx(theme.custom.fontSize.label),
                   fontWeight: 500,
                   color: 'text.primary',
                 }}
@@ -486,7 +486,7 @@ export default function Page() {
               <Typography
                 sx={{
                   color: 'text.secondary',
-                  fontSize: scaledPx(13),
+                  fontSize: scaledPx(theme.custom.fontSize.label),
                 }}
               >
                 :
@@ -502,7 +502,7 @@ export default function Page() {
                     borderRadius: '6px',
                     padding: '4px 11px',
                     fontFamily: 'monospace',
-                    fontSize: scaledPx(12),
+                    fontSize: scaledPx(theme.custom.fontSize.body),
                     color: 'text.primary',
                     boxShadow: !isDark
                       ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
@@ -536,13 +536,12 @@ export default function Page() {
                       width: 28,
                       height: 28,
                       borderRadius: '7px',
-                      border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
-                      backgroundColor: isDark
-                        ? 'rgba(100,180,255,0.10)'
-                        : 'rgba(0,113,227,0.07)',
-                      color: isDark
-                        ? 'rgba(255,255,255,0.25)'
-                        : 'rgba(0,0,0,0.28)',
+                      border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                      backgroundColor: alpha(
+                        theme.palette.accent.main,
+                        isDark ? 0.1 : 0.07,
+                      ),
+                      color: theme.palette.text.disabled,
                       '&:hover': {
                         borderColor: theme.palette.primary.main,
                         color: theme.palette.primary.main,
@@ -563,7 +562,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: scaledPx(14),
+              fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -587,7 +586,7 @@ export default function Page() {
         <Box sx={{ py: '12px' }}>
           <Typography
             sx={{
-              fontSize: scaledPx(14),
+              fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
               fontWeight: 600,
               letterSpacing: '0.01em',
               mb: '10px',
@@ -603,9 +602,7 @@ export default function Page() {
                 flexDirection: 'column',
                 gap: '14px',
                 p: '12px 14px',
-                backgroundColor: isDark
-                  ? 'rgba(255,255,255,0.025)'
-                  : 'rgba(255,255,255,0.35)',
+                backgroundColor: theme.palette.glass.panel,
                 border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)'}`,
                 borderRadius: '10px',
                 boxShadow: isDark
@@ -626,7 +623,7 @@ export default function Page() {
                   <RowDot />
                   <Typography
                     sx={{
-                      fontSize: scaledPx(13),
+                      fontSize: scaledPx(theme.custom.fontSize.label),
                       color: 'text.primary',
                     }}
                   >
@@ -654,7 +651,7 @@ export default function Page() {
                   <RowDot />
                   <Typography
                     sx={{
-                      fontSize: scaledPx(13),
+                      fontSize: scaledPx(theme.custom.fontSize.label),
                       color: 'text.primary',
                     }}
                   >
@@ -682,7 +679,7 @@ export default function Page() {
                   <RowDot />
                   <Typography
                     sx={{
-                      fontSize: scaledPx(13),
+                      fontSize: scaledPx(theme.custom.fontSize.label),
                       color: 'text.primary',
                     }}
                   >
@@ -694,16 +691,14 @@ export default function Page() {
                     sx={{
                       height: 'auto',
                       py: '2px',
-                      fontSize: scaledPx(9.5),
+                      fontSize: scaledPx(theme.custom.fontSize.numberHint),
                       fontFamily: 'monospace',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
                       borderRadius: '4px',
-                      backgroundColor: isDark
-                        ? 'rgba(255,180,80,0.10)'
-                        : 'rgba(180,120,0,0.07)',
-                      border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.28)' : 'rgba(180,120,0,0.22)'}`,
-                      color: isDark ? '#f5c46b' : '#8a6300',
+                      backgroundColor: theme.palette.amber.background,
+                      border: `0.5px solid ${theme.palette.amber.border}`,
+                      color: theme.palette.amber.text,
                       '& .MuiChip-label': { px: '6px' },
                     }}
                   />
@@ -725,13 +720,12 @@ export default function Page() {
                         height: 30,
                         borderRadius: '7px',
                         flexShrink: 0,
-                        border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
-                        backgroundColor: isDark
-                          ? 'rgba(100,180,255,0.10)'
-                          : 'rgba(0,113,227,0.07)',
-                        color: isDark
-                          ? 'rgba(255,255,255,0.25)'
-                          : 'rgba(0,0,0,0.28)',
+                        border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                        backgroundColor: alpha(
+                          theme.palette.accent.main,
+                          isDark ? 0.1 : 0.07,
+                        ),
+                        color: theme.palette.text.disabled,
                         '&:hover': {
                           borderColor: theme.palette.primary.main,
                           color: theme.palette.primary.main,
@@ -746,9 +740,7 @@ export default function Page() {
                     sx={{
                       flex: 1,
                       minWidth: 0,
-                      backgroundColor: isDark
-                        ? 'rgba(255,255,255,0.055)'
-                        : 'rgba(255,255,255,0.55)',
+                      backgroundColor: theme.palette.glass.field,
                       border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
                       borderRadius: '7px',
                       px: '10px',
@@ -762,7 +754,7 @@ export default function Page() {
                       component='span'
                       sx={{
                         fontFamily: 'monospace',
-                        fontSize: scaledPx(11),
+                        fontSize: scaledPx(theme.custom.fontSize.captionSm),
                         display: 'block',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -796,7 +788,7 @@ export default function Page() {
                     <RowDot />
                     <Typography
                       sx={{
-                        fontSize: scaledPx(13),
+                        fontSize: scaledPx(theme.custom.fontSize.label),
                         color: 'text.primary',
                       }}
                     >
@@ -808,16 +800,14 @@ export default function Page() {
                       sx={{
                         height: 'auto',
                         py: '2px',
-                        fontSize: scaledPx(9.5),
+                        fontSize: scaledPx(theme.custom.fontSize.numberHint),
                         fontFamily: 'monospace',
                         letterSpacing: '0.06em',
                         textTransform: 'uppercase',
                         borderRadius: '4px',
-                        backgroundColor: isDark
-                          ? 'rgba(255,180,80,0.10)'
-                          : 'rgba(180,120,0,0.07)',
-                        border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.28)' : 'rgba(180,120,0,0.22)'}`,
-                        color: isDark ? '#f5c46b' : '#8a6300',
+                        backgroundColor: theme.palette.amber.background,
+                        border: `0.5px solid ${theme.palette.amber.border}`,
+                        color: theme.palette.amber.text,
                         '& .MuiChip-label': { px: '6px' },
                       }}
                     />
@@ -831,13 +821,12 @@ export default function Page() {
                           width: 28,
                           height: 28,
                           borderRadius: '7px',
-                          border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
-                          backgroundColor: isDark
-                            ? 'rgba(100,180,255,0.10)'
-                            : 'rgba(0,113,227,0.07)',
-                          color: isDark
-                            ? 'rgba(255,255,255,0.25)'
-                            : 'rgba(0,0,0,0.28)',
+                          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                          backgroundColor: alpha(
+                            theme.palette.accent.main,
+                            isDark ? 0.1 : 0.07,
+                          ),
+                          color: theme.palette.text.disabled,
                           '&:hover': {
                             borderColor: theme.palette.primary.main,
                             color: theme.palette.primary.main,
@@ -855,13 +844,12 @@ export default function Page() {
                           width: 28,
                           height: 28,
                           borderRadius: '7px',
-                          border: `0.5px solid ${isDark ? 'rgba(100,180,255,0.18)' : 'rgba(0,113,227,0.14)'}`,
-                          backgroundColor: isDark
-                            ? 'rgba(100,180,255,0.10)'
-                            : 'rgba(0,113,227,0.07)',
-                          color: isDark
-                            ? 'rgba(255,255,255,0.25)'
-                            : 'rgba(0,0,0,0.28)',
+                          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                          backgroundColor: alpha(
+                            theme.palette.accent.main,
+                            isDark ? 0.1 : 0.07,
+                          ),
+                          color: theme.palette.text.disabled,
                           '&:hover': {
                             borderColor: theme.palette.primary.main,
                             color: theme.palette.primary.main,
@@ -969,13 +957,14 @@ function dialogPaperSx(isDark: boolean) {
 }
 
 function LogSummaryRow({ label, value }: { label: string; value: string }) {
+  const theme = useTheme()
   return (
     <Box
       sx={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}
     >
       <Typography
         sx={{
-          fontSize: scaledPx(11),
+          fontSize: scaledPx(theme.custom.fontSize.captionSm),
           flexShrink: 0,
           width: 110,
           fontWeight: 500,
@@ -987,7 +976,7 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
       <Typography
         title={value}
         sx={{
-          fontSize: scaledPx(11),
+          fontSize: scaledPx(theme.custom.fontSize.captionSm),
           fontFamily: 'monospace',
           color: 'text.primary',
           overflow: 'hidden',
@@ -1036,7 +1025,7 @@ function NumberInputField({
     <Box>
       <Typography
         sx={{
-          fontSize: scaledPx(11),
+          fontSize: scaledPx(theme.custom.fontSize.captionSm),
           fontWeight: 500,
           mb: '6px',
           color: 'text.secondary',
@@ -1049,9 +1038,7 @@ function NumberInputField({
         sx={{
           display: 'flex',
           alignItems: 'center',
-          backgroundColor: isDark
-            ? 'rgba(255,255,255,0.055)'
-            : 'rgba(255,255,255,0.55)',
+          backgroundColor: theme.palette.glass.field,
           border: `0.5px solid ${borderColor}`,
           borderRadius: '7px',
           padding: '4px 8px',
@@ -1074,7 +1061,7 @@ function NumberInputField({
             border: 'none',
             outline: 'none',
             fontFamily: 'monospace',
-            fontSize: scaledPx(12),
+            fontSize: scaledPx(theme.custom.fontSize.body),
             color: 'text.primary',
             caretColor: theme.palette.primary.main,
             padding: '2px 0',
@@ -1100,7 +1087,7 @@ function NumberInputField({
       {hint && (
         <Typography
           sx={{
-            fontSize: scaledPx(10.5),
+            fontSize: scaledPx(theme.custom.fontSize.hint),
             color: 'error.main',
             mt: '4px',
             lineHeight: 1.4,
@@ -1153,7 +1140,9 @@ function Keycap({ children, big = false, active = true }: KeycapProps) {
             : '0 1px 0 rgba(0,0,30,0.08), inset 0 0.5px 0 rgba(255,255,255,0.9)'
           : 'none',
         fontFamily: 'monospace',
-        fontSize: big ? scaledPx(15) : scaledPx(12),
+        fontSize: big
+          ? scaledPx(theme.custom.fontSize.searchInput)
+          : scaledPx(theme.custom.fontSize.body),
         fontWeight: 600,
         color: active ? 'text.primary' : 'text.secondary',
         textAlign: 'center',
@@ -1213,19 +1202,13 @@ function ShortcutCheckbox({
           outlineOffset: '2px',
         },
         backgroundColor: checked
-          ? isDark
-            ? 'rgba(100,180,255,0.10)'
-            : 'rgba(0,113,227,0.06)'
+          ? alpha(theme.palette.accent.main, isDark ? 0.1 : 0.06)
           : hovered
-            ? isDark
-              ? 'rgba(255,255,255,0.04)'
-              : 'rgba(255,255,255,0.55)'
+            ? theme.palette.surface.hover
             : 'transparent',
         border: `0.5px solid ${
           checked
-            ? isDark
-              ? 'rgba(100,180,255,0.30)'
-              : 'rgba(0,113,227,0.22)'
+            ? alpha(theme.palette.accent.main, isDark ? 0.3 : 0.22)
             : hovered
               ? theme.palette.divider
               : 'transparent'
@@ -1270,7 +1253,7 @@ function ShortcutCheckbox({
       <Keycap active={checked}>{symbol}</Keycap>
       <Typography
         sx={{
-          fontSize: scaledPx(13),
+          fontSize: scaledPx(theme.custom.fontSize.label),
           color: checked ? 'text.primary' : 'text.secondary',
         }}
       >
@@ -1322,13 +1305,13 @@ function HotkeyInput({ value, onChange, invalid }: HotkeyInputProps) {
         borderRadius: '7px',
         padding: '7px 8px',
         fontFamily: 'monospace',
-        fontSize: scaledPx(16),
+        fontSize: scaledPx(theme.custom.fontSize.hotkeyChar),
         fontWeight: 600,
         color: 'text.primary',
         caretColor: theme.palette.primary.main,
         outline: 'none',
         boxShadow: focused
-          ? `0 0 0 3px ${isDark ? 'rgba(100,180,255,0.13)' : 'rgba(0,113,227,0.10)'}`
+          ? `0 0 0 3px ${alpha(theme.palette.accent.main, isDark ? 0.13 : 0.1)}`
           : !isDark
             ? 'inset 0 1px 2px rgba(0,0,0,0.04)'
             : 'none',
@@ -1408,7 +1391,7 @@ function ShortcutSettingsDialog({
       <DialogTitle
         sx={{
           padding: '14px 18px 12px',
-          fontSize: scaledPx(14),
+          fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
           fontWeight: 600,
           borderBottom: `0.5px solid ${theme.palette.divider}`,
         }}
@@ -1430,10 +1413,8 @@ function ShortcutSettingsDialog({
             alignItems: 'flex-start',
             gap: '9px',
             p: '9px 11px',
-            backgroundColor: isDark
-              ? 'rgba(255,180,80,0.08)'
-              : 'rgba(180,120,0,0.06)',
-            border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.30)' : 'rgba(180,120,0,0.22)'}`,
+            backgroundColor: theme.palette.amber.background,
+            border: `0.5px solid ${theme.palette.amber.border}`,
             borderRadius: '8px',
           }}
         >
@@ -1442,14 +1423,14 @@ function ShortcutSettingsDialog({
               fontSize: '14px',
               mt: '1px',
               flexShrink: 0,
-              color: isDark ? '#f5c46b' : '#a87a00',
+              color: theme.palette.amber.text,
             }}
           />
           <Typography
             sx={{
               lineHeight: 1.5,
-              color: isDark ? '#f5c46b' : '#8a6300',
-              fontSize: scaledPx(11.5),
+              color: theme.palette.amber.text,
+              fontSize: scaledPx(theme.custom.fontSize.caption),
             }}
           >
             Changing the global shortcut takes effect after restarting
@@ -1465,9 +1446,7 @@ function ShortcutSettingsDialog({
             alignItems: 'center',
             gap: '8px',
             p: '16px 12px',
-            backgroundColor: isDark
-              ? 'rgba(255,255,255,0.025)'
-              : 'rgba(255,255,255,0.35)',
+            backgroundColor: theme.palette.glass.panel,
             border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)'}`,
             borderRadius: '10px',
             boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
@@ -1475,7 +1454,7 @@ function ShortcutSettingsDialog({
         >
           <Typography
             sx={{
-              fontSize: scaledPx(10.5),
+              fontSize: scaledPx(theme.custom.fontSize.hint),
               fontWeight: 600,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
@@ -1495,7 +1474,7 @@ function ShortcutSettingsDialog({
           ) : (
             <Typography
               sx={{
-                fontSize: scaledPx(13),
+                fontSize: scaledPx(theme.custom.fontSize.label),
                 color: 'text.secondary',
                 p: '7px 0',
               }}
@@ -1509,7 +1488,7 @@ function ShortcutSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1562,7 +1541,7 @@ function ShortcutSettingsDialog({
           {showError && !hasModifier && (
             <Typography
               sx={{
-                fontSize: scaledPx(10.5),
+                fontSize: scaledPx(theme.custom.fontSize.hint),
                 color: theme.palette.error.main,
                 mt: '2px',
               }}
@@ -1576,7 +1555,7 @@ function ShortcutSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1596,7 +1575,7 @@ function ShortcutSettingsDialog({
             />
             <Typography
               sx={{
-                fontSize: scaledPx(11.5),
+                fontSize: scaledPx(theme.custom.fontSize.caption),
                 color: 'text.secondary',
               }}
             >
@@ -1605,7 +1584,7 @@ function ShortcutSettingsDialog({
           </Box>
           <Typography
             sx={{
-              fontSize: scaledPx(10.5),
+              fontSize: scaledPx(theme.custom.fontSize.hint),
               color: 'text.disabled',
               lineHeight: 1.4,
             }}
@@ -1615,7 +1594,7 @@ function ShortcutSettingsDialog({
           {showError && !hasHotkey && (
             <Typography
               sx={{
-                fontSize: scaledPx(10.5),
+                fontSize: scaledPx(theme.custom.fontSize.hint),
                 color: theme.palette.error.main,
                 mt: '2px',
               }}
@@ -1639,7 +1618,7 @@ function ShortcutSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: scaledPx(12),
+            fontSize: scaledPx(theme.custom.fontSize.body),
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
@@ -1663,11 +1642,11 @@ function ShortcutSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: scaledPx(12),
+            fontSize: scaledPx(theme.custom.fontSize.body),
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
-            backgroundColor: isDark ? '#64b4ff' : '#0071e3',
+            backgroundColor: theme.palette.accent.main,
             border: '0.5px solid transparent',
             color: '#fff',
             boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
@@ -1780,7 +1759,7 @@ function LogSettingsDialog({
       <DialogTitle
         sx={{
           padding: '14px 18px 12px',
-          fontSize: scaledPx(14),
+          fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
           fontWeight: 600,
           borderBottom: `0.5px solid ${theme.palette.divider}`,
         }}
@@ -1802,10 +1781,8 @@ function LogSettingsDialog({
             alignItems: 'flex-start',
             gap: '9px',
             p: '9px 11px',
-            backgroundColor: isDark
-              ? 'rgba(255,180,80,0.08)'
-              : 'rgba(180,120,0,0.06)',
-            border: `0.5px solid ${isDark ? 'rgba(255,180,80,0.30)' : 'rgba(180,120,0,0.22)'}`,
+            backgroundColor: theme.palette.amber.background,
+            border: `0.5px solid ${theme.palette.amber.border}`,
             borderRadius: '8px',
           }}
         >
@@ -1814,14 +1791,14 @@ function LogSettingsDialog({
               fontSize: '14px',
               mt: '1px',
               flexShrink: 0,
-              color: isDark ? '#f5c46b' : '#a87a00',
+              color: theme.palette.amber.text,
             }}
           />
           <Typography
             sx={{
               lineHeight: 1.5,
-              color: isDark ? '#f5c46b' : '#8a6300',
-              fontSize: scaledPx(11.5),
+              color: theme.palette.amber.text,
+              fontSize: scaledPx(theme.custom.fontSize.caption),
             }}
           >
             Log settings only take effect after restarting RightCheat.
@@ -1832,7 +1809,7 @@ function LogSettingsDialog({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <Typography
             sx={{
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               fontWeight: 600,
               letterSpacing: '0.01em',
               color: 'text.secondary',
@@ -1885,7 +1862,7 @@ function LogSettingsDialog({
                 dir='ltr'
                 sx={{
                   fontFamily: 'monospace',
-                  fontSize: scaledPx(11.5),
+                  fontSize: scaledPx(theme.custom.fontSize.caption),
                   display: 'block',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -1944,7 +1921,7 @@ function LogSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: scaledPx(12),
+            fontSize: scaledPx(theme.custom.fontSize.body),
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
@@ -1968,11 +1945,11 @@ function LogSettingsDialog({
           sx={{
             borderRadius: '7px',
             padding: '5px 16px',
-            fontSize: scaledPx(12),
+            fontSize: scaledPx(theme.custom.fontSize.body),
             fontWeight: 600,
             minWidth: 78,
             textTransform: 'none',
-            backgroundColor: isDark ? '#64b4ff' : '#0071e3',
+            backgroundColor: theme.palette.accent.main,
             border: '0.5px solid transparent',
             color: '#fff',
             boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
