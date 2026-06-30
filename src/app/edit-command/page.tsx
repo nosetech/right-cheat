@@ -157,7 +157,7 @@ export default function EditCommandPage() {
             value={groupEditId}
             onChange={(e) => setGroupEditId(e.target.value)}
             size='small'
-            sx={{ fontSize: scaledPx(13) }}
+            sx={{ fontSize: scaledPx(theme.custom.fontSize.label) }}
             displayEmpty
           >
             <MenuItem value=''>
@@ -183,7 +183,7 @@ export default function EditCommandPage() {
             }
             size='small'
             fullWidth
-            sx={{ fontSize: scaledPx(13) }}
+            sx={{ fontSize: scaledPx(theme.custom.fontSize.label) }}
           />
         </FieldRow>
 
@@ -217,7 +217,7 @@ export default function EditCommandPage() {
                 sx={{
                   '& textarea': {
                     fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                    fontSize: scaledPx(12),
+                    fontSize: scaledPx(theme.custom.fontSize.body),
                   },
                 }}
               />
@@ -227,7 +227,7 @@ export default function EditCommandPage() {
                 value={layout}
                 onChange={(e) => setLayout(e.target.value as CommandLayout)}
                 size='small'
-                sx={{ fontSize: scaledPx(13) }}
+                sx={{ fontSize: scaledPx(theme.custom.fontSize.label) }}
               >
                 {LAYOUT_OPTIONS.map((o) => (
                   <MenuItem key={o.value} value={o.value}>
@@ -280,7 +280,7 @@ function FieldRow({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
       <Box
         sx={{
-          fontSize: scaledPx(11),
+          fontSize: scaledPx(theme.custom.fontSize.captionSm),
           fontWeight: 600,
           color: 'text.secondary',
           letterSpacing: '0.01em',
@@ -292,7 +292,7 @@ function FieldRow({
       {hint && (
         <Box
           sx={{
-            fontSize: scaledPx(10.5),
+            fontSize: scaledPx(theme.custom.fontSize.hint),
             color: theme.palette.text.disabled,
             lineHeight: 1.4,
           }}

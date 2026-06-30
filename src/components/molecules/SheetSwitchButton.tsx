@@ -115,9 +115,9 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
       }
     }
 
-    const dropdownBg = isDark ? 'rgba(12,28,48,0.97)' : 'rgba(240,245,255,0.97)'
+    const dropdownBg = theme.palette.glass.overlay
     const borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'
-    const inputBg = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'
+    const inputBg = isDark ? theme.palette.glass.field : theme.palette.surface.hover
 
     return (
       <Box ref={containerRef} sx={{ position: 'relative' }}>
@@ -128,11 +128,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
           aria-haspopup='listbox'
           aria-expanded={open}
           sx={{
-            background: open
-              ? isDark
-                ? 'rgba(255,255,255,0.12)'
-                : 'rgba(0,0,0,0.08)'
-              : 'none',
+            background: open ? theme.palette.surface.hover : 'none',
             border: `0.5px solid ${open ? theme.palette.accent.main : 'transparent'}`,
             borderRadius: '6px',
             cursor: 'pointer',
@@ -244,7 +240,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                     border: 'none',
                     outline: 'none',
                     fontFamily: 'inherit',
-                    fontSize: scaledPx(12),
+                    fontSize: scaledPx(theme.custom.fontSize.body),
                     color: theme.palette.text.primary,
                   }}
                 />
@@ -293,7 +289,7 @@ export const SheetSwitchButton = forwardRef<SheetSwitchButtonHandle, Props>(
                 <Typography
                   sx={{
                     padding: '10px 16px',
-                    fontSize: scaledPx(12),
+                    fontSize: scaledPx(theme.custom.fontSize.body),
                     color: theme.palette.text.disabled,
                     textAlign: 'center',
                   }}
@@ -354,6 +350,7 @@ const SheetDropdownItem = forwardRef<HTMLDivElement, DropdownItemProps>(
     },
     ref,
   ) {
+    const theme = useTheme()
     return (
       <Box
         ref={ref}
@@ -364,16 +361,12 @@ const SheetDropdownItem = forwardRef<HTMLDivElement, DropdownItemProps>(
         sx={{
           padding: '7px 12px',
           cursor: 'pointer',
-          fontSize: scaledPx(13),
+          fontSize: scaledPx(theme.custom.fontSize.label),
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           color: selected ? accentColor : textPrimary,
-          background: active
-            ? isDark
-              ? 'rgba(255,255,255,0.08)'
-              : 'rgba(0,0,0,0.05)'
-            : 'none',
+          background: active ? theme.palette.surface.hover : 'none',
           transition: 'background 0.08s',
         }}
       >

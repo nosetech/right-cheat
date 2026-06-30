@@ -3,7 +3,7 @@ import { scaledPx } from '@/utils/css'
 import { Fragment, useState } from 'react'
 
 import { Box } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 
 import { CommandSearchResult } from '@/types/api/CheatSheet'
 import {
@@ -57,12 +57,10 @@ const SheetBadge = ({
   name,
   isDark,
   focused,
-  accentSolid,
 }: {
   name: string
   isDark: boolean
   focused: boolean
-  accentSolid: string
 }) => {
   const theme = useTheme()
   return (
@@ -72,25 +70,17 @@ const SheetBadge = ({
         alignItems: 'center',
         gap: '4px',
         fontFamily: FONT_UI,
-        fontSize: scaledPx(10.5),
+        fontSize: scaledPx(theme.custom.fontSize.hint),
         fontWeight: 500,
         letterSpacing: '0.01em',
-        color: focused ? accentSolid : theme.palette.text.secondary,
+        color: focused ? theme.palette.accent.main : theme.palette.text.secondary,
         background: focused
-          ? isDark
-            ? 'rgba(100,180,255,0.14)'
-            : 'rgba(0,113,227,0.08)'
-          : isDark
-            ? 'rgba(255,255,255,0.06)'
-            : 'rgba(255,255,255,0.60)',
+          ? alpha(theme.palette.accent.main, isDark ? 0.14 : 0.08)
+          : theme.palette.glass.field,
         border: `0.5px solid ${
           focused
-            ? isDark
-              ? 'rgba(100,180,255,0.35)'
-              : 'rgba(0,113,227,0.28)'
-            : isDark
-              ? 'rgba(255,255,255,0.10)'
-              : 'rgba(0,0,0,0.08)'
+            ? alpha(theme.palette.accent.main, isDark ? 0.35 : 0.28)
+            : theme.palette.divider
         }`,
         borderRadius: '999px',
         padding: '1.5px 8px 1.5px 6px',
@@ -105,7 +95,7 @@ const SheetBadge = ({
           width: '6px',
           height: '6px',
           borderRadius: '50%',
-          background: focused ? accentSolid : theme.palette.text.disabled,
+          background: focused ? theme.palette.accent.main : theme.palette.text.disabled,
           flexShrink: 0,
           transition: 'background 0.14s',
         }}
@@ -133,7 +123,6 @@ export const SearchResultItem = ({
 }: Props) => {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const accentSolid = isDark ? '#64b4ff' : '#0071e3'
   const [hov, setHov] = useState(false)
 
   const descSpans = buildHighlights(hit.description || '', query)
@@ -158,15 +147,11 @@ export const SearchResultItem = ({
         padding: '9px 12px 9px 14px',
         cursor: 'pointer',
         background: focused
-          ? isDark
-            ? 'rgba(100,180,255,0.10)'
-            : 'rgba(0,113,227,0.06)'
+          ? theme.palette.surface.selected
           : hov
-            ? isDark
-              ? 'rgba(255,255,255,0.04)'
-              : 'rgba(255,255,255,0.55)'
+            ? theme.palette.surface.hover
             : 'transparent',
-        borderLeft: `2.5px solid ${focused ? accentSolid : 'transparent'}`,
+        borderLeft: `2.5px solid ${focused ? theme.palette.accent.main : 'transparent'}`,
         transition: 'background 0.1s, border-color 0.1s',
       }}
     >
@@ -192,7 +177,7 @@ export const SearchResultItem = ({
             component='span'
             sx={{
               fontFamily: FONT_UI,
-              fontSize: scaledPx(13),
+              fontSize: scaledPx(theme.custom.fontSize.label),
               fontWeight: 600,
               color: theme.palette.text.primary,
               overflow: 'hidden',
@@ -221,7 +206,6 @@ export const SearchResultItem = ({
             name={hit.cheatsheet_title}
             isDark={isDark}
             focused={focused}
-            accentSolid={accentSolid}
           />
         </Box>
 
@@ -229,7 +213,7 @@ export const SearchResultItem = ({
         <Box
           sx={{
             fontFamily: FONT_CODE,
-            fontSize: scaledPx(11.5),
+            fontSize: scaledPx(theme.custom.fontSize.caption),
             color: focused
               ? theme.palette.text.primary
               : theme.palette.text.secondary,
@@ -252,7 +236,7 @@ export const SearchResultItem = ({
           opacity: focused ? 0.85 : active ? 0.35 : 0,
           transition: 'opacity 0.14s',
           paddingTop: '6px',
-          color: focused ? accentSolid : theme.palette.text.disabled,
+          color: focused ? theme.palette.accent.main : theme.palette.text.disabled,
           display: 'flex',
           alignItems: 'center',
         }}

@@ -86,7 +86,7 @@ export function EditModeFooter({
           {editDirty ? (
             <Box
               sx={{
-                fontSize: scaledPx(11),
+                fontSize: scaledPx(theme.custom.fontSize.captionSm),
                 color: 'text.secondary',
                 fontStyle: 'italic',
               }}
@@ -96,7 +96,7 @@ export function EditModeFooter({
           ) : (
             <Box
               sx={{
-                fontSize: scaledPx(11),
+                fontSize: scaledPx(theme.custom.fontSize.captionSm),
                 color: 'text.disabled',
               }}
             >

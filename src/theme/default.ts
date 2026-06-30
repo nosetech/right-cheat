@@ -8,6 +8,21 @@ import { grey } from '@/theme/color'
 const FONT_UI =
   '"Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif'
 
+const FONT_SIZE_SCALE = {
+  numberHint: 9.5,
+  hint: 10.5,
+  commandMultiline: 10,
+  captionSm: 11,
+  caption: 11.5,
+  body: 12,
+  dialogMessage: 12.5,
+  label: 13,
+  sectionHeader: 14,
+  dialogTitle: 14.5,
+  searchInput: 15,
+  hotkeyChar: 16,
+} as const
+
 declare module '@mui/material/styles' {
   interface BreakpointOverrides {
     xs: true
@@ -15,6 +30,29 @@ declare module '@mui/material/styles' {
     md: true
     lg: true
     xl: true
+  }
+  interface Theme {
+    custom: {
+      fontSize: {
+        numberHint: number
+        hint: number
+        commandMultiline: number
+        captionSm: number
+        caption: number
+        body: number
+        dialogMessage: number
+        label: number
+        sectionHeader: number
+        dialogTitle: number
+        searchInput: number
+        hotkeyChar: number
+      }
+    }
+  }
+  interface ThemeOptions {
+    custom?: {
+      fontSize?: Partial<Theme['custom']['fontSize']>
+    }
   }
   interface Palette {
     alert: { main: string }
@@ -34,6 +72,20 @@ declare module '@mui/material/styles' {
       checkedHover: string
       uncheckedHover: string
     }
+    glass: {
+      panel: string
+      field: string
+      overlay: string
+    }
+    surface: {
+      hover: string
+      selected: string
+    }
+    amber: {
+      text: string
+      background: string
+      border: string
+    }
   }
   interface PaletteOptions {
     alert?: { main?: string }
@@ -52,6 +104,20 @@ declare module '@mui/material/styles' {
       trackBackground?: string
       checkedHover?: string
       uncheckedHover?: string
+    }
+    glass?: {
+      panel?: string
+      field?: string
+      overlay?: string
+    }
+    surface?: {
+      hover?: string
+      selected?: string
+    }
+    amber?: {
+      text?: string
+      background?: string
+      border?: string
     }
   }
 }
@@ -79,6 +145,9 @@ const getBaseThemeOptions = (fontScale: number = 1.0) => ({
     h2: { fontSize: 18 * fontScale, fontWeight: 700 },
     h3: { fontSize: 15 * fontScale, fontWeight: 500 },
     h4: { fontSize: 14 * fontScale },
+  },
+  custom: {
+    fontSize: FONT_SIZE_SCALE,
   },
 })
 
@@ -112,6 +181,20 @@ const getLightPalette = () => ({
     trackBackground: 'rgba(0,0,0,0.12)',
     checkedHover: 'rgba(0,113,227,0.08)',
     uncheckedHover: 'rgba(0,0,0,0.08)',
+  },
+  glass: {
+    panel: 'rgba(255,255,255,0.35)',
+    field: 'rgba(255,255,255,0.55)',
+    overlay: 'rgba(240,245,255,0.97)',
+  },
+  surface: {
+    hover: 'rgba(0,0,0,0.04)',
+    selected: 'rgba(0,113,227,0.06)',
+  },
+  amber: {
+    text: '#8a6300',
+    background: 'rgba(180,120,0,0.06)',
+    border: 'rgba(180,120,0,0.22)',
   },
   background: {
     default: '#dce5f2',
@@ -149,6 +232,20 @@ const getDarkPalette = () => ({
     trackBackground: 'rgba(255,255,255,0.15)',
     checkedHover: 'rgba(100,180,255,0.08)',
     uncheckedHover: 'rgba(255,255,255,0.08)',
+  },
+  glass: {
+    panel: 'rgba(255,255,255,0.025)',
+    field: 'rgba(255,255,255,0.055)',
+    overlay: 'rgba(12,28,48,0.97)',
+  },
+  surface: {
+    hover: 'rgba(255,255,255,0.05)',
+    selected: 'rgba(100,180,255,0.10)',
+  },
+  amber: {
+    text: '#f5c46b',
+    background: 'rgba(255,180,80,0.08)',
+    border: 'rgba(255,180,80,0.30)',
   },
   background: {
     default: '#0f2236',

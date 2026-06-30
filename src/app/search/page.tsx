@@ -149,7 +149,7 @@ export default function SearchPage() {
           <Box
             sx={{
               fontFamily: FONT_UI,
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               color: theme.palette.text.secondary,
               display: 'flex',
               alignItems: 'center',

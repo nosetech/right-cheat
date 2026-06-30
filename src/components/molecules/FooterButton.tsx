@@ -1,7 +1,7 @@
 'use client'
 import { scaledPx } from '@/utils/css'
 import { Box } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 
 type Props = {
   onClick?: () => void
@@ -13,8 +13,6 @@ type Props = {
 export function FooterButton({ onClick, primary, disabled, children }: Props) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const accent = isDark ? '#64b4ff' : '#0071e3'
-
   return (
     <Box
       component='button'
@@ -22,32 +20,24 @@ export function FooterButton({ onClick, primary, disabled, children }: Props) {
       disabled={disabled}
       sx={{
         background: disabled
-          ? isDark
-            ? 'rgba(255,255,255,0.05)'
-            : 'rgba(0,0,0,0.04)'
+          ? theme.palette.surface.hover
           : primary
-            ? accent
-            : isDark
-              ? 'rgba(255,255,255,0.06)'
-              : 'rgba(255,255,255,0.75)',
+            ? theme.palette.accent.main
+            : theme.palette.glass.field,
         color: disabled
-          ? isDark
-            ? 'rgba(255,255,255,0.25)'
-            : 'rgba(0,0,0,0.28)'
+          ? theme.palette.text.disabled
           : primary
             ? '#fff'
             : theme.palette.text.primary,
         border: `0.5px solid ${
           primary && !disabled
             ? 'transparent'
-            : isDark
-              ? 'rgba(255,255,255,0.10)'
-              : 'rgba(0,0,0,0.12)'
+            : theme.palette.divider
         }`,
         borderRadius: '7px',
         padding: '5px 16px',
         fontFamily: theme.typography.fontFamily,
-        fontSize: scaledPx(12),
+        fontSize: scaledPx(theme.custom.fontSize.body),
         fontWeight: 600,
         letterSpacing: '0.01em',
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -60,9 +50,7 @@ export function FooterButton({ onClick, primary, disabled, children }: Props) {
             ? isDark
               ? '#7cc0ff'
               : '#1a82eb'
-            : isDark
-              ? 'rgba(255,255,255,0.10)'
-              : 'rgba(255,255,255,0.95)',
+            : theme.palette.glass.panel,
         },
       }}
     >

@@ -24,9 +24,7 @@ export function ThemeToggle({
 }: ThemeToggleProps) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const borderColor = isDark
-    ? 'rgba(255,255,255,0.10)'
-    : 'rgba(255,255,255,0.72)'
+  const borderColor = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.72)'
 
   return (
     <Box sx={{ display: 'flex' }} role='group' aria-label='Theme selection'>
@@ -45,11 +43,7 @@ export function ThemeToggle({
             aria-pressed={selected}
             sx={{
               position: 'relative',
-              background: selected
-                ? isDark
-                  ? 'rgba(255,255,255,0.12)'
-                  : 'rgba(255,255,255,0.7)'
-                : 'transparent',
+              background: selected ? theme.palette.glass.panel : 'transparent',
               backdropFilter: 'blur(12px)',
               borderTop: `0.5px solid ${borderColor}`,
               borderRight: `0.5px solid ${borderColor}`,
@@ -58,13 +52,9 @@ export function ThemeToggle({
               padding: '5px 14px',
               cursor: disabled ? 'default' : 'pointer',
               fontFamily: 'monospace',
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               fontWeight: selected ? 700 : 400,
-              color: selected
-                ? theme.palette.primary.main
-                : isDark
-                  ? 'rgba(255,255,255,0.28)'
-                  : 'rgba(0,0,0,0.28)',
+              color: selected ? theme.palette.primary.main : theme.palette.text.disabled,
               transition: 'color 0.14s, background 0.14s, box-shadow 0.14s',
               borderRadius,
               boxShadow:

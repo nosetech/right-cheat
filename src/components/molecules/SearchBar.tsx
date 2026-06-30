@@ -3,7 +3,7 @@ import { scaledPx } from '@/utils/css'
 import { KeyboardEvent, RefObject } from 'react'
 
 import { Box } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 
 type Props = {
   value: string
@@ -26,7 +26,7 @@ export const SearchBar = ({
 }: Props) => {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const accentSolid = isDark ? '#64b4ff' : '#0071e3'
+  const accentSolid = theme.palette.accent.main
 
   return (
     <Box sx={{ padding: '14px 16px 10px' }}>
@@ -35,15 +35,13 @@ export const SearchBar = ({
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          background: isDark ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.78)',
-          border: `0.5px solid ${
-            isDark ? 'rgba(100,180,255,0.30)' : 'rgba(0,113,227,0.25)'
-          }`,
+          background: theme.palette.glass.field,
+          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.30 : 0.25)}`,
           borderRadius: '10px',
           padding: '8px 12px',
           boxShadow: isDark
-            ? 'inset 0 1px 0 rgba(0,0,0,0.30), 0 0 0 3px rgba(100,180,255,0.06)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 3px rgba(0,113,227,0.05)',
+            ? `inset 0 1px 0 rgba(0,0,0,0.30), 0 0 0 3px ${alpha(theme.palette.accent.main, 0.06)}`
+            : `inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 3px ${alpha(theme.palette.accent.main, 0.05)}`,
         }}
       >
         <svg
@@ -78,7 +76,7 @@ export const SearchBar = ({
             outline: 'none',
             fontFamily:
               '"Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif',
-            fontSize: scaledPx(15),
+            fontSize: scaledPx(theme.custom.fontSize.searchInput),
             fontWeight: 500,
             color: theme.palette.text.primary,
             caretColor: accentSolid,
@@ -99,9 +97,7 @@ export const SearchBar = ({
             title='Clear'
             aria-label='Clear search'
             sx={{
-              background: isDark
-                ? 'rgba(255,255,255,0.10)'
-                : 'rgba(0,0,0,0.08)',
+              background: theme.palette.surface.hover,
               border: 'none',
               borderRadius: '50%',
               width: '18px',
@@ -112,7 +108,7 @@ export const SearchBar = ({
               justifyContent: 'center',
               cursor: 'pointer',
               flexShrink: 0,
-              color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)',
+              color: theme.palette.text.secondary,
             }}
           >
             <svg

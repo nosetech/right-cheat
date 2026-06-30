@@ -10,7 +10,7 @@ import {
 import ReactDOM from 'react-dom'
 
 import { Box } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { debug, info, error as logError } from '@tauri-apps/plugin-log'
@@ -195,7 +195,7 @@ function TypeBadge({
   const color = isDark ? meta.colorDark : meta.colorLight
   const bg = isDark ? meta.bgDark : meta.bgLight
   const border = isDark ? meta.borderDark : meta.borderLight
-  const accent = isDark ? '#64b4ff' : '#0071e3'
+  const accent = theme.palette.accent.main
 
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
@@ -254,7 +254,7 @@ function TypeBadge({
           borderRadius: 999,
           padding: '2px 8px 2px 7px',
           fontFamily: theme.typography.fontFamily,
-          fontSize: scaledPx(9.5),
+          fontSize: scaledPx(theme.custom.fontSize.numberHint),
           fontWeight: 600,
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
@@ -328,9 +328,7 @@ function TypeBadge({
               position: 'fixed',
               top: pos.top,
               right: pos.right,
-              background: isDark
-                ? 'rgba(20,30,48,0.97)'
-                : 'rgba(248,250,254,0.97)',
+              background: theme.palette.glass.overlay,
               border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
               borderRadius: 10,
               padding: 5,
@@ -345,7 +343,7 @@ function TypeBadge({
           >
             <div
               style={{
-                fontSize: scaledPx(9.5),
+                fontSize: scaledPx(theme.custom.fontSize.numberHint),
                 fontWeight: 600,
                 color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)',
                 letterSpacing: '0.12em',
@@ -410,7 +408,7 @@ function TypeBadge({
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontSize: scaledPx(12.5),
+                        fontSize: scaledPx(theme.custom.fontSize.dialogMessage),
                         fontWeight: 500,
                         color: isDark
                           ? 'rgba(255,255,255,0.92)'
@@ -421,7 +419,7 @@ function TypeBadge({
                     </div>
                     <div
                       style={{
-                        fontSize: scaledPx(10.5),
+                        fontSize: scaledPx(theme.custom.fontSize.hint),
                         color: isDark
                           ? 'rgba(255,255,255,0.45)'
                           : 'rgba(0,0,0,0.45)',
@@ -470,7 +468,7 @@ function LayoutBadge({
   const locked = sheetType === 'shortcut'
   const effectiveValue = locked ? 'inline' : value
   const meta = LAYOUT_META[effectiveValue]
-  const accent = isDark ? '#64b4ff' : '#0071e3'
+  const accent = theme.palette.accent.main
 
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
@@ -539,7 +537,7 @@ function LayoutBadge({
           borderRadius: 6,
           padding: '2px 6px',
           fontFamily: theme.typography.fontFamily,
-          fontSize: scaledPx(11),
+          fontSize: scaledPx(theme.custom.fontSize.captionSm),
           fontWeight: 500,
           color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)',
           cursor: locked ? 'default' : 'pointer',
@@ -565,7 +563,7 @@ function LayoutBadge({
         <span
           style={{
             fontFamily: '"JetBrains Mono","Fira Code","SF Mono",monospace',
-            fontSize: scaledPx(10.5),
+            fontSize: scaledPx(theme.custom.fontSize.hint),
             color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)',
             letterSpacing: '0.01em',
             flex: 1,
@@ -621,9 +619,7 @@ function LayoutBadge({
               position: 'fixed',
               top: pos.top,
               right: pos.right,
-              background: isDark
-                ? 'rgba(20,30,48,0.97)'
-                : 'rgba(248,250,254,0.97)',
+              background: theme.palette.glass.overlay,
               border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'}`,
               borderRadius: 10,
               padding: 5,
@@ -638,7 +634,7 @@ function LayoutBadge({
           >
             <div
               style={{
-                fontSize: scaledPx(9.5),
+                fontSize: scaledPx(theme.custom.fontSize.numberHint),
                 fontWeight: 600,
                 color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)',
                 letterSpacing: '0.12em',
@@ -713,7 +709,7 @@ function LayoutBadge({
                       style={{
                         fontFamily:
                           '"JetBrains Mono","Fira Code","SF Mono",monospace',
-                        fontSize: scaledPx(12),
+                        fontSize: scaledPx(theme.custom.fontSize.body),
                         fontWeight: 500,
                         color: isDark
                           ? 'rgba(255,255,255,0.92)'
@@ -724,7 +720,7 @@ function LayoutBadge({
                     </div>
                     <div
                       style={{
-                        fontSize: scaledPx(10.5),
+                        fontSize: scaledPx(theme.custom.fontSize.hint),
                         color: isDark
                           ? 'rgba(255,255,255,0.45)'
                           : 'rgba(0,0,0,0.45)',
@@ -802,7 +798,7 @@ function EditRow({
 }) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const accent = isDark ? '#64b4ff' : '#0071e3'
+  const accent = theme.palette.accent.main
   const panelBorder = isDark
     ? 'rgba(255,255,255,0.10)'
     : 'rgba(255,255,255,0.75)'
@@ -838,7 +834,7 @@ function EditRow({
             height: 2,
             background: accent,
             borderRadius: 2,
-            boxShadow: `0 0 0 2px ${isDark ? 'rgba(100,180,255,0.20)' : 'rgba(0,113,227,0.18)'}`,
+            boxShadow: `0 0 0 2px ${alpha(theme.palette.accent.main, isDark ? 0.20 : 0.18)}`,
             pointerEvents: 'none',
             zIndex: 2,
           }}
@@ -992,7 +988,7 @@ function EditRow({
                 borderRadius: 6,
                 padding: '4px 8px',
                 fontFamily: theme.typography.fontFamily,
-                fontSize: scaledPx(13),
+                fontSize: scaledPx(theme.custom.fontSize.label),
                 fontWeight: 500,
                 color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)',
                 caretColor: accent,
@@ -1028,7 +1024,7 @@ function EditRow({
             <div
               style={{
                 fontFamily: theme.typography.fontFamily,
-                fontSize: scaledPx(10.5),
+                fontSize: scaledPx(theme.custom.fontSize.hint),
                 color: '#ff6b6b',
                 paddingLeft: 9,
                 lineHeight: 1.4,
@@ -1115,8 +1111,8 @@ function EditRow({
 export default function EditCheatsheetsPage() {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const accent = isDark ? '#64b4ff' : '#0071e3'
-  const divider = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
+  const accent = theme.palette.accent.main
+  const divider = theme.palette.divider
 
   const { getConfirmActions } = usePreferencesStore()
   const { showError } = useNotificationContext() ?? {}
@@ -1413,7 +1409,7 @@ export default function EditCheatsheetsPage() {
             <Box
               sx={{
                 padding: '16px',
-                fontSize: scaledPx(12),
+                fontSize: scaledPx(theme.custom.fontSize.body),
                 color: theme.palette.text.secondary,
               }}
             >
@@ -1423,7 +1419,7 @@ export default function EditCheatsheetsPage() {
             <Box
               sx={{
                 padding: '16px',
-                fontSize: scaledPx(12),
+                fontSize: scaledPx(theme.custom.fontSize.body),
                 color: theme.palette.text.secondary,
               }}
             >
@@ -1470,9 +1466,7 @@ export default function EditCheatsheetsPage() {
           sx={{
             flexShrink: 0,
             borderTop: `0.5px solid ${divider}`,
-            background: isDark
-              ? 'rgba(255,255,255,0.018)'
-              : 'rgba(255,255,255,0.30)',
+            background: theme.palette.glass.panel,
           }}
         >
           {/* Add row button */}
@@ -1482,7 +1476,7 @@ export default function EditCheatsheetsPage() {
               onClick={addRow}
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.background =
-                  isDark ? 'rgba(100,180,255,0.06)' : 'rgba(0,113,227,0.05)'
+                  alpha(theme.palette.accent.main, isDark ? 0.06 : 0.05)
                 ;(e.currentTarget as HTMLButtonElement).style.borderColor =
                   accent
               }}
@@ -1490,7 +1484,7 @@ export default function EditCheatsheetsPage() {
                 ;(e.currentTarget as HTMLButtonElement).style.background =
                   'transparent'
                 ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-                  isDark ? 'rgba(100,180,255,0.32)' : 'rgba(0,113,227,0.30)'
+                  alpha(theme.palette.accent.main, isDark ? 0.32 : 0.30)
               }}
               sx={{
                 width: '100%',
@@ -1499,12 +1493,12 @@ export default function EditCheatsheetsPage() {
                 justifyContent: 'center',
                 gap: '6px',
                 background: 'transparent',
-                border: `1px dashed ${isDark ? 'rgba(100,180,255,0.32)' : 'rgba(0,113,227,0.30)'}`,
+                border: `1px dashed ${alpha(theme.palette.accent.main, isDark ? 0.32 : 0.30)}`,
                 borderRadius: '8px',
                 padding: '8px 10px',
                 cursor: 'pointer',
                 fontFamily: theme.typography.fontFamily,
-                fontSize: scaledPx(12),
+                fontSize: scaledPx(theme.custom.fontSize.body),
                 fontWeight: 500,
                 color: accent,
                 transition: 'all 0.14s',
@@ -1564,7 +1558,7 @@ export default function EditCheatsheetsPage() {
                     component='span'
                     sx={{
                       fontFamily: theme.typography.fontFamily,
-                      fontSize: scaledPx(11),
+                      fontSize: scaledPx(theme.custom.fontSize.captionSm),
                       color: '#ff6b6b',
                       fontWeight: 500,
                     }}
@@ -1577,7 +1571,7 @@ export default function EditCheatsheetsPage() {
                   component='span'
                   sx={{
                     fontFamily: theme.typography.fontFamily,
-                    fontSize: scaledPx(11),
+                    fontSize: scaledPx(theme.custom.fontSize.captionSm),
                     color: theme.palette.text.secondary,
                     fontStyle: 'italic',
                   }}
@@ -1589,7 +1583,7 @@ export default function EditCheatsheetsPage() {
                   component='span'
                   sx={{
                     fontFamily: theme.typography.fontFamily,
-                    fontSize: scaledPx(11),
+                    fontSize: scaledPx(theme.custom.fontSize.captionSm),
                     color: isDark
                       ? 'rgba(255,255,255,0.22)'
                       : 'rgba(0,0,0,0.28)',

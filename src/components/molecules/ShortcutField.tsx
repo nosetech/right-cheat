@@ -32,7 +32,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
         <Typography
           sx={{
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: scaledPx(11.5),
+            fontSize: scaledPx(theme.custom.fontSize.caption),
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',
             lineHeight: 1.55,
@@ -44,7 +44,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
       <TruncatedText
         text={description}
         sx={{
-          fontSize: scaledPx(11),
+          fontSize: scaledPx(theme.custom.fontSize.captionSm),
           color: theme.palette.text.secondary,
         }}
       />

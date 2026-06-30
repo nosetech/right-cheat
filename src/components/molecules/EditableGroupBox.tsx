@@ -1,7 +1,7 @@
 'use client'
 import { scaledPx } from '@/utils/css'
 import { Box, Typography } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { useState } from 'react'
 
 import { EditIconButton } from '@/components/atoms/EditIconButton'
@@ -41,8 +41,6 @@ export function EditableGroupBox({
   const isDark = theme.palette.mode === 'dark'
   const [isHovered, setIsHovered] = useState(false)
   const [grabbing, setGrabbing] = useState(false)
-  const accent = isDark ? '#64b4ff' : '#0071e3'
-
   return (
     <Box
       ref={blockRef}
@@ -50,7 +48,7 @@ export function EditableGroupBox({
       onMouseLeave={() => setIsHovered(false)}
       sx={{
         position: 'relative',
-        border: `0.5px solid ${isDropTarget ? accent : theme.palette.divider}`,
+        border: `0.5px solid ${isDropTarget ? theme.palette.accent.main : theme.palette.divider}`,
         borderRadius: '6px',
         pt: '22px',
         pb: 1,
@@ -58,9 +56,7 @@ export function EditableGroupBox({
         opacity: isDragging ? 0.35 : 1,
         transition: 'all 0.12s',
         background: isDropTarget
-          ? isDark
-            ? 'rgba(100,180,255,0.05)'
-            : 'rgba(0,113,227,0.03)'
+          ? alpha(theme.palette.accent.main, isDark ? 0.05 : 0.03)
           : 'transparent',
       }}
     >
@@ -118,7 +114,7 @@ export function EditableGroupBox({
           variant='caption'
           sx={{
             color: theme.palette.text.secondary,
-            fontSize: scaledPx(11),
+            fontSize: scaledPx(theme.custom.fontSize.captionSm),
             lineHeight: 1,
             userSelect: 'none',
           }}
@@ -177,7 +173,7 @@ export function EditableGroupBox({
         {isEmpty ? (
           <Typography
             sx={{
-              fontSize: scaledPx(11),
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
               color: theme.palette.text.disabled,
               fontStyle: 'italic',
               textAlign: 'center',

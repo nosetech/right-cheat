@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PushPin from '@mui/icons-material/PushPin'
 import PushPinOutlined from '@mui/icons-material/PushPinOutlined'
 import { Alert, Box, Grid, IconButton, Stack } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import {
@@ -998,9 +998,7 @@ export const CheatSheet = () => {
               title={editMode ? 'Cancel edit mode (Esc)' : 'Edit mode (e)'}
               sx={{
                 background: editMode
-                  ? theme.palette.mode === 'dark'
-                    ? 'rgba(100,180,255,0.18)'
-                    : 'rgba(0,113,227,0.14)'
+                  ? alpha(theme.palette.accent.main, 0.18)
                   : 'transparent',
                 border: editMode
                   ? `0.5px solid ${theme.palette.accent.main}`
@@ -1016,9 +1014,7 @@ export const CheatSheet = () => {
                 '&.Mui-focusVisible': {
                   outline: 'none',
                   background: editMode
-                    ? theme.palette.mode === 'dark'
-                      ? 'rgba(100,180,255,0.18)'
-                      : 'rgba(0,113,227,0.14)'
+                    ? alpha(theme.palette.accent.main, 0.18)
                     : 'transparent',
                 },
               }}
