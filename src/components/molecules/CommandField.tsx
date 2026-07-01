@@ -269,7 +269,16 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         {numberHintBox}
         {commandBox}
         {layout !== 'command_only' && description && (
-          <TruncatedText text={description} color='text.secondary' />
+          <TruncatedText
+            text={description}
+            sx={{
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
+              color: isFocused
+                ? theme.palette.text.primary
+                : theme.palette.text.secondary,
+              transition: 'color 0.14s',
+            }}
+          />
         )}
       </Stack>
     )
