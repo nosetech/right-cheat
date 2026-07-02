@@ -1,10 +1,15 @@
 'use client'
 import React from 'react'
 
-import { Box, Stack, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
 import { CommandField } from '@/components/molecules/CommandField'
+import {
+  COMMAND_GRID_COL_GAP,
+  COMMAND_GRID_ROW_GAP,
+  INLINE_GRID_TEMPLATE_COLUMNS,
+} from '@/constants/layout'
 import { CommandData, CommandLayout } from '@/types/api/CheatSheet'
 
 type CommandFieldGroupProps = {
@@ -55,7 +60,16 @@ export const CommandFieldGroup = ({
       >
         {group}
       </Typography>
-      <Stack spacing={1} sx={{ minWidth: 0, overflow: 'hidden' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: INLINE_GRID_TEMPLATE_COLUMNS,
+          columnGap: COMMAND_GRID_COL_GAP,
+          rowGap: COMMAND_GRID_ROW_GAP,
+          minWidth: 0,
+          overflow: 'hidden',
+        }}
+      >
         {commandlist.map((item, i) => {
           const flatIndex = startIndex + i
           return (
@@ -75,7 +89,7 @@ export const CommandFieldGroup = ({
             />
           )
         })}
-      </Stack>
+      </Box>
     </Box>
   )
 }

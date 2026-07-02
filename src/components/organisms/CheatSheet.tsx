@@ -29,7 +29,12 @@ import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { RcDialog } from '@/components/organisms/RcDialog'
 import { FOCUS_FALLBACK_ID } from '@/constants/focus'
-import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import {
+  COMMAND_GRID_COL_GAP,
+  COMMAND_GRID_ROW_GAP,
+  INLINE_GRID_TEMPLATE_COLUMNS,
+  TITLEBAR_HEIGHT,
+} from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
@@ -1393,7 +1398,16 @@ export const CheatSheet = () => {
                   )}
                 </Grid>
               ) : (
-                <Stack paddingY={1} spacing={1} width='100%'>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: INLINE_GRID_TEMPLATE_COLUMNS,
+                    columnGap: COMMAND_GRID_COL_GAP,
+                    rowGap: COMMAND_GRID_ROW_GAP,
+                    py: 1,
+                    width: '100%',
+                  }}
+                >
                   {cheatSheetData?.commandlist.map(
                     (item: CommandListItem, index) => {
                       const flatIndex = flatStartIndices[index]
@@ -1403,7 +1417,7 @@ export const CheatSheet = () => {
                           : 'copy'
                       if (isCommandGroupData(item)) {
                         return (
-                          <Box key={index} pt={1}>
+                          <Box key={index} pt={1} sx={{ gridColumn: '1 / -1' }}>
                             <CommandFieldGroup
                               key={index}
                               group={item.group}
@@ -1437,7 +1451,7 @@ export const CheatSheet = () => {
                       )
                     },
                   )}
-                </Stack>
+                </Box>
               )}
             </>
           )}

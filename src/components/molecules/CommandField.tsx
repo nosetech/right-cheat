@@ -2,19 +2,20 @@
 import { scaledPx } from '@/utils/css'
 import { forwardRef, useState } from 'react'
 
-import { Box, Stack, StackProps, Typography } from '@mui/material'
+import { Box, BoxProps, Stack, Typography } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { error as logError } from '@tauri-apps/plugin-log'
 
 import { TruncatedText } from '@/components/atoms/TruncatedText'
+import { COMMAND_HINT_WIDTH } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useClipboard } from '@/hooks/useClipboard'
 import { CheatSheetAPI, CommandLayout } from '@/types/api/CheatSheet'
 
-const NUMBER_HINT_WIDTH = '14px'
+const NUMBER_HINT_WIDTH = COMMAND_HINT_WIDTH
 
-export type CommandFieldProps = StackProps & {
+export type CommandFieldProps = BoxProps & {
   description?: string
   command: string
   numberHint?: string
@@ -235,7 +236,8 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
 
     if (layout === 'stacked' && description) {
       return (
-        <Stack spacing={0.25} {...remainProps}>
+        // grid コンテナ内では 1 行分（全列）を占有する。内部は従来どおり縦積み。
+        <Stack spacing={0.25} {...remainProps} sx={{ gridColumn: '1 / -1' }}>
           <Stack direction='row' spacing={0.75} alignItems='baseline'>
             {numberHintBox}
             <TruncatedText
@@ -260,11 +262,16 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
     }
 
     return (
-      <Stack
-        direction='row'
-        spacing={0.75}
-        alignItems='flex-start'
+      // 親 grid の列トラック（番号ヒント / コマンド / 説明）を subgrid で継承し、
+      // 全行でコマンド列・説明列の幅を揃える。
+      <Box
         {...remainProps}
+        sx={{
+          display: 'grid',
+          gridColumn: '1 / -1',
+          gridTemplateColumns: 'subgrid',
+          alignItems: 'start',
+        }}
       >
         {numberHintBox}
         {commandBox}
@@ -272,6 +279,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           <TruncatedText
             text={description}
             sx={{
+              minWidth: 0,
               fontSize: scaledPx(theme.custom.fontSize.captionSm),
               color: isFocused
                 ? theme.palette.text.primary
@@ -280,7 +288,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
             }}
           />
         )}
-      </Stack>
+      </Box>
     )
   },
 )
