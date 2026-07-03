@@ -942,6 +942,7 @@ export const CheatSheet = () => {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
+        paddingX: '4px',
       }}
     >
       {/* ウィンドウ操作（setResizable / setSize）後に WKWebView の native
@@ -1071,7 +1072,10 @@ export const CheatSheet = () => {
           overflow: 'hidden',
         }}
       >
-        <Box ref={scrollContainerRef} sx={{ flex: 1, overflow: 'auto', p: 1 }}>
+        <Box
+          ref={scrollContainerRef}
+          sx={{ flex: 1, overflow: 'auto', px: 1.5, py: 1 }}
+        >
           {errorMessage ? (
             <Alert
               severity='error'
