@@ -10,6 +10,7 @@ import { Event } from '@/common'
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { FONT_CODE } from '@/theme/fonts'
 import { CommandLayout } from '@/types/api/CheatSheet'
 import {
   EditCommandInitPayload,
@@ -216,7 +217,7 @@ export default function EditCommandPage() {
                 fullWidth
                 sx={{
                   '& textarea': {
-                    fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                    fontFamily: FONT_CODE,
                     fontSize: scaledPx(theme.custom.fontSize.body),
                   },
                 }}

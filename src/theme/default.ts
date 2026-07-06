@@ -4,9 +4,7 @@ import { green, pink, red } from '@mui/material/colors'
 import { createTheme, Theme } from '@mui/material/styles'
 
 import { grey } from '@/theme/color'
-
-const FONT_UI =
-  '"Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif'
+import { FONT_UI } from '@/theme/fonts'
 
 const FONT_SIZE_SCALE = {
   numberHint: 9.5,

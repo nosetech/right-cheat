@@ -4,6 +4,7 @@ import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
 import { TruncatedText } from '@/components/atoms/TruncatedText'
+import { FONT_CODE } from '@/theme/fonts'
 
 export type ShortcutFieldProps = StackProps & {
   description: string
@@ -31,7 +32,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+            fontFamily: FONT_CODE,
             fontSize: scaledPx(theme.custom.fontSize.caption),
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',

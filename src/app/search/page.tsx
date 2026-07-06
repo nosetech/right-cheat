@@ -15,10 +15,8 @@ import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { SearchResults } from '@/components/organisms/SearchResults'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useCommandSearch } from '@/hooks/useCommandSearch'
+import { FONT_UI } from '@/theme/fonts'
 import { CommandSearchResult } from '@/types/api/CheatSheet'
-
-const FONT_UI =
-  '"Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif'
 
 // コマンド全文検索ウィンドウ（RightCheat Mockup v16 / Search 画面に準拠）。
 export default function SearchPage() {

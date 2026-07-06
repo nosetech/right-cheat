@@ -5,6 +5,8 @@ import { KeyboardEvent, RefObject } from 'react'
 import { Box } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 
+import { FONT_UI } from '@/theme/fonts'
+
 type Props = {
   value: string
   onChange: (value: string) => void
@@ -74,8 +76,7 @@ export const SearchBar = ({
             background: 'none',
             border: 'none',
             outline: 'none',
-            fontFamily:
-              '"Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif',
+            fontFamily: FONT_UI,
             fontSize: scaledPx(theme.custom.fontSize.searchInput),
             fontWeight: 500,
             color: theme.palette.text.primary,

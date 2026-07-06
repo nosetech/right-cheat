@@ -5,6 +5,7 @@ import { useTheme } from '@mui/material/styles'
 
 import { TruncatedText } from '@/components/atoms/TruncatedText'
 import { EditableRowBase } from '@/components/molecules/EditableRowBase'
+import { FONT_CODE } from '@/theme/fonts'
 import { EditCommandData } from '@/types/edit/EditBlock'
 
 type Props = {
@@ -67,7 +68,7 @@ export function EditableShortcutRow({
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+            fontFamily: FONT_CODE,
             fontSize: scaledPx(theme.custom.fontSize.caption),
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',

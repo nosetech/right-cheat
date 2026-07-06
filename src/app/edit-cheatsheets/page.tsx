@@ -21,6 +21,7 @@ import { RcDialog } from '@/components/organisms/RcDialog'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { FONT_CODE } from '@/theme/fonts'
 import {
   CheatSheetAPI,
   CheatSheetSummary,
@@ -562,7 +563,7 @@ function LayoutBadge({
         </span>
         <span
           style={{
-            fontFamily: '"JetBrains Mono","Fira Code","SF Mono",monospace',
+            fontFamily: FONT_CODE,
             fontSize: scaledPx(theme.custom.fontSize.hint),
             color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)',
             letterSpacing: '0.01em',
@@ -707,8 +708,7 @@ function LayoutBadge({
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontFamily:
-                          '"JetBrains Mono","Fira Code","SF Mono",monospace',
+                        fontFamily: FONT_CODE,
                         fontSize: scaledPx(theme.custom.fontSize.body),
                         fontWeight: 500,
                         color: isDark
@@ -937,7 +937,7 @@ function EditRow({
           style={{
             width: 18,
             flexShrink: 0,
-            fontFamily: '"JetBrains Mono","Fira Code","SF Mono",monospace',
+            fontFamily: FONT_CODE,
             fontSize: scaledPx(10),
             color: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.28)',
             textAlign: 'right',
@@ -1003,8 +1003,7 @@ function EditRow({
             {(isEditing || error.tooLong) && (
               <span
                 style={{
-                  fontFamily:
-                    '"JetBrains Mono","Fira Code","SF Mono",monospace',
+                  fontFamily: FONT_CODE,
                   fontSize: scaledPx(10),
                   color: error.tooLong
                     ? '#ff6b6b'

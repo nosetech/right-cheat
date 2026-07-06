@@ -5,6 +5,7 @@ import { useTheme } from '@mui/material/styles'
 
 import { TruncatedText } from '@/components/atoms/TruncatedText'
 import { EditableRowBase } from '@/components/molecules/EditableRowBase'
+import { FONT_CODE } from '@/theme/fonts'
 import { CommandLayout } from '@/types/api/CheatSheet'
 import { EditCommandData } from '@/types/edit/EditBlock'
 
@@ -58,7 +59,7 @@ export function EditableCommandRow({
       <Typography
         component='pre'
         sx={{
-          fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+          fontFamily: FONT_CODE,
           fontSize: isMultiLine
             ? scaledPx(10)
             : scaledPx(theme.custom.fontSize.caption),

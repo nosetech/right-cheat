@@ -12,6 +12,7 @@ import { debug, error as logError } from '@tauri-apps/plugin-log'
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { FONT_CODE } from '@/theme/fonts'
 import { CheatSheetAPI, CheatSheetTitleData } from '@/types/api/CheatSheet'
 
 type ResultKind = 'success' | 'error'
@@ -298,7 +299,7 @@ function ResultModal({
             </Typography>
             <Box
               sx={{
-                fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                fontFamily: FONT_CODE,
                 fontSize: scaledPx(theme.custom.fontSize.hint),
                 color: theme.palette.text.primary,
                 background: isDark ? 'rgba(0,0,0,0.30)' : 'rgba(0,0,0,0.04)',
@@ -502,7 +503,7 @@ export default function ExportPage() {
           {/* count pill */}
           <Box
             sx={{
-              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+              fontFamily: FONT_CODE,
               fontSize: scaledPx(10),
               color: noneOn ? theme.palette.text.disabled : accentSolid,
               background: noneOn

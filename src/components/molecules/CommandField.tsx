@@ -11,6 +11,7 @@ import { TruncatedText } from '@/components/atoms/TruncatedText'
 import { COMMAND_HINT_WIDTH } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useClipboard } from '@/hooks/useClipboard'
+import { FONT_CODE } from '@/theme/fonts'
 import { CheatSheetAPI, CommandLayout } from '@/types/api/CheatSheet'
 
 const NUMBER_HINT_WIDTH = COMMAND_HINT_WIDTH
@@ -128,7 +129,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         {numberHint && (
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+              fontFamily: FONT_CODE,
               fontSize: scaledPx(theme.custom.fontSize.numberHint),
               color: numberHintColor,
               transition: 'color 0.14s',
@@ -171,7 +172,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+            fontFamily: FONT_CODE,
             fontSize: isMultiLine
               ? scaledPx(theme.custom.fontSize.commandMultiline)
               : scaledPx(theme.custom.fontSize.caption),

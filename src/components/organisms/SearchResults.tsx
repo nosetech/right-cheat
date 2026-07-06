@@ -6,11 +6,8 @@ import { Box } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 
 import { SearchResultItem } from '@/components/molecules/SearchResultItem'
+import { FONT_CODE, FONT_UI } from '@/theme/fonts'
 import { CommandSearchResult } from '@/types/api/CheatSheet'
-
-const FONT_CODE = '"JetBrains Mono", "Fira Code", monospace'
-const FONT_UI =
-  '"Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif'
 
 // 未入力 / 0 件のプレースホルダ
 const SearchPlaceholder = ({

@@ -5,6 +5,7 @@ import { alpha, useTheme } from '@mui/material/styles'
 import { useState } from 'react'
 
 import { EditIconButton } from '@/components/atoms/EditIconButton'
+import { FONT_CODE } from '@/theme/fonts'
 import { EditCommandData } from '@/types/edit/EditBlock'
 
 type Props = {
@@ -115,7 +116,7 @@ export function EditableRowBase({
       {/* インデックス番号 */}
       <Typography
         sx={{
-          fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+          fontFamily: FONT_CODE,
           fontSize: scaledPx(theme.custom.fontSize.numberHint),
           color: theme.palette.text.disabled,
           minWidth: '16px',
