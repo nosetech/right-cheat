@@ -28,7 +28,8 @@
       "Bash(yarn lint:eslint *)",
       "Bash(gh pr *)",
       "Bash(cargo doc *)",
-      "Bash(osascript -e ' *)"
+      "Bash(osascript -e ' *)",
+      "Bash(git commit -m ' *k)"
     ],
     "deny": [],
     "ask": []

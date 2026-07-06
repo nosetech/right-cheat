@@ -84,9 +84,7 @@ export const CommandFieldGroup = ({
               }}
               description={item.description}
               command={item.command}
-              numberHint={
-                flatIndex < 9 ? (flatIndex + 1).toString() : undefined
-              }
+              numberHint={(flatIndex + 1).toString()}
               mode={mode}
               layout={item.layout ?? cheatSheetLayout ?? 'inline'}
               editMode={editMode}
