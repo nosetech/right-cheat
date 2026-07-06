@@ -221,7 +221,12 @@ function TypeBadge({
         setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        // ドロップダウンを閉じるだけにし、window の Esc ハンドラ（ウィンドウを
+        // 閉じる）まで伝播させない
+        e.stopPropagation()
+        setOpen(false)
+      }
     }
     document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onKey)
@@ -494,7 +499,12 @@ function LayoutBadge({
         setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        // ドロップダウンを閉じるだけにし、window の Esc ハンドラ（ウィンドウを
+        // 閉じる）まで伝播させない
+        e.stopPropagation()
+        setOpen(false)
+      }
     }
     document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onKey)
@@ -1354,17 +1364,23 @@ export default function EditCheatsheetsPage() {
     await getCurrentWindow().close()
   }, [])
 
-  // Cmd+S shortcut
+  // Cmd+S 保存 / Esc で Cancel と同じ動作
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault()
         if (canSave) onSave()
+      } else if (e.key === 'Escape' && !e.isComposing) {
+        // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない。
+        // ドロップダウン等が開いている場合は document 側で stopPropagation され
+        // window まで伝播しないため、ここでは Cancel を実行してよい。
+        e.preventDefault()
+        onCancel()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [canSave, onSave])
+  }, [canSave, onSave, onCancel])
 
   return (
     <>

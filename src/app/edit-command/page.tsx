@@ -1,6 +1,6 @@
 'use client'
 import { scaledPx } from '@/utils/css'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Box, MenuItem, Select, TextField } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -89,7 +89,7 @@ export default function EditCommandPage() {
       ? 'Add Command'
       : 'Edit Command'
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave || !initPayload) return
     const win = getCurrentWebviewWindow()
     const payload: EditCommandSavePayload = {
@@ -104,24 +104,36 @@ export default function EditCommandPage() {
     }
     await win.emitTo('main', Event.EDIT_COMMAND_SAVE, payload)
     await win.destroy()
-  }
+  }, [
+    canSave,
+    initPayload,
+    isNew,
+    description,
+    commandText,
+    key,
+    layout,
+    groupEditId,
+  ])
 
   const handleCancel = async () => {
     await getCurrentWebviewWindow().destroy()
   }
 
-  // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
+  // Cmd+S で Save / Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
-      if (e.key === 'Escape' && !e.isComposing) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault()
+        void handleSave()
+      } else if (e.key === 'Escape' && !e.isComposing) {
+        // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
         e.preventDefault()
         void getCurrentWebviewWindow().destroy()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [handleSave])
 
   if (!initPayload) {
     return null

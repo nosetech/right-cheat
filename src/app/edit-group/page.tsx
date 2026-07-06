@@ -67,8 +67,12 @@ export default function EditGroupPage() {
   useEffect(() => {
     if (!initPayload) return
     const h = (e: KeyboardEvent) => {
-      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
-      if (e.key === 'Escape' && !e.isComposing) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        // Cmd+S で Save
+        e.preventDefault()
+        void handleSave()
+      } else if (e.key === 'Escape' && !e.isComposing) {
+        // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない。
         // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
         e.preventDefault()
         void getCurrentWebviewWindow().destroy()
@@ -76,7 +80,7 @@ export default function EditGroupPage() {
     }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
-  }, [initPayload])
+  }, [initPayload, handleSave])
 
   if (!initPayload) {
     return null

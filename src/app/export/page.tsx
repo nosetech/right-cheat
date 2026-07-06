@@ -379,6 +379,19 @@ export default function ExportPage() {
     })()
   }, [])
 
+  // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
+      if (e.key === 'Escape' && !e.isComposing) {
+        e.preventDefault()
+        void getCurrentWindow().close()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   const toggleAll = useCallback(() => {
     const next = !allOn
     setSheets((prev) => prev.map((s) => ({ ...s, checked: next })))

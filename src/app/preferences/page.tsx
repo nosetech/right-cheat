@@ -33,6 +33,7 @@ import {
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
@@ -151,6 +152,21 @@ export default function Page() {
     [resolveDialog],
   )
   // ────────────────────────────────────────────────────────────
+
+  // Esc でウィンドウを閉じる（この画面に Cancel ボタンはない）。
+  // ダイアログ表示中は MUI Dialog が Esc を処理して stopPropagation するため、
+  // window までは伝播せずウィンドウは閉じない。
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
+      if (e.key === 'Escape' && !e.isComposing) {
+        e.preventDefault()
+        void getCurrentWindow().close()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   useEffect(() => {
     ;(async () => {
