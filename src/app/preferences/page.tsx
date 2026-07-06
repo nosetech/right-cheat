@@ -15,7 +15,6 @@ import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
 import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined'
@@ -821,7 +820,7 @@ export default function Page() {
                           },
                         }}
                       >
-                        <EditOutlinedIcon sx={{ fontSize: '13px' }} />
+                        <SettingsOutlinedIcon sx={{ fontSize: '13px' }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
