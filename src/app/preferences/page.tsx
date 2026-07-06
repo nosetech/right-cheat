@@ -23,7 +23,6 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -685,23 +684,6 @@ export default function Page() {
                   >
                     CheatSheet DB
                   </Typography>
-                  <Chip
-                    label='Restart Required'
-                    size='small'
-                    sx={{
-                      height: 'auto',
-                      py: '2px',
-                      fontSize: scaledPx(theme.custom.fontSize.numberHint),
-                      fontFamily: 'monospace',
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                      borderRadius: '4px',
-                      backgroundColor: theme.palette.amber.background,
-                      border: `0.5px solid ${theme.palette.amber.border}`,
-                      color: theme.palette.amber.text,
-                      '& .MuiChip-label': { px: '6px' },
-                    }}
-                  />
                 </Box>
                 <Box
                   sx={{
@@ -794,23 +776,6 @@ export default function Page() {
                     >
                       Log
                     </Typography>
-                    <Chip
-                      label='Restart Required'
-                      size='small'
-                      sx={{
-                        height: 'auto',
-                        py: '2px',
-                        fontSize: scaledPx(theme.custom.fontSize.numberHint),
-                        fontFamily: 'monospace',
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        borderRadius: '4px',
-                        backgroundColor: theme.palette.amber.background,
-                        border: `0.5px solid ${theme.palette.amber.border}`,
-                        color: theme.palette.amber.text,
-                        '& .MuiChip-label': { px: '6px' },
-                      }}
-                    />
                   </Box>
                   <Box sx={{ display: 'flex', gap: '4px' }}>
                     <Tooltip title='Open latest log file'>
