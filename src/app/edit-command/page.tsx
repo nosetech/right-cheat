@@ -52,18 +52,18 @@ export default function EditCommandPage() {
           setInitPayload(payload)
           setGroupEditId(payload.initialGroupEditId ?? '')
           setDescription(payload.item?.description ?? '')
-          if (payload.kind === 'shortcut') {
-            setKey(payload.item?.command ?? '')
-            setCommandText('')
-          } else {
+          // command と application は現状同じ処理。
+          // 将来 command / application で処理を分ける可能性があるため分岐を明示しておく
+          if (payload.kind === 'command' || payload.kind === 'application') {
             setCommandText(payload.item?.command ?? '')
             setKey('')
+            setLayout(payload.item?.layout ?? 'inherit')
+          } else {
+            // shortcut
+            setKey(payload.item?.command ?? '')
+            setCommandText('')
+            setLayout('inherit')
           }
-          setLayout(
-            payload.kind !== 'shortcut' && payload.item?.layout
-              ? payload.item.layout
-              : 'inherit',
-          )
           setTimeout(() => descRef.current?.focus(), 80)
         },
       )

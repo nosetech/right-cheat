@@ -26,19 +26,18 @@ import {
   CheatSheetAPI,
   CheatSheetSummary,
   CheatSheetUpdate,
+  CommandLayout,
+  SheetType,
 } from '@/types/api/CheatSheet'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-type SheetType = 'command' | 'application' | 'shortcut'
-type LayoutType = 'inline' | 'stacked' | 'command_only'
 
 type RowData = {
   localId: string
   dbId: number | null
   title: string
   sheetType: SheetType
-  layout: LayoutType
+  layout: CommandLayout
   commandCount: number
 }
 
@@ -100,7 +99,7 @@ const TYPE_META: Record<
 }
 
 const LAYOUT_META: Record<
-  LayoutType,
+  CommandLayout,
   { label: string; description: string; icon: React.ReactNode }
 > = {
   inline: {
@@ -465,9 +464,9 @@ function LayoutBadge({
   sheetType,
   onChange,
 }: {
-  value: LayoutType
+  value: CommandLayout
   sheetType: SheetType
-  onChange: (l: LayoutType) => void
+  onChange: (l: CommandLayout) => void
 }) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
@@ -655,7 +654,7 @@ function LayoutBadge({
             >
               Default layout
             </div>
-            {(Object.keys(LAYOUT_META) as LayoutType[]).map((k) => {
+            {(Object.keys(LAYOUT_META) as CommandLayout[]).map((k) => {
               const m = LAYOUT_META[k]
               const selected = k === value
               return (
@@ -796,7 +795,7 @@ function EditRow({
   onEndEdit: () => void
   onChange: (v: string) => void
   onTypeChange: (t: SheetType) => void
-  onLayoutChange: (l: LayoutType) => void
+  onLayoutChange: (l: CommandLayout) => void
   onRemove: () => void
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void
   onPointerMove: (e: React.PointerEvent) => void
@@ -1173,7 +1172,7 @@ export default function EditCheatsheetsPage() {
             dbId: s.id,
             title: s.title,
             sheetType: (s.sheet_type as SheetType) ?? 'command',
-            layout: (s.layout as LayoutType) ?? 'inline',
+            layout: (s.layout as CommandLayout) ?? 'inline',
             commandCount: s.command_count,
           })),
         )
@@ -1206,7 +1205,7 @@ export default function EditCheatsheetsPage() {
     setDirty(true)
   }, [])
 
-  const updateLayout = useCallback((localId: string, value: LayoutType) => {
+  const updateLayout = useCallback((localId: string, value: CommandLayout) => {
     setRows((rs) =>
       rs.map((r) => (r.localId === localId ? { ...r, layout: value } : r)),
     )

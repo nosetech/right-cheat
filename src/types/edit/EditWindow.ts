@@ -1,3 +1,4 @@
+import { SheetType } from '@/types/api/CheatSheet'
 import {
   EditCommandData,
   EditGroupData,
@@ -5,7 +6,7 @@ import {
 } from '@/types/edit/EditBlock'
 
 export type EditCommandInitPayload = {
-  kind: 'command' | 'shortcut'
+  kind: SheetType
   item: EditCommandData | null
   groups: GroupOption[]
   initialGroupEditId: string | null

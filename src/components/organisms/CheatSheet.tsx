@@ -569,7 +569,9 @@ export const CheatSheet = () => {
 
       const win = getCurrentWebviewWindow()
       const initData: EditCommandInitPayload = {
-        kind: isShortcuts ? 'shortcut' : 'command',
+        // 実際のシート種別（command / application / shortcut）を渡す。
+        // command と application は編集画面で現状同じ扱いだが、将来分岐できるようにする
+        kind: cheatSheetData?.type ?? 'command',
         item,
         groups: groupOptions,
         initialGroupEditId,
@@ -602,7 +604,7 @@ export const CheatSheet = () => {
         setEditWindowOpenCount((prev) => Math.max(0, prev - 1))
       })
     },
-    [isShortcuts, groupOptions],
+    [isShortcuts, cheatSheetData?.type, groupOptions],
   )
 
   const openGroupEditWindow = useCallback(
