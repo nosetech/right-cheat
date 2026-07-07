@@ -382,17 +382,29 @@ export const CheatSheet = () => {
     }
   }, [confirmActions, doSave])
 
-  // Esc = Cancel（確認ダイアログが開いていない場合のみ）
+  // Cmd+S = Save / Esc = Cancel（確認ダイアログが開いていない場合のみ）
   useEffect(() => {
     if (!editMode) return
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !confirmCancelOpen && !confirmSaveOpen) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        // Cmd+S で保存（Save ボタンと同じ条件のときのみ）
+        e.preventDefault()
+        if (editDirty && !isSaving) saveEditMode()
+      } else if (e.key === 'Escape' && !confirmCancelOpen && !confirmSaveOpen) {
         cancelEditMode()
       }
     }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
-  }, [editMode, confirmCancelOpen, confirmSaveOpen, cancelEditMode])
+  }, [
+    editMode,
+    confirmCancelOpen,
+    confirmSaveOpen,
+    cancelEditMode,
+    editDirty,
+    isSaving,
+    saveEditMode,
+  ])
 
   // ─── コマンド/グループ操作 ────────────────────────────────
   const upsertCommand = useCallback(
