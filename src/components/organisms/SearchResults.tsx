@@ -19,7 +19,6 @@ const SearchPlaceholder = ({
   query?: string
 }) => {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
   const empty = kind === 'empty'
 
   return (
@@ -38,8 +37,8 @@ const SearchPlaceholder = ({
           width: '44px',
           height: '44px',
           borderRadius: '50%',
-          background: alpha(theme.palette.accent.main, isDark ? 0.1 : 0.07),
-          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.22 : 0.16)}`,
+          background: alpha(theme.palette.accent.main, 0.1),
+          border: `0.5px solid ${alpha(theme.palette.accent.main, 0.22)}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -102,7 +101,6 @@ const SearchPlaceholder = ({
 // キーチップ + ラベル（フッターのキーボードヒント）
 const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
       <Box sx={{ display: 'flex', gap: '2px' }}>
@@ -121,9 +119,7 @@ const Hotkey = ({ chips, label }: { chips: string[]; label: string }) => {
               padding: '1px 5px',
               minWidth: '16px',
               textAlign: 'center',
-              boxShadow: isDark
-                ? '0 1px 0 rgba(0,0,0,0.35)'
-                : '0 1px 0 rgba(0,0,30,0.08), inset 0 0.5px 0 rgba(255,255,255,0.9)',
+              boxShadow: '0 1px 0 rgba(0,0,0,0.35)',
             }}
           >
             {c}
@@ -184,7 +180,7 @@ export const SearchResults = ({
           overflowY: 'auto',
           borderTop: `0.5px solid ${divider}`,
           borderBottom: `0.5px solid ${divider}`,
-          background: isDark ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.18)',
+          background: isDark ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)',
           scrollbarWidth: 'thin',
         }}
       >
