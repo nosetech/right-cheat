@@ -19,7 +19,6 @@ const FOOTER_HEIGHT = 60
 
 export default function EditGroupPage() {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
 
   const [initPayload, setInitPayload] = useState<EditGroupInitPayload | null>(
     null,
@@ -143,10 +142,8 @@ export default function EditGroupPage() {
           display: 'flex',
           justifyContent: 'flex-end',
           gap: '8px',
-          background: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.30)',
-          borderTop: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          background: theme.palette.ui.footerBg,
+          borderTop: `0.5px solid ${theme.palette.ui.borderSubtle}`,
         }}
       >
         <FooterButton onClick={handleCancel}>Cancel</FooterButton>

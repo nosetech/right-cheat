@@ -26,16 +26,13 @@ export function EditModeFooter({
   onSave,
 }: Props) {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
 
   return (
     <Box
       sx={{
         flexShrink: 0,
         borderTop: `0.5px solid ${theme.palette.divider}`,
-        background: isDark
-          ? 'rgba(255,255,255,0.018)'
-          : 'rgba(255,255,255,0.30)',
+        background: theme.palette.ui.footerBg,
       }}
     >
       {/* Add ボタン行 */}

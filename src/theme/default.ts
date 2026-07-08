@@ -5,6 +5,13 @@ import { createTheme, Theme } from '@mui/material/styles'
 
 import { grey } from '@/theme/color'
 import { FONT_UI } from '@/theme/fonts'
+import { SheetType } from '@/types/api/CheatSheet'
+
+type SheetTypeColor = {
+  color: string
+  background: string
+  border: string
+}
 
 const FONT_SIZE_SCALE = {
   numberHint: 9.5,
@@ -84,6 +91,20 @@ declare module '@mui/material/styles' {
       background: string
       border: string
     }
+    sheetType: Record<SheetType, SheetTypeColor>
+    onAccent: string
+    accentHover: string
+    danger: { text: string; main: string }
+    positive: { main: string }
+    status: Record<
+      'information' | 'warning' | 'error' | 'confirmation',
+      { main: string; hover: string }
+    >
+    ui: {
+      footerBg: string
+      fieldRowBg: string
+      borderSubtle: string
+    }
   }
   interface PaletteOptions {
     alert?: { main?: string }
@@ -116,6 +137,20 @@ declare module '@mui/material/styles' {
       text?: string
       background?: string
       border?: string
+    }
+    sheetType?: Record<SheetType, SheetTypeColor>
+    onAccent?: string
+    accentHover?: string
+    danger?: { text: string; main: string }
+    positive?: { main: string }
+    status?: Record<
+      'information' | 'warning' | 'error' | 'confirmation',
+      { main: string; hover: string }
+    >
+    ui?: {
+      footerBg: string
+      fieldRowBg: string
+      borderSubtle: string
     }
   }
 }
@@ -194,6 +229,38 @@ const getLightPalette = () => ({
     background: 'rgba(180,120,0,0.06)',
     border: 'rgba(180,120,0,0.22)',
   },
+  sheetType: {
+    command: {
+      color: '#0071e3',
+      background: 'rgba(0,113,227,0.08)',
+      border: 'rgba(0,113,227,0.26)',
+    },
+    application: {
+      color: '#7c3aed',
+      background: 'rgba(124,58,237,0.08)',
+      border: 'rgba(124,58,237,0.26)',
+    },
+    shortcut: {
+      color: '#b45309',
+      background: 'rgba(180,83,9,0.08)',
+      border: 'rgba(180,83,9,0.28)',
+    },
+  },
+  onAccent: '#fff',
+  accentHover: '#1a82eb',
+  danger: { text: '#ff6b6b', main: '#d32f2f' },
+  positive: { main: '#1a9a5c' },
+  status: {
+    information: { main: '#0071e3', hover: '#1a82eb' },
+    warning: { main: '#ed6c02', hover: '#f57c00' },
+    error: { main: '#d32f2f', hover: '#b71c1c' },
+    confirmation: { main: '#7c3aed', hover: '#6d28d9' },
+  },
+  ui: {
+    footerBg: 'rgba(255,255,255,0.30)',
+    fieldRowBg: 'rgba(255,255,255,0.48)',
+    borderSubtle: 'rgba(0,0,0,0.08)',
+  },
   background: {
     default: '#dce5f2',
     paper: '#e8eef6',
@@ -244,6 +311,38 @@ const getDarkPalette = () => ({
     text: '#f5c46b',
     background: 'rgba(255,180,80,0.08)',
     border: 'rgba(255,180,80,0.30)',
+  },
+  sheetType: {
+    command: {
+      color: '#64b4ff',
+      background: 'rgba(100,180,255,0.13)',
+      border: 'rgba(100,180,255,0.34)',
+    },
+    application: {
+      color: '#b794f4',
+      background: 'rgba(183,148,244,0.13)',
+      border: 'rgba(183,148,244,0.34)',
+    },
+    shortcut: {
+      color: '#f6c177',
+      background: 'rgba(246,193,119,0.14)',
+      border: 'rgba(246,193,119,0.34)',
+    },
+  },
+  onAccent: '#fff',
+  accentHover: '#7cc0ff',
+  danger: { text: '#ff6b6b', main: '#ff6b6b' },
+  positive: { main: '#3ddc97' },
+  status: {
+    information: { main: '#64b4ff', hover: '#7cc0ff' },
+    warning: { main: '#ffb74d', hover: '#ffc77a' },
+    error: { main: '#ff6b6b', hover: '#e85555' },
+    confirmation: { main: '#c084fc', hover: '#d8b4fe' },
+  },
+  ui: {
+    footerBg: 'rgba(255,255,255,0.018)',
+    fieldRowBg: 'rgba(255,255,255,0.055)',
+    borderSubtle: 'rgba(255,255,255,0.08)',
   },
   background: {
     default: '#0f2236',

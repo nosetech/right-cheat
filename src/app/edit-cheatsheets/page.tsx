@@ -53,48 +53,26 @@ const MAX_TITLE = 100
 let _uid = 0
 const nextLocalId = () => `loc${_uid++}`
 
+// 色（ライト/ダーク）は theme.palette.sheetType で一元管理する。
+// ここではラベルと説明のみを定義する。
 const TYPE_META: Record<
   SheetType,
   {
     label: string
     description: string
-    colorDark: string
-    colorLight: string
-    bgDark: string
-    bgLight: string
-    borderDark: string
-    borderLight: string
   }
 > = {
   command: {
     label: 'Command',
     description: 'Copyable shell commands',
-    colorDark: '#64b4ff',
-    colorLight: '#0071e3',
-    bgDark: 'rgba(100,180,255,0.13)',
-    bgLight: 'rgba(0,113,227,0.08)',
-    borderDark: 'rgba(100,180,255,0.34)',
-    borderLight: 'rgba(0,113,227,0.26)',
   },
   application: {
     label: 'Application',
     description: 'Subcommands of a single CLI app',
-    colorDark: '#b794f4',
-    colorLight: '#7c3aed',
-    bgDark: 'rgba(183,148,244,0.13)',
-    bgLight: 'rgba(124,58,237,0.08)',
-    borderDark: 'rgba(183,148,244,0.34)',
-    borderLight: 'rgba(124,58,237,0.26)',
   },
   shortcut: {
     label: 'Shortcut',
     description: 'Keyboard shortcuts',
-    colorDark: '#f6c177',
-    colorLight: '#b45309',
-    bgDark: 'rgba(246,193,119,0.14)',
-    bgLight: 'rgba(180,83,9,0.08)',
-    borderDark: 'rgba(246,193,119,0.34)',
-    borderLight: 'rgba(180,83,9,0.28)',
   },
 }
 
@@ -192,9 +170,7 @@ function TypeBadge({
   const isDark = theme.palette.mode === 'dark'
   const locked = commandCount > 0
   const meta = TYPE_META[type]
-  const color = isDark ? meta.colorDark : meta.colorLight
-  const bg = isDark ? meta.bgDark : meta.bgLight
-  const border = isDark ? meta.borderDark : meta.borderLight
+  const { color, background: bg, border } = theme.palette.sheetType[type]
   const accent = theme.palette.accent.main
 
   const [open, setOpen] = useState(false)
@@ -360,7 +336,7 @@ function TypeBadge({
             </div>
             {(Object.keys(TYPE_META) as SheetType[]).map((k) => {
               const m = TYPE_META[k]
-              const c = isDark ? m.colorDark : m.colorLight
+              const { color: c, background: cBg } = theme.palette.sheetType[k]
               const selected = k === type
               return (
                 <button
@@ -407,7 +383,7 @@ function TypeBadge({
                       borderRadius: 3,
                       background: c,
                       flexShrink: 0,
-                      boxShadow: `0 0 0 2px ${isDark ? m.bgDark : m.bgLight}`,
+                      boxShadow: `0 0 0 2px ${cBg}`,
                     }}
                   />
                   <span style={{ flex: 1, minWidth: 0 }}>
@@ -1015,7 +991,7 @@ function EditRow({
                   fontFamily: FONT_CODE,
                   fontSize: scaledPx(10),
                   color: error.tooLong
-                    ? '#ff6b6b'
+                    ? theme.palette.danger.text
                     : isDark
                       ? 'rgba(255,255,255,0.22)'
                       : 'rgba(0,0,0,0.28)',
@@ -1033,7 +1009,7 @@ function EditRow({
               style={{
                 fontFamily: theme.typography.fontFamily,
                 fontSize: scaledPx(theme.custom.fontSize.hint),
-                color: '#ff6b6b',
+                color: theme.palette.danger.text,
                 paddingLeft: 9,
                 lineHeight: 1.4,
               }}
@@ -1068,7 +1044,8 @@ function EditRow({
           tabIndex={hov || isEditing ? 0 : -1}
           aria-label={`Delete ${row.title}`}
           onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#ff6b6b'
+            ;(e.currentTarget as HTMLButtonElement).style.color =
+              theme.palette.danger.text
             ;(e.currentTarget as HTMLButtonElement).style.background = isDark
               ? 'rgba(255,107,107,0.10)'
               : 'rgba(255,80,80,0.08)'
@@ -1560,7 +1537,7 @@ export default function EditCheatsheetsPage() {
                     height='12'
                     viewBox='0 0 24 24'
                     fill='none'
-                    stroke='#ff6b6b'
+                    stroke={theme.palette.danger.text}
                     strokeWidth='2.2'
                     style={{ flexShrink: 0 }}
                   >
@@ -1573,7 +1550,7 @@ export default function EditCheatsheetsPage() {
                     sx={{
                       fontFamily: theme.typography.fontFamily,
                       fontSize: scaledPx(theme.custom.fontSize.captionSm),
-                      color: '#ff6b6b',
+                      color: theme.palette.danger.text,
                       fontWeight: 500,
                     }}
                   >

@@ -1223,7 +1223,7 @@ function ShortcutCheckbox({
             height='11'
             viewBox='0 0 24 24'
             fill='none'
-            stroke='#fff'
+            stroke={theme.palette.onAccent}
             strokeWidth='3'
           >
             <polyline points='20 6 9 17 4 12' />
@@ -1587,9 +1587,7 @@ function ShortcutSettingsDialog({
       <DialogActions
         sx={{
           padding: '12px 16px 14px',
-          backgroundColor: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.30)',
+          backgroundColor: theme.palette.ui.footerBg,
           borderTop: `0.5px solid ${theme.palette.divider}`,
         }}
       >
@@ -1628,10 +1626,10 @@ function ShortcutSettingsDialog({
             textTransform: 'none',
             backgroundColor: theme.palette.accent.main,
             border: '0.5px solid transparent',
-            color: '#fff',
+            color: theme.palette.onAccent,
             boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
             '&:hover': {
-              backgroundColor: isDark ? '#7cc0ff' : '#1a82eb',
+              backgroundColor: theme.palette.accentHover,
             },
             '&.Mui-disabled': {
               backgroundColor: isDark
@@ -1890,9 +1888,7 @@ function LogSettingsDialog({
       <DialogActions
         sx={{
           padding: '12px 16px 14px',
-          backgroundColor: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.30)',
+          backgroundColor: theme.palette.ui.footerBg,
           borderTop: `0.5px solid ${theme.palette.divider}`,
         }}
       >
@@ -1931,10 +1927,10 @@ function LogSettingsDialog({
             textTransform: 'none',
             backgroundColor: theme.palette.accent.main,
             border: '0.5px solid transparent',
-            color: '#fff',
+            color: theme.palette.onAccent,
             boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
             '&:hover': {
-              backgroundColor: isDark ? '#7cc0ff' : '#1a82eb',
+              backgroundColor: theme.palette.accentHover,
             },
             '&.Mui-disabled': {
               backgroundColor: isDark

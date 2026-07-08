@@ -27,7 +27,7 @@ export function FooterButton({ onClick, primary, disabled, children }: Props) {
         color: disabled
           ? theme.palette.text.disabled
           : primary
-            ? '#fff'
+            ? theme.palette.onAccent
             : theme.palette.text.primary,
         border: `0.5px solid ${
           primary && !disabled ? 'transparent' : theme.palette.divider
@@ -45,9 +45,7 @@ export function FooterButton({ onClick, primary, disabled, children }: Props) {
           !isDark && !disabled ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
         '&:hover:not(:disabled)': {
           background: primary
-            ? isDark
-              ? '#7cc0ff'
-              : '#1a82eb'
+            ? theme.palette.accentHover
             : theme.palette.glass.panel,
         },
       }}

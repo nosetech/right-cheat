@@ -89,7 +89,7 @@ function ExportCheckbox({
           height={Math.round(size * 0.62)}
           viewBox='0 0 24 24'
           fill='none'
-          stroke='#fff'
+          stroke={theme.palette.onAccent}
           strokeWidth='3.5'
           strokeLinecap='round'
         >
@@ -101,7 +101,7 @@ function ExportCheckbox({
           height={Math.round(size * 0.7)}
           viewBox='0 0 24 24'
           fill='none'
-          stroke='#fff'
+          stroke={theme.palette.onAccent}
           strokeWidth='3.2'
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -249,7 +249,7 @@ function ResultModal({
               height='22'
               viewBox='0 0 24 24'
               fill='none'
-              stroke={isDark ? '#3ddc97' : '#1a9a5c'}
+              stroke={theme.palette.positive.main}
               strokeWidth='2.6'
               strokeLinecap='round'
               strokeLinejoin='round'
@@ -262,7 +262,7 @@ function ResultModal({
               height='22'
               viewBox='0 0 24 24'
               fill='none'
-              stroke='#ff6b6b'
+              stroke={theme.palette.danger.text}
               strokeWidth='2.4'
               strokeLinecap='round'
             >
@@ -325,7 +325,7 @@ function ResultModal({
           sx={{
             marginTop: '4px',
             background: accentSolid,
-            color: '#fff',
+            color: theme.palette.onAccent,
             border: 'none',
             borderRadius: '7px',
             padding: '6px 22px',
@@ -596,9 +596,7 @@ export default function ExportPage() {
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '10px',
-            background: isDark
-              ? 'rgba(255,255,255,0.018)'
-              : 'rgba(255,255,255,0.30)',
+            background: theme.palette.ui.footerBg,
           }}
         >
           {/* Summary text */}
