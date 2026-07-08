@@ -20,11 +20,11 @@ import {
   CheckIcon,
   ChevronDownIcon,
   DragHandleIcon,
+  LayoutIcon,
   LockIcon,
   PlusIcon,
   TrashIcon,
 } from '@/components/atoms/icons'
-import { LayoutIcon } from '@/components/atoms/LayoutIcon'
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { RcDialog } from '@/components/organisms/RcDialog'
