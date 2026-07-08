@@ -15,6 +15,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { debug, info, error as logError } from '@tauri-apps/plugin-log'
 
+import { LayoutIcon } from '@/components/atoms/LayoutIcon'
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { RcDialog } from '@/components/organisms/RcDialog'
@@ -76,64 +77,22 @@ const TYPE_META: Record<
   },
 }
 
+// アイコンは LayoutIcon コンポーネントで描画する。ここではラベルと説明のみ定義する。
 const LAYOUT_META: Record<
   CommandLayout,
-  { label: string; description: string; icon: React.ReactNode }
+  { label: string; description: string }
 > = {
   inline: {
     label: 'inline',
     description: 'Description and command on one line',
-    icon: (
-      <svg
-        width='14'
-        height='14'
-        viewBox='0 0 24 24'
-        fill='none'
-        stroke='currentColor'
-        strokeWidth='2'
-      >
-        <line x1='3' y1='9' x2='10' y2='9' />
-        <line x1='12' y1='9' x2='21' y2='9' />
-        <line x1='3' y1='15' x2='10' y2='15' />
-        <line x1='12' y1='15' x2='21' y2='15' />
-      </svg>
-    ),
   },
   stacked: {
     label: 'stacked',
     description: 'Description above, command below',
-    icon: (
-      <svg
-        width='14'
-        height='14'
-        viewBox='0 0 24 24'
-        fill='none'
-        stroke='currentColor'
-        strokeWidth='2'
-      >
-        <line x1='3' y1='6' x2='14' y2='6' />
-        <line x1='3' y1='11' x2='21' y2='11' />
-        <line x1='3' y1='15' x2='14' y2='15' />
-        <line x1='3' y1='20' x2='21' y2='20' />
-      </svg>
-    ),
   },
   command_only: {
     label: 'command_only',
     description: 'Show command only, hide description',
-    icon: (
-      <svg
-        width='14'
-        height='14'
-        viewBox='0 0 24 24'
-        fill='none'
-        stroke='currentColor'
-        strokeWidth='2'
-      >
-        <polyline points='4 17 10 11 4 5' />
-        <line x1='12' y1='19' x2='20' y2='19' />
-      </svg>
-    ),
   },
 }
 
@@ -511,15 +470,14 @@ function LayoutBadge({
           background: isDark
             ? 'rgba(255,255,255,0.05)'
             : 'rgba(255,255,255,0.65)',
-          border: `0.5px solid ${
-            !locked && (hov || open)
+          border: `0.5px solid ${!locked && (hov || open)
               ? isDark
                 ? 'rgba(255,255,255,0.30)'
                 : 'rgba(0,0,0,0.22)'
               : isDark
                 ? 'rgba(255,255,255,0.14)'
                 : 'rgba(0,0,0,0.12)'
-          }`,
+            }`,
           borderRadius: 6,
           padding: '2px 6px',
           fontFamily: theme.typography.fontFamily,
@@ -544,7 +502,7 @@ function LayoutBadge({
             opacity: 0.85,
           }}
         >
-          {meta.icon}
+          <LayoutIcon layout={effectiveValue} />
         </span>
         <span
           style={{
@@ -688,7 +646,7 @@ function LayoutBadge({
                         : 'rgba(0,0,0,0.55)',
                     }}
                   >
-                    {m.icon}
+                    <LayoutIcon layout={k} />
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <div
@@ -845,15 +803,14 @@ function EditRow({
                 ? 'rgba(255,255,255,0.035)'
                 : 'rgba(255,255,255,0.5)'
               : 'transparent',
-          border: `0.5px solid ${
-            hasError
+          border: `0.5px solid ${hasError
               ? 'rgba(255,107,107,0.32)'
               : isEditing
                 ? accent
                 : hov
                   ? panelBorder
                   : 'transparent'
-          }`,
+            }`,
           opacity: isDragging ? 0.35 : 1,
           transition: 'background 0.12s, border-color 0.12s, opacity 0.12s',
         }}
@@ -963,13 +920,12 @@ function EditRow({
                     ? 'rgba(0,0,0,0.25)'
                     : 'rgba(255,255,255,0.9)'
                   : 'transparent',
-                border: `0.5px solid ${
-                  isEditing
+                border: `0.5px solid ${isEditing
                     ? hasError
                       ? 'rgba(255,107,107,0.55)'
                       : accent
                     : 'transparent'
-                }`,
+                  }`,
                 borderRadius: 6,
                 padding: '4px 8px',
                 fontFamily: theme.typography.fontFamily,
@@ -1044,18 +1000,18 @@ function EditRow({
           tabIndex={hov || isEditing ? 0 : -1}
           aria-label={`Delete ${row.title}`}
           onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color =
+            ; (e.currentTarget as HTMLButtonElement).style.color =
               theme.palette.danger.text
-            ;(e.currentTarget as HTMLButtonElement).style.background = isDark
-              ? 'rgba(255,107,107,0.10)'
-              : 'rgba(255,80,80,0.08)'
+              ; (e.currentTarget as HTMLButtonElement).style.background = isDark
+                ? 'rgba(255,107,107,0.10)'
+                : 'rgba(255,80,80,0.08)'
           }}
           onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = isDark
+            ; (e.currentTarget as HTMLButtonElement).style.color = isDark
               ? 'rgba(255,255,255,0.22)'
               : 'rgba(0,0,0,0.28)'
-            ;(e.currentTarget as HTMLButtonElement).style.background =
-              'transparent'
+              ; (e.currentTarget as HTMLButtonElement).style.background =
+                'transparent'
           }}
           style={{
             background: 'transparent',
@@ -1130,7 +1086,7 @@ export default function EditCheatsheetsPage() {
   const canSave = dirty && errorCt === 0 && !saving
 
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       try {
         const confirmActionsValue = await getConfirmActions()
         setConfirmActionsState(confirmActionsValue)
@@ -1288,7 +1244,7 @@ export default function EditCheatsheetsPage() {
       const next = rs.slice()
       const swapIdx = direction === 'up' ? idx - 1 : idx + 1
       if (swapIdx < 0 || swapIdx >= next.length) return rs
-      ;[next[idx], next[swapIdx]] = [next[swapIdx], next[idx]]
+        ;[next[idx], next[swapIdx]] = [next[swapIdx], next[idx]]
       return next
     })
     setDirty(true)
@@ -1466,16 +1422,16 @@ export default function EditCheatsheetsPage() {
               component='button'
               onClick={addRow}
               onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background =
+                ; (e.currentTarget as HTMLButtonElement).style.background =
                   alpha(theme.palette.accent.main, isDark ? 0.06 : 0.05)
-                ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-                  accent
+                  ; (e.currentTarget as HTMLButtonElement).style.borderColor =
+                    accent
               }}
               onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background =
+                ; (e.currentTarget as HTMLButtonElement).style.background =
                   'transparent'
-                ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-                  alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)
+                  ; (e.currentTarget as HTMLButtonElement).style.borderColor =
+                    alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)
               }}
               sx={{
                 width: '100%',
