@@ -3,7 +3,7 @@
 import { scaledPx } from '@/utils/css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { ThemedSwitch, ThemeToggle } from '@/components/atoms'
+import { CheckIcon, ThemedSwitch, ThemeToggle } from '@/components/atoms'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
@@ -1218,16 +1218,7 @@ function ShortcutCheckbox({
         }}
       >
         {checked && (
-          <svg
-            width='11'
-            height='11'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke={theme.palette.onAccent}
-            strokeWidth='3'
-          >
-            <polyline points='20 6 9 17 4 12' />
-          </svg>
+          <CheckIcon size={11} strokeWidth={3} color={theme.palette.onAccent} />
         )}
       </Box>
       <Keycap active={checked}>{symbol}</Keycap>

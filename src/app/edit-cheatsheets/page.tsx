@@ -15,6 +15,15 @@ import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { debug, info, error as logError } from '@tauri-apps/plugin-log'
 
+import {
+  AlertCircleIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  DragHandleIcon,
+  LockIcon,
+  PlusIcon,
+  TrashIcon,
+} from '@/components/atoms/icons'
 import { LayoutIcon } from '@/components/atoms/LayoutIcon'
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
@@ -210,18 +219,7 @@ function TypeBadge({
         }}
       >
         {locked ? (
-          <svg
-            width='8.5'
-            height='8.5'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2.4'
-            style={{ opacity: 0.75 }}
-          >
-            <rect x='4' y='11' width='16' height='10' rx='1.5' />
-            <path d='M8 11V7a4 4 0 0 1 8 0v4' />
-          </svg>
+          <LockIcon size={8.5} strokeWidth={2.4} style={{ opacity: 0.75 }} />
         ) : (
           <span
             style={{
@@ -245,17 +243,11 @@ function TypeBadge({
           {meta.label}
         </span>
         {!locked && (
-          <svg
-            width='8'
-            height='8'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='3'
+          <ChevronDownIcon
+            size={8}
+            strokeWidth={3}
             style={{ marginLeft: 1, opacity: 0.75 }}
-          >
-            <polyline points='6 9 12 15 18 9' />
-          </svg>
+          />
         )}
       </button>
 
@@ -370,17 +362,12 @@ function TypeBadge({
                     </div>
                   </span>
                   {selected && (
-                    <svg
-                      width='13'
-                      height='13'
-                      viewBox='0 0 24 24'
-                      fill='none'
-                      stroke={accent}
-                      strokeWidth='2.6'
+                    <CheckIcon
+                      size={13}
+                      strokeWidth={2.6}
+                      color={accent}
                       style={{ flexShrink: 0 }}
-                    >
-                      <polyline points='20 6 9 17 4 12' />
-                    </svg>
+                    />
                   )}
                 </button>
               )
@@ -470,14 +457,15 @@ function LayoutBadge({
           background: isDark
             ? 'rgba(255,255,255,0.05)'
             : 'rgba(255,255,255,0.65)',
-          border: `0.5px solid ${!locked && (hov || open)
+          border: `0.5px solid ${
+            !locked && (hov || open)
               ? isDark
                 ? 'rgba(255,255,255,0.30)'
                 : 'rgba(0,0,0,0.22)'
               : isDark
                 ? 'rgba(255,255,255,0.14)'
                 : 'rgba(0,0,0,0.12)'
-            }`,
+          }`,
           borderRadius: 6,
           padding: '2px 6px',
           fontFamily: theme.typography.fontFamily,
@@ -520,37 +508,24 @@ function LayoutBadge({
           {meta.label}
         </span>
         {locked ? (
-          <svg
-            width='9'
-            height='9'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2.4'
+          <LockIcon
+            size={9}
+            strokeWidth={2.4}
             style={{
               marginLeft: 1,
               color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)',
               opacity: 0.75,
             }}
-          >
-            <rect x='4' y='11' width='16' height='10' rx='1.5' />
-            <path d='M8 11V7a4 4 0 0 1 8 0v4' />
-          </svg>
+          />
         ) : (
-          <svg
-            width='8'
-            height='8'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='3'
+          <ChevronDownIcon
+            size={8}
+            strokeWidth={3}
             style={{
               marginLeft: 1,
               color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)',
             }}
-          >
-            <polyline points='6 9 12 15 18 9' />
-          </svg>
+          />
         )}
       </button>
 
@@ -674,17 +649,12 @@ function LayoutBadge({
                     </div>
                   </span>
                   {selected && (
-                    <svg
-                      width='13'
-                      height='13'
-                      viewBox='0 0 24 24'
-                      fill='none'
-                      stroke={accent}
-                      strokeWidth='2.6'
+                    <CheckIcon
+                      size={13}
+                      strokeWidth={2.6}
+                      color={accent}
                       style={{ flexShrink: 0 }}
-                    >
-                      <polyline points='20 6 9 17 4 12' />
-                    </svg>
+                    />
                   )}
                 </button>
               )
@@ -803,14 +773,15 @@ function EditRow({
                 ? 'rgba(255,255,255,0.035)'
                 : 'rgba(255,255,255,0.5)'
               : 'transparent',
-          border: `0.5px solid ${hasError
+          border: `0.5px solid ${
+            hasError
               ? 'rgba(255,107,107,0.32)'
               : isEditing
                 ? accent
                 : hov
                   ? panelBorder
                   : 'transparent'
-            }`,
+          }`,
           opacity: isDragging ? 0.35 : 1,
           transition: 'background 0.12s, border-color 0.12s, opacity 0.12s',
         }}
@@ -864,14 +835,7 @@ function EditRow({
             outline: 'none',
           }}
         >
-          <svg width='10' height='14' viewBox='0 0 10 14' fill='currentColor'>
-            <circle cx='2' cy='2' r='1.2' />
-            <circle cx='2' cy='7' r='1.2' />
-            <circle cx='2' cy='12' r='1.2' />
-            <circle cx='8' cy='2' r='1.2' />
-            <circle cx='8' cy='7' r='1.2' />
-            <circle cx='8' cy='12' r='1.2' />
-          </svg>
+          <DragHandleIcon />
         </div>
 
         {/* Index */}
@@ -920,12 +884,13 @@ function EditRow({
                     ? 'rgba(0,0,0,0.25)'
                     : 'rgba(255,255,255,0.9)'
                   : 'transparent',
-                border: `0.5px solid ${isEditing
+                border: `0.5px solid ${
+                  isEditing
                     ? hasError
                       ? 'rgba(255,107,107,0.55)'
                       : accent
                     : 'transparent'
-                  }`,
+                }`,
                 borderRadius: 6,
                 padding: '4px 8px',
                 fontFamily: theme.typography.fontFamily,
@@ -1000,18 +965,18 @@ function EditRow({
           tabIndex={hov || isEditing ? 0 : -1}
           aria-label={`Delete ${row.title}`}
           onMouseEnter={(e) => {
-            ; (e.currentTarget as HTMLButtonElement).style.color =
+            ;(e.currentTarget as HTMLButtonElement).style.color =
               theme.palette.danger.text
-              ; (e.currentTarget as HTMLButtonElement).style.background = isDark
-                ? 'rgba(255,107,107,0.10)'
-                : 'rgba(255,80,80,0.08)'
+            ;(e.currentTarget as HTMLButtonElement).style.background = isDark
+              ? 'rgba(255,107,107,0.10)'
+              : 'rgba(255,80,80,0.08)'
           }}
           onMouseLeave={(e) => {
-            ; (e.currentTarget as HTMLButtonElement).style.color = isDark
+            ;(e.currentTarget as HTMLButtonElement).style.color = isDark
               ? 'rgba(255,255,255,0.22)'
               : 'rgba(0,0,0,0.28)'
-              ; (e.currentTarget as HTMLButtonElement).style.background =
-                'transparent'
+            ;(e.currentTarget as HTMLButtonElement).style.background =
+              'transparent'
           }}
           style={{
             background: 'transparent',
@@ -1027,20 +992,7 @@ function EditRow({
             flexShrink: 0,
           }}
         >
-          <svg
-            width='13'
-            height='13'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-          >
-            <polyline points='3 6 5 6 21 6' />
-            <path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6' />
-            <path d='M10 11v6' />
-            <path d='M14 11v6' />
-            <path d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2' />
-          </svg>
+          <TrashIcon size={13} />
         </button>
       </div>
     </div>
@@ -1086,7 +1038,7 @@ export default function EditCheatsheetsPage() {
   const canSave = dirty && errorCt === 0 && !saving
 
   useEffect(() => {
-    ; (async () => {
+    ;(async () => {
       try {
         const confirmActionsValue = await getConfirmActions()
         setConfirmActionsState(confirmActionsValue)
@@ -1244,7 +1196,7 @@ export default function EditCheatsheetsPage() {
       const next = rs.slice()
       const swapIdx = direction === 'up' ? idx - 1 : idx + 1
       if (swapIdx < 0 || swapIdx >= next.length) return rs
-        ;[next[idx], next[swapIdx]] = [next[swapIdx], next[idx]]
+      ;[next[idx], next[swapIdx]] = [next[swapIdx], next[idx]]
       return next
     })
     setDirty(true)
@@ -1422,16 +1374,16 @@ export default function EditCheatsheetsPage() {
               component='button'
               onClick={addRow}
               onMouseEnter={(e) => {
-                ; (e.currentTarget as HTMLButtonElement).style.background =
+                ;(e.currentTarget as HTMLButtonElement).style.background =
                   alpha(theme.palette.accent.main, isDark ? 0.06 : 0.05)
-                  ; (e.currentTarget as HTMLButtonElement).style.borderColor =
-                    accent
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor =
+                  accent
               }}
               onMouseLeave={(e) => {
-                ; (e.currentTarget as HTMLButtonElement).style.background =
+                ;(e.currentTarget as HTMLButtonElement).style.background =
                   'transparent'
-                  ; (e.currentTarget as HTMLButtonElement).style.borderColor =
-                    alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor =
+                  alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)
               }}
               sx={{
                 width: '100%',
@@ -1451,17 +1403,7 @@ export default function EditCheatsheetsPage() {
                 transition: 'all 0.14s',
               }}
             >
-              <svg
-                width='12'
-                height='12'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2.4'
-              >
-                <line x1='12' y1='5' x2='12' y2='19' />
-                <line x1='5' y1='12' x2='19' y2='12' />
-              </svg>
+              <PlusIcon size={12} strokeWidth={2.4} />
               Add cheatsheet
             </Box>
           </Box>
@@ -1488,19 +1430,12 @@ export default function EditCheatsheetsPage() {
             >
               {errorCt > 0 ? (
                 <>
-                  <svg
-                    width='12'
-                    height='12'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke={theme.palette.danger.text}
-                    strokeWidth='2.2'
+                  <AlertCircleIcon
+                    size={12}
+                    strokeWidth={2.2}
+                    color={theme.palette.danger.text}
                     style={{ flexShrink: 0 }}
-                  >
-                    <circle cx='12' cy='12' r='10' />
-                    <line x1='12' y1='8' x2='12' y2='12' />
-                    <line x1='12' y1='16' x2='12.01' y2='16' />
-                  </svg>
+                  />
                   <Box
                     component='span'
                     sx={{

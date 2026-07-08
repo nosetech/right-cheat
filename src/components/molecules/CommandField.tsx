@@ -7,6 +7,7 @@ import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { error as logError } from '@tauri-apps/plugin-log'
 
+import { CheckIcon, CopyIcon, PlayIcon } from '@/components/atoms/icons'
 import { TruncatedText } from '@/components/atoms/TruncatedText'
 import { COMMAND_HINT_WIDTH } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
@@ -197,39 +198,11 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           }}
         >
           {hasDone ? (
-            <svg
-              width='11'
-              height='11'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2.5'
-            >
-              <polyline points='20 6 9 17 4 12' />
-            </svg>
+            <CheckIcon size={11} strokeWidth={2.5} />
           ) : mode === 'execute' ? (
-            <svg
-              width='11'
-              height='11'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2'
-            >
-              <polygon points='5 3 19 12 5 21 5 3' />
-            </svg>
+            <PlayIcon size={11} strokeWidth={2} />
           ) : (
-            <svg
-              width='11'
-              height='11'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2'
-            >
-              <rect x='9' y='9' width='13' height='13' rx='2' />
-              <path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' />
-            </svg>
+            <CopyIcon size={11} strokeWidth={2} />
           )}
         </Box>
       </Box>
