@@ -10,6 +10,7 @@ import { Event } from '@/common'
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { FONT_CODE } from '@/theme/fonts'
 import { CommandLayout } from '@/types/api/CheatSheet'
 import {
@@ -119,20 +120,10 @@ export default function EditCommandPage() {
   }
 
   // Cmd+S で Save / Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault()
-        void handleSave()
-      } else if (e.key === 'Escape' && !e.isComposing) {
-        // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
-        e.preventDefault()
-        void getCurrentWebviewWindow().destroy()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [handleSave])
+  useWindowCloseShortcuts({
+    onSave: () => void handleSave(),
+    onCancel: () => void handleCancel(),
+  })
 
   if (!initPayload) {
     return null

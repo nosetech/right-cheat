@@ -19,6 +19,7 @@ import {
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { FONT_CODE } from '@/theme/fonts'
 import { CheatSheetAPI, CheatSheetTitleData } from '@/types/api/CheatSheet'
 
@@ -359,17 +360,9 @@ export default function ExportPage() {
   }, [])
 
   // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
-      if (e.key === 'Escape' && !e.isComposing) {
-        e.preventDefault()
-        void getCurrentWindow().close()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  useWindowCloseShortcuts({
+    onCancel: () => void getCurrentWindow().close(),
+  })
 
   const toggleAll = useCallback(() => {
     const next = !allOn

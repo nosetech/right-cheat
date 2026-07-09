@@ -5,6 +5,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { info, error as logError } from '@tauri-apps/plugin-log'
 
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { CheatSheetAPI, CheatSheetUpdate } from '@/types/api/CheatSheet'
 
 import { RowData } from './types'
@@ -95,22 +96,12 @@ export function useSaveCheatsheets({
   }, [])
 
   // Cmd+S 保存 / Esc で Cancel と同じ動作
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault()
-        if (canSave) onSave()
-      } else if (e.key === 'Escape' && !e.isComposing) {
-        // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない。
-        // ドロップダウン等が開いている場合は document 側で stopPropagation され
-        // window まで伝播しないため、ここでは Cancel を実行してよい。
-        e.preventDefault()
-        onCancel()
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [canSave, onSave, onCancel])
+  useWindowCloseShortcuts({
+    onSave: () => {
+      if (canSave) onSave()
+    },
+    onCancel,
+  })
 
   return {
     saving,

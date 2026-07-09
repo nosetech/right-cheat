@@ -9,6 +9,7 @@ import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { DbSettings, DbSettingsAPI } from '@/types/api/DbSettings'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
@@ -156,17 +157,9 @@ export default function Page() {
   // Esc でウィンドウを閉じる（この画面に Cancel ボタンはない）。
   // ダイアログ表示中は MUI Dialog が Esc を処理して stopPropagation するため、
   // window までは伝播せずウィンドウは閉じない。
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
-      if (e.key === 'Escape' && !e.isComposing) {
-        e.preventDefault()
-        void getCurrentWindow().close()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  useWindowCloseShortcuts({
+    onCancel: () => void getCurrentWindow().close(),
+  })
 
   useEffect(() => {
     ;(async () => {

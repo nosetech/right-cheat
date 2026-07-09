@@ -40,6 +40,7 @@ import { useNotificationContext } from '@/context/NotificationContext'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { useWindowSize } from '@/hooks/useWindowSize'
 import {
   CheatSheetAPI,
@@ -384,28 +385,14 @@ export const CheatSheet = () => {
   }, [confirmActions, doSave])
 
   // Cmd+S = Save / Esc = Cancel（確認ダイアログが開いていない場合のみ）
-  useEffect(() => {
-    if (!editMode) return
-    const h = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        // Cmd+S で保存（Save ボタンと同じ条件のときのみ）
-        e.preventDefault()
-        if (editDirty && !isSaving) saveEditMode()
-      } else if (e.key === 'Escape' && !confirmCancelOpen && !confirmSaveOpen) {
-        cancelEditMode()
-      }
-    }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [
-    editMode,
-    confirmCancelOpen,
-    confirmSaveOpen,
-    cancelEditMode,
-    editDirty,
-    isSaving,
-    saveEditMode,
-  ])
+  useWindowCloseShortcuts({
+    enabled: editMode && !confirmCancelOpen && !confirmSaveOpen,
+    // Cmd+S は Save ボタンと同じ条件のときのみ実行
+    onSave: () => {
+      if (editDirty && !isSaving) saveEditMode()
+    },
+    onCancel: cancelEditMode,
+  })
 
   // ─── コマンド/グループ操作 ────────────────────────────────
   const upsertCommand = useCallback(

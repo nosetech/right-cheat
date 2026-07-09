@@ -10,6 +10,7 @@ import { Event } from '@/common'
 import { FooterButton } from '@/components/molecules/FooterButton'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import {
   EditGroupInitPayload,
   EditGroupSavePayload,
@@ -63,23 +64,12 @@ export default function EditGroupPage() {
     await getCurrentWebviewWindow().destroy()
   }
 
-  useEffect(() => {
-    if (!initPayload) return
-    const h = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        // Cmd+S で Save
-        e.preventDefault()
-        void handleSave()
-      } else if (e.key === 'Escape' && !e.isComposing) {
-        // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない。
-        // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
-        e.preventDefault()
-        void getCurrentWebviewWindow().destroy()
-      }
-    }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [initPayload, handleSave])
+  // Cmd+S で Save / Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
+  useWindowCloseShortcuts({
+    enabled: !!initPayload,
+    onSave: () => void handleSave(),
+    onCancel: () => void handleCancel(),
+  })
 
   if (!initPayload) {
     return null
