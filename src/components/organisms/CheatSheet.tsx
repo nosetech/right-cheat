@@ -1,10 +1,8 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import PushPin from '@mui/icons-material/PushPin'
-import PushPinOutlined from '@mui/icons-material/PushPinOutlined'
-import { Alert, Box, Grid, IconButton, Stack } from '@mui/material'
-import { alpha, useTheme } from '@mui/material/styles'
+import { Alert, Box } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import {
@@ -14,27 +12,16 @@ import {
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
-import { PencilIcon } from '@/components/atoms/icons'
-import { CommandField } from '@/components/molecules/CommandField'
-import { CommandFieldGroup } from '@/components/molecules/CommandFieldGroup'
-import { EditableCommandRow } from '@/components/molecules/EditableCommandRow'
-import { EditableGroupBox } from '@/components/molecules/EditableGroupBox'
-import { EditableShortcutRow } from '@/components/molecules/EditableShortcutRow'
 import { EditModeFooter } from '@/components/molecules/EditModeFooter'
-import {
-  SheetSwitchButton,
-  SheetSwitchButtonHandle,
-} from '@/components/molecules/SheetSwitchButton'
-import { ShortcutField } from '@/components/molecules/ShortcutField'
-import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
+import { SheetSwitchButtonHandle } from '@/components/molecules/SheetSwitchButton'
 import { WindowHeader } from '@/components/molecules/WindowHeader'
+import {
+  CheatSheetToolbar,
+  EditBlockList,
+  NormalCommandList,
+} from '@/components/organisms/cheat-sheet'
 import { RcDialog } from '@/components/organisms/RcDialog'
 import { FOCUS_FALLBACK_ID } from '@/constants/focus'
-import {
-  COMMAND_GRID_COL_GAP,
-  COMMAND_GRID_ROW_GAP,
-  INLINE_GRID_TEMPLATE_COLUMNS,
-} from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
@@ -46,9 +33,9 @@ import {
   CheatSheetData,
   CheatSheetTitleData,
   CommandLayout,
-  CommandListItem,
   isCommandGroupData,
 } from '@/types/api/CheatSheet'
+import { DragInfo, DropMark } from '@/types/edit/dnd'
 import {
   EditBlock,
   EditCommandData,
@@ -64,18 +51,6 @@ import {
   EditGroupInitPayload,
   EditGroupSavePayload,
 } from '@/types/edit/EditWindow'
-
-// ─── DnD 型定義 ───────────────────────────────────────────────
-type DragInfo = {
-  type: 'item' | 'group'
-  blockIndex: number
-  itemIndex?: number
-}
-
-type DropMark =
-  | { kind: 'between-blocks'; afterBlockIndex: number }
-  | { kind: 'into-group'; groupBlockIndex: number }
-  | { kind: 'between-items'; groupBlockIndex: number; afterItemIndex: number }
 
 // ─── メインコンポーネント ─────────────────────────────────────
 export const CheatSheet = () => {
@@ -967,77 +942,17 @@ export const CheatSheet = () => {
       <WindowHeader
         title={selectCheatSheet || 'RightCheat'}
         rightControls={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {/* シート切り替え（編集モード中は無効化） */}
-            <Box
-              sx={{
-                opacity: editMode ? 0.35 : 1,
-                pointerEvents: editMode ? 'none' : 'auto',
-                transition: 'opacity 0.14s',
-              }}
-            >
-              <SheetSwitchButton
-                ref={sheetSwitchRef}
-                titles={cheatSheetTitles?.title ?? []}
-                selected={selectCheatSheet}
-                onSelect={(value) => setCheatSheet(value)}
-              />
-            </Box>
-
-            {/* 編集モードトグル（鉛筆アイコン） */}
-            <IconButton
-              onClick={editMode ? cancelEditMode : enterEditMode}
-              size='small'
-              disabled={!selectCheatSheet}
-              title={editMode ? 'Cancel edit mode (Esc)' : 'Edit mode (e)'}
-              sx={{
-                background: editMode
-                  ? alpha(theme.palette.accent.main, 0.18)
-                  : 'transparent',
-                border: editMode
-                  ? `0.5px solid ${theme.palette.accent.main}`
-                  : 'none',
-                borderRadius: '6px',
-                p: '3px',
-                color: editMode
-                  ? theme.palette.accent.main
-                  : theme.palette.text.disabled,
-                opacity: !selectCheatSheet ? 0.3 : 1,
-                transition: 'all 0.15s',
-                ml: '2px',
-                '&.Mui-focusVisible': {
-                  outline: 'none',
-                  background: editMode
-                    ? alpha(theme.palette.accent.main, 0.18)
-                    : 'transparent',
-                },
-              }}
-            >
-              <PencilIcon size={13} />
-            </IconButton>
-
-            {/* ピン留めボタン */}
-            <IconButton
-              ref={pinButtonRef}
-              onClick={selectCheatSheet && !editMode ? togglePin : undefined}
-              size='small'
-              disabled={!selectCheatSheet || editMode}
-              title={isPinned ? 'Unpin (p)' : 'Pin (p)'}
-              sx={{
-                opacity: selectCheatSheet && !editMode ? 1 : 0.3,
-                color: isPinned
-                  ? theme.palette.accent.main
-                  : theme.palette.text.disabled,
-                p: '4px',
-              }}
-            >
-              {isPinned ? (
-                <PushPin sx={{ fontSize: 13 }} />
-              ) : (
-                <PushPinOutlined sx={{ fontSize: 13 }} />
-              )}
-            </IconButton>
-          </Box>
+          <CheatSheetToolbar
+            titles={cheatSheetTitles?.title ?? []}
+            selected={selectCheatSheet}
+            onSelect={(value) => setCheatSheet(value)}
+            editMode={editMode}
+            onToggleEdit={editMode ? cancelEditMode : enterEditMode}
+            isPinned={isPinned}
+            onTogglePin={togglePin}
+            sheetSwitchRef={sheetSwitchRef}
+            pinButtonRef={pinButtonRef}
+          />
         }
       />
 
@@ -1071,367 +986,32 @@ export const CheatSheet = () => {
             </Alert>
           ) : editMode ? (
             // ─── 編集モード ───────────────────────────────────
-            <Stack
-              spacing={0}
-              sx={{
-                py: 1,
-                minHeight: '40px',
-                userSelect: dragInfo ? 'none' : undefined,
-              }}
-            >
-              {editBlocks.map((block, blockIndex) => {
-                const isBlockDragging =
-                  dragInfo?.blockIndex === blockIndex &&
-                  dragInfo.itemIndex === undefined
-                const isBlockDropTarget =
-                  dropMark?.kind === 'between-blocks' &&
-                  dropMark.afterBlockIndex === blockIndex - 1
-
-                return (
-                  <Box key={block._editId}>
-                    {/* ドロップインジケーター（上） */}
-                    {isBlockDropTarget && (
-                      <Box
-                        sx={{
-                          height: '2px',
-                          background: theme.palette.accent.main,
-                          borderRadius: '1px',
-                          mx: 1,
-                          my: '1px',
-                        }}
-                      />
-                    )}
-
-                    {isEditGroup(block) ? (
-                      // グループ
-                      <EditableGroupBox
-                        groupName={block.group}
-                        isEmpty={block.commandlist.length === 0}
-                        isDragging={isBlockDragging}
-                        isDropTarget={
-                          dropMark?.kind === 'into-group' &&
-                          dropMark.groupBlockIndex === blockIndex
-                        }
-                        onRename={() => openGroupEditWindow(block, false)}
-                        onDelete={() => deleteGroup(block._editId)}
-                        onPointerDown={(e) => handlePointerDown(e, blockIndex)}
-                        onPointerMove={handlePointerMove}
-                        onPointerUp={handlePointerUp}
-                        onPointerCancel={handlePointerCancel}
-                        blockRef={(el) => {
-                          if (el) blockRefsMap.current.set(block._editId, el)
-                          else blockRefsMap.current.delete(block._editId)
-                        }}
-                        groupBodyRef={(el) => {
-                          if (el)
-                            groupBodyRefsMap.current.set(block._editId, el)
-                          else groupBodyRefsMap.current.delete(block._editId)
-                        }}
-                      >
-                        <Stack spacing={0}>
-                          {block.commandlist.map((item, itemIndex) => {
-                            const isItemDragging =
-                              dragInfo?.blockIndex === blockIndex &&
-                              dragInfo.itemIndex === itemIndex
-                            const isItemDropTarget =
-                              dropMark?.kind === 'between-items' &&
-                              dropMark.groupBlockIndex === blockIndex &&
-                              dropMark.afterItemIndex === itemIndex - 1
-
-                            return (
-                              <Box key={item._editId}>
-                                {isItemDropTarget && (
-                                  <Box
-                                    sx={{
-                                      height: '2px',
-                                      background: theme.palette.accent.main,
-                                      borderRadius: '1px',
-                                      mx: '4px',
-                                      my: '1px',
-                                    }}
-                                  />
-                                )}
-                                {isShortcuts ? (
-                                  <EditableShortcutRow
-                                    index={
-                                      editFlatStartIndices[blockIndex] +
-                                      itemIndex
-                                    }
-                                    item={item}
-                                    isDragging={isItemDragging}
-                                    isDropTarget={
-                                      dropMark?.kind === 'between-items' &&
-                                      dropMark.groupBlockIndex === blockIndex &&
-                                      dropMark.afterItemIndex === itemIndex
-                                    }
-                                    onEdit={() =>
-                                      openCmdEditWindow(
-                                        item,
-                                        block._editId,
-                                        false,
-                                      )
-                                    }
-                                    onDelete={() => deleteCommand(item._editId)}
-                                    onPointerDown={(e) =>
-                                      handlePointerDown(
-                                        e,
-                                        blockIndex,
-                                        itemIndex,
-                                      )
-                                    }
-                                    onPointerMove={handlePointerMove}
-                                    onPointerUp={handlePointerUp}
-                                    onPointerCancel={handlePointerCancel}
-                                    rowRef={(el) => {
-                                      if (el)
-                                        itemRefsMap.current.set(
-                                          item._editId,
-                                          el,
-                                        )
-                                      else
-                                        itemRefsMap.current.delete(item._editId)
-                                    }}
-                                  />
-                                ) : (
-                                  <EditableCommandRow
-                                    index={
-                                      editFlatStartIndices[blockIndex] +
-                                      itemIndex
-                                    }
-                                    item={item}
-                                    layout={
-                                      item.layout ??
-                                      cheatSheetData?.layout ??
-                                      'inline'
-                                    }
-                                    isDragging={isItemDragging}
-                                    isDropTarget={
-                                      dropMark?.kind === 'between-items' &&
-                                      dropMark.groupBlockIndex === blockIndex &&
-                                      dropMark.afterItemIndex === itemIndex
-                                    }
-                                    onEdit={() =>
-                                      openCmdEditWindow(
-                                        item,
-                                        block._editId,
-                                        false,
-                                      )
-                                    }
-                                    onDelete={() => deleteCommand(item._editId)}
-                                    onPointerDown={(e) =>
-                                      handlePointerDown(
-                                        e,
-                                        blockIndex,
-                                        itemIndex,
-                                      )
-                                    }
-                                    onPointerMove={handlePointerMove}
-                                    onPointerUp={handlePointerUp}
-                                    onPointerCancel={handlePointerCancel}
-                                    rowRef={(el) => {
-                                      if (el)
-                                        itemRefsMap.current.set(
-                                          item._editId,
-                                          el,
-                                        )
-                                      else
-                                        itemRefsMap.current.delete(item._editId)
-                                    }}
-                                  />
-                                )}
-                              </Box>
-                            )
-                          })}
-                          {/* グループ末尾ドロップインジケーター */}
-                          {dropMark?.kind === 'between-items' &&
-                            dropMark.groupBlockIndex === blockIndex &&
-                            dropMark.afterItemIndex ===
-                              block.commandlist.length - 1 && (
-                              <Box
-                                sx={{
-                                  height: '2px',
-                                  background: theme.palette.accent.main,
-                                  borderRadius: '1px',
-                                  mx: '4px',
-                                  my: '1px',
-                                }}
-                              />
-                            )}
-                        </Stack>
-                      </EditableGroupBox>
-                    ) : (
-                      // トップレベルアイテム
-                      <>
-                        {isShortcuts ? (
-                          <EditableShortcutRow
-                            index={editFlatStartIndices[blockIndex]}
-                            item={block as EditCommandData}
-                            isDragging={isBlockDragging}
-                            isDropTarget={
-                              dropMark?.kind === 'between-blocks' &&
-                              dropMark.afterBlockIndex === blockIndex
-                            }
-                            onEdit={() =>
-                              openCmdEditWindow(
-                                block as EditCommandData,
-                                null,
-                                false,
-                              )
-                            }
-                            onDelete={() =>
-                              deleteCommand((block as EditCommandData)._editId)
-                            }
-                            onPointerDown={(e) =>
-                              handlePointerDown(e, blockIndex)
-                            }
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={handlePointerUp}
-                            onPointerCancel={handlePointerCancel}
-                            rowRef={(el) => {
-                              if (el)
-                                blockRefsMap.current.set(block._editId, el)
-                              else blockRefsMap.current.delete(block._editId)
-                            }}
-                          />
-                        ) : (
-                          <EditableCommandRow
-                            index={editFlatStartIndices[blockIndex]}
-                            item={block as EditCommandData}
-                            layout={
-                              (block as EditCommandData).layout ??
-                              cheatSheetData?.layout ??
-                              'inline'
-                            }
-                            isDragging={isBlockDragging}
-                            isDropTarget={
-                              dropMark?.kind === 'between-blocks' &&
-                              dropMark.afterBlockIndex === blockIndex
-                            }
-                            onEdit={() =>
-                              openCmdEditWindow(
-                                block as EditCommandData,
-                                null,
-                                false,
-                              )
-                            }
-                            onDelete={() =>
-                              deleteCommand((block as EditCommandData)._editId)
-                            }
-                            onPointerDown={(e) =>
-                              handlePointerDown(e, blockIndex)
-                            }
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={handlePointerUp}
-                            onPointerCancel={handlePointerCancel}
-                            rowRef={(el) => {
-                              if (el)
-                                blockRefsMap.current.set(block._editId, el)
-                              else blockRefsMap.current.delete(block._editId)
-                            }}
-                          />
-                        )}
-                      </>
-                    )}
-                  </Box>
-                )
-              })}
-
-              {/* リスト末尾ドロップインジケーター */}
-              {dropMark?.kind === 'between-blocks' &&
-                dropMark.afterBlockIndex === editBlocks.length - 1 && (
-                  <Box
-                    sx={{
-                      height: '2px',
-                      background: theme.palette.accent.main,
-                      borderRadius: '1px',
-                      mx: 1,
-                      my: '1px',
-                    }}
-                  />
-                )}
-            </Stack>
+            <EditBlockList
+              editBlocks={editBlocks}
+              isShortcuts={isShortcuts}
+              cheatSheetLayout={cheatSheetData?.layout}
+              dragInfo={dragInfo}
+              dropMark={dropMark}
+              editFlatStartIndices={editFlatStartIndices}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
+              blockRefsMap={blockRefsMap}
+              groupBodyRefsMap={groupBodyRefsMap}
+              itemRefsMap={itemRefsMap}
+              onEditCommand={openCmdEditWindow}
+              onDeleteCommand={deleteCommand}
+              onRenameGroup={(group) => openGroupEditWindow(group, false)}
+              onDeleteGroup={deleteGroup}
+            />
           ) : (
             // ─── 通常モード ───────────────────────────────────
-            <>
-              {cheatSheetData?.type === 'shortcut' ? (
-                <Grid container spacing={1} p={1} width='100%'>
-                  {cheatSheetData?.commandlist.map(
-                    (item: CommandListItem, index) => {
-                      if (isCommandGroupData(item)) {
-                        return (
-                          <Grid key={index} size={{ xs: 12 }}>
-                            <ShortcutGroup
-                              group={item.group}
-                              commandlist={item.commandlist}
-                            />
-                          </Grid>
-                        )
-                      }
-                      return (
-                        <Grid key={index} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-                          <ShortcutField
-                            m={0.5}
-                            description={item.description ?? ''}
-                            command={item.command}
-                          />
-                        </Grid>
-                      )
-                    },
-                  )}
-                </Grid>
-              ) : (
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: INLINE_GRID_TEMPLATE_COLUMNS,
-                    columnGap: COMMAND_GRID_COL_GAP,
-                    rowGap: COMMAND_GRID_ROW_GAP,
-                    py: 1,
-                    width: '100%',
-                  }}
-                >
-                  {cheatSheetData?.commandlist.map(
-                    (item: CommandListItem, index) => {
-                      const flatIndex = flatStartIndices[index]
-                      const mode =
-                        cheatSheetData.type === 'application'
-                          ? 'execute'
-                          : 'copy'
-                      if (isCommandGroupData(item)) {
-                        return (
-                          <Box key={index} pt={1} sx={{ gridColumn: '1 / -1' }}>
-                            <CommandFieldGroup
-                              key={index}
-                              group={item.group}
-                              commandlist={item.commandlist}
-                              startIndex={flatIndex}
-                              mode={mode}
-                              cheatSheetLayout={cheatSheetData.layout}
-                              commandFieldRefs={commandFieldRefs}
-                            />
-                          </Box>
-                        )
-                      }
-                      return (
-                        <CommandField
-                          key={index}
-                          ref={(el) => {
-                            commandFieldRefs.current[flatIndex] = el
-                          }}
-                          description={item.description}
-                          command={item.command}
-                          numberHint={(flatIndex + 1).toString()}
-                          mode={mode}
-                          layout={
-                            item.layout ?? cheatSheetData.layout ?? 'inline'
-                          }
-                        />
-                      )
-                    },
-                  )}
-                </Box>
-              )}
-            </>
+            <NormalCommandList
+              cheatSheetData={cheatSheetData}
+              flatStartIndices={flatStartIndices}
+              commandFieldRefs={commandFieldRefs}
+            />
           )}
         </Box>
 
