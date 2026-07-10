@@ -7,7 +7,10 @@ import { useTheme } from '@mui/material/styles'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 
 import { Event } from '@/common'
-import { FooterButton } from '@/components/molecules/FooterButton'
+import {
+  WINDOW_ACTION_FOOTER_HEIGHT,
+  WindowActionFooter,
+} from '@/components/molecules/WindowActionFooter'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
@@ -15,8 +18,6 @@ import {
   EditGroupInitPayload,
   EditGroupSavePayload,
 } from '@/types/edit/EditWindow'
-
-const FOOTER_HEIGHT = 60
 
 export default function EditGroupPage() {
   const theme = useTheme()
@@ -94,7 +95,7 @@ export default function EditGroupPage() {
         sx={{
           px: '18px',
           pt: '12px',
-          pb: `${FOOTER_HEIGHT + 12}px`,
+          pb: `${WINDOW_ACTION_FOOTER_HEIGHT + 12}px`,
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
@@ -121,26 +122,11 @@ export default function EditGroupPage() {
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: `${FOOTER_HEIGHT}px`,
-          p: '10px 16px',
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '8px',
-          background: theme.palette.ui.footerBg,
-          borderTop: `0.5px solid ${theme.palette.ui.borderSubtle}`,
-        }}
-      >
-        <FooterButton onClick={handleCancel}>Cancel</FooterButton>
-        <FooterButton primary disabled={!canSave} onClick={handleSave}>
-          Save
-        </FooterButton>
-      </Box>
+      <WindowActionFooter
+        onCancel={handleCancel}
+        onSave={handleSave}
+        canSave={canSave}
+      />
     </>
   )
 }

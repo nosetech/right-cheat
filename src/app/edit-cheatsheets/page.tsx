@@ -4,8 +4,8 @@ import { scaledPx } from '@/utils/css'
 import { Box } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 
-import { AlertCircleIcon, PlusIcon } from '@/components/atoms/icons'
-import { FooterButton } from '@/components/molecules/FooterButton'
+import { PlusIcon } from '@/components/atoms/icons'
+import { EditCheatsheetsFooter } from '@/components/molecules/EditCheatsheetsFooter'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { EditRow } from '@/components/organisms/edit-cheatsheets'
 import { RcDialog } from '@/components/organisms/RcDialog'
@@ -52,7 +52,6 @@ export default function EditCheatsheetsPage() {
   } = useRowDragAndDrop({ reorderRows })
 
   const {
-    saving,
     canSave,
     confirmSaveOpen,
     setConfirmSaveOpen,
@@ -204,81 +203,13 @@ export default function EditCheatsheetsPage() {
           </Box>
 
           {/* Footer */}
-          <Box
-            sx={{
-              borderTop: `0.5px solid ${divider}`,
-              padding: '10px 16px 14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '10px',
-            }}
-          >
-            {/* Status text */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                minHeight: '18px',
-              }}
-            >
-              {errorCt > 0 ? (
-                <>
-                  <AlertCircleIcon
-                    size={12}
-                    strokeWidth={2.2}
-                    color={theme.palette.danger.text}
-                    style={{ flexShrink: 0 }}
-                  />
-                  <Box
-                    component='span'
-                    sx={{
-                      fontFamily: theme.typography.fontFamily,
-                      fontSize: scaledPx(theme.custom.fontSize.captionSm),
-                      color: theme.palette.danger.text,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {errorCt} {errorCt === 1 ? 'error' : 'errors'}
-                  </Box>
-                </>
-              ) : dirty ? (
-                <Box
-                  component='span'
-                  sx={{
-                    fontFamily: theme.typography.fontFamily,
-                    fontSize: scaledPx(theme.custom.fontSize.captionSm),
-                    color: theme.palette.text.secondary,
-                    fontStyle: 'italic',
-                  }}
-                >
-                  Unsaved changes
-                </Box>
-              ) : (
-                <Box
-                  component='span'
-                  sx={{
-                    fontFamily: theme.typography.fontFamily,
-                    fontSize: scaledPx(theme.custom.fontSize.captionSm),
-                    color: isDark
-                      ? 'rgba(255,255,255,0.22)'
-                      : 'rgba(0,0,0,0.28)',
-                  }}
-                >
-                  No changes
-                </Box>
-              )}
-            </Box>
-
-            {/* Buttons */}
-            <Box sx={{ display: 'flex', gap: '8px' }}>
-              <FooterButton onClick={onCancel}>Cancel</FooterButton>
-              <FooterButton onClick={onSave} primary disabled={!canSave}>
-                {saving ? 'Saving…' : 'Save'}
-              </FooterButton>
-            </Box>
-          </Box>
+          <EditCheatsheetsFooter
+            dirty={dirty}
+            errorCt={errorCt}
+            canSave={canSave}
+            onCancel={onCancel}
+            onSave={onSave}
+          />
         </Box>
       </Box>
 

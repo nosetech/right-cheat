@@ -9,14 +9,8 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { save } from '@tauri-apps/plugin-dialog'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
-import {
-  AlertCircleIcon,
-  CheckIcon,
-  FileIcon,
-  MinusIcon,
-  UploadIcon,
-} from '@/components/atoms/icons'
-import { FooterButton } from '@/components/molecules/FooterButton'
+import { AlertCircleIcon, CheckIcon, MinusIcon } from '@/components/atoms/icons'
+import { ExportFooter } from '@/components/molecules/ExportFooter'
 import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
@@ -408,7 +402,6 @@ export default function ExportPage() {
   const panelBorder = isDark
     ? 'rgba(255,255,255,0.10)'
     : 'rgba(255,255,255,0.75)'
-  const divider = theme.palette.divider
 
   return (
     <>
@@ -559,87 +552,13 @@ export default function ExportPage() {
         </Box>
 
         {/* Footer */}
-        <Box
-          sx={{
-            flexShrink: 0,
-            borderTop: `0.5px solid ${divider}`,
-            padding: '10px 16px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px',
-            background: theme.palette.ui.footerBg,
-          }}
-        >
-          {/* Summary text */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              minHeight: '18px',
-            }}
-          >
-            <FileIcon
-              size={12}
-              style={{
-                color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.28)',
-                flexShrink: 0,
-              }}
-            />
-            <Typography
-              sx={{
-                fontSize: scaledPx(theme.custom.fontSize.captionSm),
-                color: theme.palette.text.secondary,
-              }}
-            >
-              {noneOn ? (
-                <Box
-                  component='span'
-                  sx={{
-                    color: isDark
-                      ? 'rgba(255,255,255,0.25)'
-                      : 'rgba(0,0,0,0.28)',
-                  }}
-                >
-                  Select at least one cheatsheet
-                </Box>
-              ) : (
-                <>
-                  <Box
-                    component='strong'
-                    sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
-                  >
-                    {selectedSheets.length}
-                  </Box>
-                  {selectedSheets.length === 1 ? ' cheatsheet' : ' cheatsheets'}
-                </>
-              )}
-            </Typography>
-          </Box>
-
-          {/* Buttons */}
-          <Box sx={{ display: 'flex', gap: '8px' }}>
-            <FooterButton onClick={onClose}>Cancel</FooterButton>
-            <FooterButton
-              onClick={onExport}
-              primary
-              disabled={noneOn || exporting}
-            >
-              <Box
-                component='span'
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <UploadIcon size={11} strokeWidth={2.4} />
-                {exporting ? 'Exporting...' : 'Export'}
-              </Box>
-            </FooterButton>
-          </Box>
-        </Box>
+        <ExportFooter
+          selectedCount={selectedSheets.length}
+          noneOn={noneOn}
+          exporting={exporting}
+          onCancel={onClose}
+          onExport={onExport}
+        />
 
         {/* Result modal */}
         {result && (
