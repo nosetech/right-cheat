@@ -11,8 +11,7 @@ import {
   WINDOW_ACTION_FOOTER_HEIGHT,
   WindowActionFooter,
 } from '@/components/molecules/WindowActionFooter'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
-import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { FONT_CODE } from '@/theme/fonts'
 import { CommandLayout } from '@/types/api/CheatSheet'
@@ -132,18 +131,7 @@ export default function EditCommandPage() {
 
   return (
     <>
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-      <WindowTitleBar title={title} />
+      <WindowHeader title={title} />
 
       <Box
         sx={{

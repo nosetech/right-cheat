@@ -11,7 +11,7 @@ import { debug, error as logError } from '@tauri-apps/plugin-log'
 
 import { AlertCircleIcon, CheckIcon, MinusIcon } from '@/components/atoms/icons'
 import { ExportFooter } from '@/components/molecules/ExportFooter'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { FONT_CODE } from '@/theme/fonts'
@@ -405,18 +405,7 @@ export default function ExportPage() {
 
   return (
     <>
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-      <WindowTitleBar title='Export Cheatsheets' />
+      <WindowHeader title='Export Cheatsheets' />
 
       <Box
         sx={{

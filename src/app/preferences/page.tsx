@@ -4,9 +4,8 @@ import { scaledPx } from '@/utils/css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { CheckIcon, ThemedSwitch, ThemeToggle } from '@/components/atoms'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
-import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
 import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
@@ -451,18 +450,7 @@ export default function Page() {
 
   return (
     <>
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-      <WindowTitleBar title='Preferences' />
+      <WindowHeader title='Preferences' />
       <Box
         sx={{ p: '4px 20px 16px', display: 'flex', flexDirection: 'column' }}
       >

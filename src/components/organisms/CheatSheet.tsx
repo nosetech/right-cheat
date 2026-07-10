@@ -27,14 +27,13 @@ import {
 } from '@/components/molecules/SheetSwitchButton'
 import { ShortcutField } from '@/components/molecules/ShortcutField'
 import { ShortcutGroup } from '@/components/molecules/ShortcutGroup'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { RcDialog } from '@/components/organisms/RcDialog'
 import { FOCUS_FALLBACK_ID } from '@/constants/focus'
 import {
   COMMAND_GRID_COL_GAP,
   COMMAND_GRID_ROW_GAP,
   INLINE_GRID_TEMPLATE_COLUMNS,
-  TITLEBAR_HEIGHT,
 } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
@@ -964,21 +963,8 @@ export const CheatSheet = () => {
         }}
       />
 
-      {/* ドラッグ領域 */}
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-
-      {/* タイトルバー */}
-      <WindowTitleBar
+      {/* タイトルバー（ドラッグ領域込み） */}
+      <WindowHeader
         title={selectCheatSheet || 'RightCheat'}
         rightControls={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

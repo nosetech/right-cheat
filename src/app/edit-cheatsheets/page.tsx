@@ -6,7 +6,7 @@ import { alpha, useTheme } from '@mui/material/styles'
 
 import { PlusIcon } from '@/components/atoms/icons'
 import { EditCheatsheetsFooter } from '@/components/molecules/EditCheatsheetsFooter'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { EditRow } from '@/components/organisms/edit-cheatsheets'
 import { RcDialog } from '@/components/organisms/RcDialog'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
@@ -65,18 +65,7 @@ export default function EditCheatsheetsPage() {
 
   return (
     <>
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-      <WindowTitleBar title='Edit Cheatsheets' />
+      <WindowHeader title='Edit Cheatsheets' />
 
       <Box
         sx={{
