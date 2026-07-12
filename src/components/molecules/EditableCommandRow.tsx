@@ -5,6 +5,7 @@ import { useTheme } from '@mui/material/styles'
 
 import { TruncatedText } from '@/components/atoms/TruncatedText'
 import { EditableRowBase } from '@/components/molecules/EditableRowBase'
+import { FONT_CODE } from '@/theme/fonts'
 import { CommandLayout } from '@/types/api/CheatSheet'
 import { EditCommandData } from '@/types/edit/EditBlock'
 
@@ -44,10 +45,8 @@ export function EditableCommandRow({
   const commandBox = (
     <Box
       sx={{
-        background: isDark
-          ? 'rgba(255,255,255,0.055)'
-          : 'rgba(255,255,255,0.48)',
-        border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+        background: theme.palette.ui.fieldRowBg,
+        border: `0.5px solid ${theme.palette.ui.borderSubtle}`,
         borderRadius: 1,
         boxShadow: isDark ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.55)',
         padding: '5px 8px',
@@ -58,7 +57,7 @@ export function EditableCommandRow({
       <Typography
         component='pre'
         sx={{
-          fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+          fontFamily: FONT_CODE,
           fontSize: isMultiLine
             ? scaledPx(10)
             : scaledPx(theme.custom.fontSize.caption),

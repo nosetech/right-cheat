@@ -9,9 +9,12 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { save } from '@tauri-apps/plugin-dialog'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
-import { FooterButton } from '@/components/molecules/FooterButton'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { AlertCircleIcon, CheckIcon, MinusIcon } from '@/components/atoms/icons'
+import { ExportFooter } from '@/components/molecules/ExportFooter'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
+import { FONT_CODE } from '@/theme/fonts'
 import { CheatSheetAPI, CheatSheetTitleData } from '@/types/api/CheatSheet'
 
 type ResultKind = 'success' | 'error'
@@ -83,30 +86,17 @@ function ExportCheckbox({
       }}
     >
       {indeterminate ? (
-        <svg
-          width={Math.round(size * 0.62)}
-          height={Math.round(size * 0.62)}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='#fff'
-          strokeWidth='3.5'
-          strokeLinecap='round'
-        >
-          <line x1='5' y1='12' x2='19' y2='12' />
-        </svg>
+        <MinusIcon
+          size={Math.round(size * 0.62)}
+          strokeWidth={3.5}
+          color={theme.palette.onAccent}
+        />
       ) : checked ? (
-        <svg
-          width={Math.round(size * 0.7)}
-          height={Math.round(size * 0.7)}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='#fff'
-          strokeWidth='3.2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-        >
-          <polyline points='20 6 9 17 4 12' />
-        </svg>
+        <CheckIcon
+          size={Math.round(size * 0.7)}
+          strokeWidth={3.2}
+          color={theme.palette.onAccent}
+        />
       ) : null}
     </Box>
   )
@@ -243,32 +233,17 @@ function ResultModal({
           }}
         >
           {ok ? (
-            <svg
-              width='22'
-              height='22'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke={isDark ? '#3ddc97' : '#1a9a5c'}
-              strokeWidth='2.6'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-            >
-              <polyline points='20 6 9 17 4 12' />
-            </svg>
+            <CheckIcon
+              size={22}
+              strokeWidth={2.6}
+              color={theme.palette.positive.main}
+            />
           ) : (
-            <svg
-              width='22'
-              height='22'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='#ff6b6b'
-              strokeWidth='2.4'
-              strokeLinecap='round'
-            >
-              <circle cx='12' cy='12' r='10' />
-              <line x1='12' y1='8' x2='12' y2='13' />
-              <line x1='12' y1='16.5' x2='12.01' y2='16.5' />
-            </svg>
+            <AlertCircleIcon
+              size={22}
+              strokeWidth={2.4}
+              color={theme.palette.danger.text}
+            />
           )}
         </Box>
 
@@ -298,7 +273,7 @@ function ResultModal({
             </Typography>
             <Box
               sx={{
-                fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                fontFamily: FONT_CODE,
                 fontSize: scaledPx(theme.custom.fontSize.hint),
                 color: theme.palette.text.primary,
                 background: isDark ? 'rgba(0,0,0,0.30)' : 'rgba(0,0,0,0.04)',
@@ -324,7 +299,7 @@ function ResultModal({
           sx={{
             marginTop: '4px',
             background: accentSolid,
-            color: '#fff',
+            color: theme.palette.onAccent,
             border: 'none',
             borderRadius: '7px',
             padding: '6px 22px',
@@ -378,6 +353,11 @@ export default function ExportPage() {
     })()
   }, [])
 
+  // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
+  useWindowCloseShortcuts({
+    onCancel: () => void getCurrentWindow().close(),
+  })
+
   const toggleAll = useCallback(() => {
     const next = !allOn
     setSheets((prev) => prev.map((s) => ({ ...s, checked: next })))
@@ -422,22 +402,10 @@ export default function ExportPage() {
   const panelBorder = isDark
     ? 'rgba(255,255,255,0.10)'
     : 'rgba(255,255,255,0.75)'
-  const divider = theme.palette.divider
 
   return (
     <>
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-      <WindowTitleBar title='Export Cheatsheets' />
+      <WindowHeader title='Export Cheatsheets' />
 
       <Box
         sx={{
@@ -502,7 +470,7 @@ export default function ExportPage() {
           {/* count pill */}
           <Box
             sx={{
-              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+              fontFamily: FONT_CODE,
               fontSize: scaledPx(10),
               color: noneOn ? theme.palette.text.disabled : accentSolid,
               background: noneOn
@@ -573,108 +541,13 @@ export default function ExportPage() {
         </Box>
 
         {/* Footer */}
-        <Box
-          sx={{
-            flexShrink: 0,
-            borderTop: `0.5px solid ${divider}`,
-            padding: '10px 16px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px',
-            background: isDark
-              ? 'rgba(255,255,255,0.018)'
-              : 'rgba(255,255,255,0.30)',
-          }}
-        >
-          {/* Summary text */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              minHeight: '18px',
-            }}
-          >
-            <svg
-              width='12'
-              height='12'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2'
-              style={{
-                color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.28)',
-                flexShrink: 0,
-              }}
-            >
-              <path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' />
-              <polyline points='14 2 14 8 20 8' />
-            </svg>
-            <Typography
-              sx={{
-                fontSize: scaledPx(theme.custom.fontSize.captionSm),
-                color: theme.palette.text.secondary,
-              }}
-            >
-              {noneOn ? (
-                <Box
-                  component='span'
-                  sx={{
-                    color: isDark
-                      ? 'rgba(255,255,255,0.25)'
-                      : 'rgba(0,0,0,0.28)',
-                  }}
-                >
-                  Select at least one cheatsheet
-                </Box>
-              ) : (
-                <>
-                  <Box
-                    component='strong'
-                    sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
-                  >
-                    {selectedSheets.length}
-                  </Box>
-                  {selectedSheets.length === 1 ? ' cheatsheet' : ' cheatsheets'}
-                </>
-              )}
-            </Typography>
-          </Box>
-
-          {/* Buttons */}
-          <Box sx={{ display: 'flex', gap: '8px' }}>
-            <FooterButton onClick={onClose}>Cancel</FooterButton>
-            <FooterButton
-              onClick={onExport}
-              primary
-              disabled={noneOn || exporting}
-            >
-              <Box
-                component='span'
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <svg
-                  width='11'
-                  height='11'
-                  viewBox='0 0 24 24'
-                  fill='none'
-                  stroke='currentColor'
-                  strokeWidth='2.4'
-                >
-                  <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
-                  <polyline points='17 8 12 3 7 8' />
-                  <line x1='12' y1='3' x2='12' y2='15' />
-                </svg>
-                {exporting ? 'Exporting...' : 'Export'}
-              </Box>
-            </FooterButton>
-          </Box>
-        </Box>
+        <ExportFooter
+          selectedCount={selectedSheets.length}
+          noneOn={noneOn}
+          exporting={exporting}
+          onCancel={onClose}
+          onExport={onExport}
+        />
 
         {/* Result modal */}
         {result && (

@@ -4,6 +4,7 @@ import { Box, Stack, StackProps, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
 import { TruncatedText } from '@/components/atoms/TruncatedText'
+import { FONT_CODE } from '@/theme/fonts'
 
 export type ShortcutFieldProps = StackProps & {
   description: string
@@ -13,17 +14,14 @@ export type ShortcutFieldProps = StackProps & {
 export const ShortcutField = (props: ShortcutFieldProps) => {
   const { description, command, ...remainProps } = props
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
 
   return (
     <Stack direction='row' spacing={1} alignItems='center' {...remainProps}>
       <Box
         sx={{
           flexShrink: 0,
-          background: isDark
-            ? 'rgba(255,255,255,0.055)'
-            : 'rgba(255,255,255,0.48)',
-          border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          background: theme.palette.ui.fieldRowBg,
+          border: `0.5px solid ${theme.palette.ui.borderSubtle}`,
           borderRadius: 1,
           px: 1,
           py: '3px',
@@ -31,7 +29,7 @@ export const ShortcutField = (props: ShortcutFieldProps) => {
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+            fontFamily: FONT_CODE,
             fontSize: scaledPx(theme.custom.fontSize.caption),
             color: theme.palette.text.primary,
             whiteSpace: 'nowrap',

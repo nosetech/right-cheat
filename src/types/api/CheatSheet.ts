@@ -17,12 +17,14 @@ export class CheatSheetAPI {
   static readonly SAVE_CHEAT_SHEET_COMMANDLIST = 'save_cheat_sheet_commandlist'
 }
 
+export type SheetType = 'command' | 'application' | 'shortcut'
+
 export type CheatSheetSummary = {
   id: number
   title: string
   sort_order: number
-  sheet_type: 'command' | 'application' | 'shortcut' | null
-  layout: 'inline' | 'stacked' | 'command_only' | null
+  sheet_type: SheetType | null
+  layout: CommandLayout | null
   command_count: number
 }
 
@@ -30,8 +32,8 @@ export type CheatSheetUpdate = {
   id: number | null
   title: string
   sort_order: number
-  sheet_type: 'command' | 'application' | 'shortcut' | null
-  layout: 'inline' | 'stacked' | 'command_only' | null
+  sheet_type: SheetType | null
+  layout: CommandLayout | null
 }
 
 export type ImportSummary = {
@@ -74,7 +76,7 @@ export const isCommandGroupData = (
 ): item is CommandGroupData => 'group' in item
 
 export type CheatSheetData = {
-  type?: 'command' | 'shortcut' | 'application'
+  type?: SheetType
   title: string
   layout?: CommandLayout
   commandlist: CommandListItem[]

@@ -7,19 +7,19 @@ import { useTheme } from '@mui/material/styles'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 
 import { Event } from '@/common'
-import { FooterButton } from '@/components/molecules/FooterButton'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
-import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import {
+  WINDOW_ACTION_FOOTER_HEIGHT,
+  WindowActionFooter,
+} from '@/components/molecules/WindowActionFooter'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import {
   EditGroupInitPayload,
   EditGroupSavePayload,
 } from '@/types/edit/EditWindow'
 
-const FOOTER_HEIGHT = 60
-
 export default function EditGroupPage() {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
 
   const [initPayload, setInitPayload] = useState<EditGroupInitPayload | null>(
     null,
@@ -64,19 +64,12 @@ export default function EditGroupPage() {
     await getCurrentWebviewWindow().destroy()
   }
 
-  useEffect(() => {
-    if (!initPayload) return
-    const h = (e: KeyboardEvent) => {
-      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
-      if (e.key === 'Escape' && !e.isComposing) {
-        // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
-        e.preventDefault()
-        void getCurrentWebviewWindow().destroy()
-      }
-    }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [initPayload])
+  // Cmd+S で Save / Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
+  useWindowCloseShortcuts({
+    enabled: !!initPayload,
+    onSave: () => void handleSave(),
+    onCancel: () => void handleCancel(),
+  })
 
   if (!initPayload) {
     return null
@@ -84,24 +77,13 @@ export default function EditGroupPage() {
 
   return (
     <>
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-      <WindowTitleBar title={title} />
+      <WindowHeader title={title} />
 
       <Box
         sx={{
           px: '18px',
           pt: '12px',
-          pb: `${FOOTER_HEIGHT + 12}px`,
+          pb: `${WINDOW_ACTION_FOOTER_HEIGHT + 12}px`,
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
@@ -128,28 +110,11 @@ export default function EditGroupPage() {
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: `${FOOTER_HEIGHT}px`,
-          p: '10px 16px',
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '8px',
-          background: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.30)',
-          borderTop: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-        }}
-      >
-        <FooterButton onClick={handleCancel}>Cancel</FooterButton>
-        <FooterButton primary disabled={!canSave} onClick={handleSave}>
-          Save
-        </FooterButton>
-      </Box>
+      <WindowActionFooter
+        onCancel={handleCancel}
+        onSave={handleSave}
+        canSave={canSave}
+      />
     </>
   )
 }

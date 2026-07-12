@@ -2,19 +2,22 @@
 import { scaledPx } from '@/utils/css'
 import { forwardRef, useState } from 'react'
 
-import { Box, Stack, StackProps, Typography } from '@mui/material'
+import { Box, BoxProps, Stack, Typography } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { error as logError } from '@tauri-apps/plugin-log'
 
+import { CheckIcon, CopyIcon, PlayIcon } from '@/components/atoms/icons'
 import { TruncatedText } from '@/components/atoms/TruncatedText'
+import { COMMAND_HINT_WIDTH } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useClipboard } from '@/hooks/useClipboard'
+import { FONT_CODE } from '@/theme/fonts'
 import { CheatSheetAPI, CommandLayout } from '@/types/api/CheatSheet'
 
-const NUMBER_HINT_WIDTH = '14px'
+const NUMBER_HINT_WIDTH = COMMAND_HINT_WIDTH
 
-export type CommandFieldProps = StackProps & {
+export type CommandFieldProps = BoxProps & {
   description?: string
   command: string
   numberHint?: string
@@ -127,7 +130,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         {numberHint && (
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+              fontFamily: FONT_CODE,
               fontSize: scaledPx(theme.custom.fontSize.numberHint),
               color: numberHintColor,
               transition: 'color 0.14s',
@@ -170,7 +173,7 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+            fontFamily: FONT_CODE,
             fontSize: isMultiLine
               ? scaledPx(theme.custom.fontSize.commandMultiline)
               : scaledPx(theme.custom.fontSize.caption),
@@ -195,39 +198,11 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           }}
         >
           {hasDone ? (
-            <svg
-              width='11'
-              height='11'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2.5'
-            >
-              <polyline points='20 6 9 17 4 12' />
-            </svg>
+            <CheckIcon size={11} strokeWidth={2.5} />
           ) : mode === 'execute' ? (
-            <svg
-              width='11'
-              height='11'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2'
-            >
-              <polygon points='5 3 19 12 5 21 5 3' />
-            </svg>
+            <PlayIcon size={11} strokeWidth={2} />
           ) : (
-            <svg
-              width='11'
-              height='11'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2'
-            >
-              <rect x='9' y='9' width='13' height='13' rx='2' />
-              <path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' />
-            </svg>
+            <CopyIcon size={11} strokeWidth={2} />
           )}
         </Box>
       </Box>
@@ -235,7 +210,8 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
 
     if (layout === 'stacked' && description) {
       return (
-        <Stack spacing={0.25} {...remainProps}>
+        // grid コンテナ内では 1 行分（全列）を占有する。内部は従来どおり縦積み。
+        <Stack spacing={0.25} {...remainProps} sx={{ gridColumn: '1 / -1' }}>
           <Stack direction='row' spacing={0.75} alignItems='baseline'>
             {numberHintBox}
             <TruncatedText
@@ -260,18 +236,33 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
     }
 
     return (
-      <Stack
-        direction='row'
-        spacing={0.75}
-        alignItems='flex-start'
+      // 親 grid の列トラック（番号ヒント / コマンド / 説明）を subgrid で継承し、
+      // 全行でコマンド列・説明列の幅を揃える。
+      <Box
         {...remainProps}
+        sx={{
+          display: 'grid',
+          gridColumn: '1 / -1',
+          gridTemplateColumns: 'subgrid',
+          alignItems: 'start',
+        }}
       >
         {numberHintBox}
         {commandBox}
         {layout !== 'command_only' && description && (
-          <TruncatedText text={description} color='text.secondary' />
+          <TruncatedText
+            text={description}
+            sx={{
+              minWidth: 0,
+              fontSize: scaledPx(theme.custom.fontSize.captionSm),
+              color: isFocused
+                ? theme.palette.text.primary
+                : theme.palette.text.secondary,
+              transition: 'color 0.14s',
+            }}
+          />
         )}
-      </Stack>
+      </Box>
     )
   },
 )

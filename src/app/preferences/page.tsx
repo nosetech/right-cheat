@@ -3,19 +3,18 @@
 import { scaledPx } from '@/utils/css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { ThemedSwitch, ThemeToggle } from '@/components/atoms'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
+import { CheckIcon, ThemedSwitch, ThemeToggle } from '@/components/atoms'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
-import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { DbSettings, DbSettingsAPI } from '@/types/api/DbSettings'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
 import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined'
@@ -23,7 +22,6 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -35,6 +33,7 @@ import {
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
@@ -153,6 +152,13 @@ export default function Page() {
     [resolveDialog],
   )
   // ────────────────────────────────────────────────────────────
+
+  // Esc でウィンドウを閉じる（この画面に Cancel ボタンはない）。
+  // ダイアログ表示中は MUI Dialog が Esc を処理して stopPropagation するため、
+  // window までは伝播せずウィンドウは閉じない。
+  useWindowCloseShortcuts({
+    onCancel: () => void getCurrentWindow().close(),
+  })
 
   useEffect(() => {
     ;(async () => {
@@ -444,18 +450,7 @@ export default function Page() {
 
   return (
     <>
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-      <WindowTitleBar title='Preferences' />
+      <WindowHeader title='Preferences' />
       <Box
         sx={{ p: '4px 20px 16px', display: 'flex', flexDirection: 'column' }}
       >
@@ -685,23 +680,6 @@ export default function Page() {
                   >
                     CheatSheet DB
                   </Typography>
-                  <Chip
-                    label='Restart Required'
-                    size='small'
-                    sx={{
-                      height: 'auto',
-                      py: '2px',
-                      fontSize: scaledPx(theme.custom.fontSize.numberHint),
-                      fontFamily: 'monospace',
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                      borderRadius: '4px',
-                      backgroundColor: theme.palette.amber.background,
-                      border: `0.5px solid ${theme.palette.amber.border}`,
-                      color: theme.palette.amber.text,
-                      '& .MuiChip-label': { px: '6px' },
-                    }}
-                  />
                 </Box>
                 <Box
                   sx={{
@@ -794,23 +772,6 @@ export default function Page() {
                     >
                       Log
                     </Typography>
-                    <Chip
-                      label='Restart Required'
-                      size='small'
-                      sx={{
-                        height: 'auto',
-                        py: '2px',
-                        fontSize: scaledPx(theme.custom.fontSize.numberHint),
-                        fontFamily: 'monospace',
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        borderRadius: '4px',
-                        backgroundColor: theme.palette.amber.background,
-                        border: `0.5px solid ${theme.palette.amber.border}`,
-                        color: theme.palette.amber.text,
-                        '& .MuiChip-label': { px: '6px' },
-                      }}
-                    />
                   </Box>
                   <Box sx={{ display: 'flex', gap: '4px' }}>
                     <Tooltip title='Open latest log file'>
@@ -856,7 +817,7 @@ export default function Page() {
                           },
                         }}
                       >
-                        <EditOutlinedIcon sx={{ fontSize: '13px' }} />
+                        <SettingsOutlinedIcon sx={{ fontSize: '13px' }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -1238,16 +1199,7 @@ function ShortcutCheckbox({
         }}
       >
         {checked && (
-          <svg
-            width='11'
-            height='11'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='#fff'
-            strokeWidth='3'
-          >
-            <polyline points='20 6 9 17 4 12' />
-          </svg>
+          <CheckIcon size={11} strokeWidth={3} color={theme.palette.onAccent} />
         )}
       </Box>
       <Keycap active={checked}>{symbol}</Keycap>
@@ -1607,9 +1559,7 @@ function ShortcutSettingsDialog({
       <DialogActions
         sx={{
           padding: '12px 16px 14px',
-          backgroundColor: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.30)',
+          backgroundColor: theme.palette.ui.footerBg,
           borderTop: `0.5px solid ${theme.palette.divider}`,
         }}
       >
@@ -1648,10 +1598,10 @@ function ShortcutSettingsDialog({
             textTransform: 'none',
             backgroundColor: theme.palette.accent.main,
             border: '0.5px solid transparent',
-            color: '#fff',
+            color: theme.palette.onAccent,
             boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
             '&:hover': {
-              backgroundColor: isDark ? '#7cc0ff' : '#1a82eb',
+              backgroundColor: theme.palette.accentHover,
             },
             '&.Mui-disabled': {
               backgroundColor: isDark
@@ -1910,9 +1860,7 @@ function LogSettingsDialog({
       <DialogActions
         sx={{
           padding: '12px 16px 14px',
-          backgroundColor: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.30)',
+          backgroundColor: theme.palette.ui.footerBg,
           borderTop: `0.5px solid ${theme.palette.divider}`,
         }}
       >
@@ -1951,10 +1899,10 @@ function LogSettingsDialog({
             textTransform: 'none',
             backgroundColor: theme.palette.accent.main,
             border: '0.5px solid transparent',
-            color: '#fff',
+            color: theme.palette.onAccent,
             boxShadow: !isDark ? 'inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
             '&:hover': {
-              backgroundColor: isDark ? '#7cc0ff' : '#1a82eb',
+              backgroundColor: theme.palette.accentHover,
             },
             '&.Mui-disabled': {
               backgroundColor: isDark

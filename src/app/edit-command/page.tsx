@@ -1,15 +1,19 @@
 'use client'
 import { scaledPx } from '@/utils/css'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Box, MenuItem, Select, TextField } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 
 import { Event } from '@/common'
-import { FooterButton } from '@/components/molecules/FooterButton'
-import { WindowTitleBar } from '@/components/molecules/WindowTitleBar'
-import { TITLEBAR_HEIGHT } from '@/constants/layout'
+import {
+  WINDOW_ACTION_FOOTER_HEIGHT,
+  WindowActionFooter,
+} from '@/components/molecules/WindowActionFooter'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
+import { FONT_CODE } from '@/theme/fonts'
 import { CommandLayout } from '@/types/api/CheatSheet'
 import {
   EditCommandInitPayload,
@@ -23,11 +27,8 @@ const LAYOUT_OPTIONS: { value: string; label: string }[] = [
   { value: 'command_only', label: 'command_only' },
 ]
 
-const FOOTER_HEIGHT = 60
-
 export default function EditCommandPage() {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
 
   const [initPayload, setInitPayload] = useState<EditCommandInitPayload | null>(
     null,
@@ -51,18 +52,18 @@ export default function EditCommandPage() {
           setInitPayload(payload)
           setGroupEditId(payload.initialGroupEditId ?? '')
           setDescription(payload.item?.description ?? '')
-          if (payload.kind === 'shortcut') {
-            setKey(payload.item?.command ?? '')
-            setCommandText('')
-          } else {
+          // command と application は現状同じ処理。
+          // 将来 command / application で処理を分ける可能性があるため分岐を明示しておく
+          if (payload.kind === 'command' || payload.kind === 'application') {
             setCommandText(payload.item?.command ?? '')
             setKey('')
+            setLayout(payload.item?.layout ?? 'inherit')
+          } else {
+            // shortcut
+            setKey(payload.item?.command ?? '')
+            setCommandText('')
+            setLayout('inherit')
           }
-          setLayout(
-            payload.kind !== 'shortcut' && payload.item?.layout
-              ? payload.item.layout
-              : 'inherit',
-          )
           setTimeout(() => descRef.current?.focus(), 80)
         },
       )
@@ -88,7 +89,7 @@ export default function EditCommandPage() {
       ? 'Add Command'
       : 'Edit Command'
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave || !initPayload) return
     const win = getCurrentWebviewWindow()
     const payload: EditCommandSavePayload = {
@@ -103,24 +104,26 @@ export default function EditCommandPage() {
     }
     await win.emitTo('main', Event.EDIT_COMMAND_SAVE, payload)
     await win.destroy()
-  }
+  }, [
+    canSave,
+    initPayload,
+    isNew,
+    description,
+    commandText,
+    key,
+    layout,
+    groupEditId,
+  ])
 
   const handleCancel = async () => {
     await getCurrentWebviewWindow().destroy()
   }
 
-  // Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      // IME 変換中の Esc（変換キャンセル）ではウィンドウを閉じない
-      if (e.key === 'Escape' && !e.isComposing) {
-        e.preventDefault()
-        void getCurrentWebviewWindow().destroy()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  // Cmd+S で Save / Esc で Cancel と同じ動作（ウィンドウを閉じる）をする
+  useWindowCloseShortcuts({
+    onSave: () => void handleSave(),
+    onCancel: () => void handleCancel(),
+  })
 
   if (!initPayload) {
     return null
@@ -128,24 +131,13 @@ export default function EditCommandPage() {
 
   return (
     <>
-      <Box
-        data-tauri-drag-region
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: `${TITLEBAR_HEIGHT}px`,
-          zIndex: 999,
-        }}
-      />
-      <WindowTitleBar title={title} />
+      <WindowHeader title={title} />
 
       <Box
         sx={{
           px: '18px',
           pt: '12px',
-          pb: `${FOOTER_HEIGHT + 12}px`,
+          pb: `${WINDOW_ACTION_FOOTER_HEIGHT + 12}px`,
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
@@ -216,7 +208,7 @@ export default function EditCommandPage() {
                 fullWidth
                 sx={{
                   '& textarea': {
-                    fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                    fontFamily: FONT_CODE,
                     fontSize: scaledPx(theme.custom.fontSize.body),
                   },
                 }}
@@ -240,28 +232,11 @@ export default function EditCommandPage() {
         )}
       </Box>
 
-      <Box
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: `${FOOTER_HEIGHT}px`,
-          p: '10px 16px',
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '8px',
-          background: isDark
-            ? 'rgba(255,255,255,0.018)'
-            : 'rgba(255,255,255,0.30)',
-          borderTop: `0.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-        }}
-      >
-        <FooterButton onClick={handleCancel}>Cancel</FooterButton>
-        <FooterButton primary disabled={!canSave} onClick={handleSave}>
-          Save
-        </FooterButton>
-      </Box>
+      <WindowActionFooter
+        onCancel={handleCancel}
+        onSave={handleSave}
+        canSave={canSave}
+      />
     </>
   )
 }

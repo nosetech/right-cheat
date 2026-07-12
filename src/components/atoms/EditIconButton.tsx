@@ -1,6 +1,6 @@
 'use client'
 import { Box } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { useState } from 'react'
 
 type Props = {
@@ -33,9 +33,7 @@ export function EditIconButton({
       sx={{
         background: hov
           ? danger
-            ? isDark
-              ? 'rgba(255,107,107,0.18)'
-              : 'rgba(211,47,47,0.10)'
+            ? alpha(theme.palette.danger.main, isDark ? 0.18 : 0.1)
             : isDark
               ? 'rgba(255,255,255,0.10)'
               : 'rgba(0,0,0,0.07)'
@@ -46,7 +44,7 @@ export function EditIconButton({
         cursor: 'pointer',
         color: hov
           ? danger
-            ? '#ff6b6b'
+            ? theme.palette.danger.text
             : theme.palette.text.primary
           : theme.palette.text.secondary,
         display: 'flex',

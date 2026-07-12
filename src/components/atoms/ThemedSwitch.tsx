@@ -67,7 +67,7 @@ export function ThemedSwitch({
           width: 16,
           height: 16,
           borderRadius: '50%',
-          backgroundColor: '#fff',
+          backgroundColor: theme.palette.onAccent,
           position: 'absolute',
           top: '2px',
           left: '2px',

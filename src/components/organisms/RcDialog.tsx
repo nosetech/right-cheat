@@ -11,10 +11,10 @@ import React from 'react'
 
 export type DialogVariant = 'information' | 'warning' | 'error' | 'confirmation'
 
+// 各バリアントの色（main/hover）は theme.palette.status で一元管理する。
+// ここではアイコンと背景・ボーダーの不透明度のみを定義する。
 type VariantDef = {
   Icon: React.ComponentType<SvgIconProps>
-  colorDark: string
-  colorLight: string
   bgAlpha: number
   borderAlpha: number
 }
@@ -22,29 +22,21 @@ type VariantDef = {
 const VARIANT_DEFS: Record<DialogVariant, VariantDef> = {
   information: {
     Icon: InfoOutlinedIcon,
-    colorDark: '#64b4ff',
-    colorLight: '#0071e3',
     bgAlpha: 0.13,
     borderAlpha: 0.3,
   },
   warning: {
     Icon: WarningAmberIcon,
-    colorDark: '#ffb74d',
-    colorLight: '#ed6c02',
     bgAlpha: 0.13,
     borderAlpha: 0.3,
   },
   error: {
     Icon: ErrorOutlineIcon,
-    colorDark: '#ff6b6b',
-    colorLight: '#d32f2f',
     bgAlpha: 0.12,
     borderAlpha: 0.35,
   },
   confirmation: {
     Icon: HelpOutlineIcon,
-    colorDark: '#c084fc',
-    colorLight: '#7c3aed',
     bgAlpha: 0.13,
     borderAlpha: 0.3,
   },
@@ -60,16 +52,7 @@ type ActionButtonProps = {
 
 function ActionButton({ variant, onClick, children }: ActionButtonProps) {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
-  const def = VARIANT_DEFS[variant]
-  const baseColor = isDark ? def.colorDark : def.colorLight
-
-  const hoverColor: Record<DialogVariant, string> = {
-    information: isDark ? '#7cc0ff' : '#1a82eb',
-    warning: isDark ? '#ffc77a' : '#f57c00',
-    error: isDark ? '#e85555' : '#b71c1c',
-    confirmation: isDark ? '#d8b4fe' : '#6d28d9',
-  }
+  const baseColor = theme.palette.status[variant].main
 
   return (
     <Box
@@ -78,7 +61,7 @@ function ActionButton({ variant, onClick, children }: ActionButtonProps) {
       onClick={onClick}
       sx={{
         background: baseColor,
-        color: '#fff',
+        color: theme.palette.onAccent,
         border: '0.5px solid transparent',
         borderRadius: '7px',
         padding: '5px 16px',
@@ -90,7 +73,7 @@ function ActionButton({ variant, onClick, children }: ActionButtonProps) {
         transition: 'all 0.14s',
         minWidth: '78px',
         '&:hover': {
-          background: hoverColor[variant],
+          background: theme.palette.status[variant].hover,
           boxShadow:
             variant === 'error'
               ? '0 2px 10px rgba(255,80,80,0.30)'
@@ -155,7 +138,7 @@ function DialogIcon({ variant }: DialogIconProps) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
   const def = VARIANT_DEFS[variant]
-  const color = isDark ? def.colorDark : def.colorLight
+  const color = theme.palette.status[variant].main
   const { Icon } = def
 
   return (

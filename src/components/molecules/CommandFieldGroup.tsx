@@ -1,10 +1,15 @@
 'use client'
 import React from 'react'
 
-import { Box, Stack, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
 import { CommandField } from '@/components/molecules/CommandField'
+import {
+  COMMAND_GRID_COL_GAP,
+  COMMAND_GRID_ROW_GAP,
+  INLINE_GRID_TEMPLATE_COLUMNS,
+} from '@/constants/layout'
 import { CommandData, CommandLayout } from '@/types/api/CheatSheet'
 
 type CommandFieldGroupProps = {
@@ -37,7 +42,11 @@ export const CommandFieldGroup = ({
         borderRadius: 1,
         pt: 2,
         pb: 1,
-        px: 1,
+        // 左右パディングと同量のネガティブマージンで枠線だけを外側へ押し出し、
+        // 中身（番号・コマンド・説明）はコンテナ端(x:0)から開始させる。
+        // これによりグループの有無に関わらず番号・コマンド・説明の横位置が揃う。
+        px: 1.25,
+        mx: -1.25,
         mt: 1,
       }}
     >
@@ -55,7 +64,16 @@ export const CommandFieldGroup = ({
       >
         {group}
       </Typography>
-      <Stack spacing={1} sx={{ minWidth: 0, overflow: 'hidden' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: INLINE_GRID_TEMPLATE_COLUMNS,
+          columnGap: COMMAND_GRID_COL_GAP,
+          rowGap: COMMAND_GRID_ROW_GAP,
+          minWidth: 0,
+          overflow: 'hidden',
+        }}
+      >
         {commandlist.map((item, i) => {
           const flatIndex = startIndex + i
           return (
@@ -66,16 +84,14 @@ export const CommandFieldGroup = ({
               }}
               description={item.description}
               command={item.command}
-              numberHint={
-                flatIndex < 9 ? (flatIndex + 1).toString() : undefined
-              }
+              numberHint={(flatIndex + 1).toString()}
               mode={mode}
               layout={item.layout ?? cheatSheetLayout ?? 'inline'}
               editMode={editMode}
             />
           )
         })}
-      </Stack>
+      </Box>
     </Box>
   )
 }
