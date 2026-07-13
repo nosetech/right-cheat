@@ -22,8 +22,29 @@ pub fn apply_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     if version < 2 {
         migrate_v2(conn)?;
     }
+    if version < 3 {
+        migrate_v3(conn)?;
+    }
 
     Ok(())
+}
+
+fn migrate_v3(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS clipboard_history (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            text       TEXT NOT NULL,
+            char_count INTEGER NOT NULL,
+            copied_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_clipboard_history_copied_at
+            ON clipboard_history(copied_at DESC);
+
+        INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('schema_version', '3');
+        ",
+    )
 }
 
 fn migrate_v2(conn: &Connection) -> Result<(), rusqlite::Error> {
