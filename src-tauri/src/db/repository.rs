@@ -691,6 +691,89 @@ pub fn replace_commandlist_by_title(
     }
 }
 
+#[derive(Debug)]
+pub struct ClipboardHistoryRow {
+    pub id: i64,
+    pub text: String,
+    pub char_count: i64,
+    pub copied_at: String,
+}
+
+/// クリップボード履歴を追加する。
+/// 直前（最新）の履歴と同一テキストの場合は INSERT せず、既存行の id を返す（重複排除）。
+pub fn insert_clipboard_history(conn: &Connection, text: &str) -> Result<i64> {
+    let last: Option<(i64, String)> = match conn.query_row(
+        "SELECT id, text FROM clipboard_history ORDER BY copied_at DESC, id DESC LIMIT 1",
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    ) {
+        Ok(row) => Some(row),
+        Err(rusqlite::Error::QueryReturnedNoRows) => None,
+        Err(e) => return Err(e),
+    };
+
+    if let Some((last_id, last_text)) = last {
+        if last_text == text {
+            return Ok(last_id);
+        }
+    }
+
+    let char_count = text.chars().count() as i64;
+    conn.execute(
+        "INSERT INTO clipboard_history (text, char_count) VALUES (?1, ?2)",
+        params![text, char_count],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+/// クリップボード履歴を新しい順に取得する。
+pub fn list_clipboard_history(conn: &Connection, limit: u32) -> Result<Vec<ClipboardHistoryRow>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, text, char_count, copied_at FROM clipboard_history
+         ORDER BY copied_at DESC, id DESC LIMIT ?1",
+    )?;
+    let rows = stmt
+        .query_map(params![limit], |row| {
+            Ok(ClipboardHistoryRow {
+                id: row.get(0)?,
+                text: row.get(1)?,
+                char_count: row.get(2)?,
+                copied_at: row.get(3)?,
+            })
+        })?
+        .collect::<Result<Vec<_>>>()?;
+    Ok(rows)
+}
+
+/// クリップボード履歴を個別削除する。
+pub fn delete_clipboard_history(conn: &Connection, id: i64) -> Result<()> {
+    conn.execute("DELETE FROM clipboard_history WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+/// クリップボード履歴を全削除する。
+pub fn clear_clipboard_history(conn: &Connection) -> Result<()> {
+    conn.execute("DELETE FROM clipboard_history", [])?;
+    Ok(())
+}
+
+/// クリップボード履歴の件数を取得する（上限管理用）。
+pub fn count_clipboard_history(conn: &Connection) -> Result<i64> {
+    let count: i64 = conn.query_row("SELECT COUNT(*) FROM clipboard_history", [], |r| r.get(0))?;
+    Ok(count)
+}
+
+/// 新しい順に keep_count 件を残し、それより古いクリップボード履歴を削除する。
+pub fn delete_oldest_clipboard_history(conn: &Connection, keep_count: u32) -> Result<()> {
+    conn.execute(
+        "DELETE FROM clipboard_history WHERE id NOT IN (
+             SELECT id FROM clipboard_history ORDER BY copied_at DESC, id DESC LIMIT ?1
+         )",
+        params![keep_count],
+    )?;
+    Ok(())
+}
+
 /// タイトルごとのコマンド数を返す。将来のエクスポートUI表示用。
 #[allow(dead_code)]
 pub fn count_commands_for_titles(
