@@ -3,12 +3,25 @@
 import { scaledPx } from '@/utils/css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { CheckIcon, ThemedSwitch, ThemeToggle } from '@/components/atoms'
+import {
+  CheckIcon,
+  StepperInput,
+  ThemedSwitch,
+  ThemeToggle,
+} from '@/components/atoms'
 import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
 import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
+import {
+  CLIPBOARD_CHARS_LOWER_BOUND,
+  CLIPBOARD_CHARS_UPPER_BOUND,
+  CLIPBOARD_ITEMS_LOWER_BOUND,
+  CLIPBOARD_ITEMS_UPPER_BOUND,
+  ClipboardSettings,
+  ClipboardSettingsAPI,
+} from '@/types/api/ClipboardSettings'
 import { DbSettings, DbSettingsAPI } from '@/types/api/DbSettings'
 import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
 import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
@@ -77,6 +90,17 @@ export default function Page() {
     output_path: null,
   })
   const [effectiveDbPath, setEffectiveDbPath] = useState<string>('')
+
+  // Fallback values matching backend defaults (clipboard_settings.rs).
+  // Overwritten immediately by GET_CLIPBOARD_SETTINGS on mount.
+  const [clipboardSettings, setClipboardSettingsState] =
+    useState<ClipboardSettings>({
+      monitoring_enabled: true,
+      min_chars: 2,
+      max_chars: 200,
+      max_items: 100,
+      clear_on_quit: false,
+    })
 
   // ── RcDialog state ──────────────────────────────────────────
   const [rcDialog, setRcDialog] = useState<{
@@ -219,6 +243,22 @@ export default function Page() {
       } catch (err) {
         error(`[preferences] Error getting log settings: ${err}`)
         await showRcError('Preferences', 'Failed to get log settings')
+      }
+
+      try {
+        const settings = await invoke<ClipboardSettings>(
+          ClipboardSettingsAPI.GET_CLIPBOARD_SETTINGS,
+        )
+        debug(
+          `[preferences] invoke '${ClipboardSettingsAPI.GET_CLIPBOARD_SETTINGS}' response=${JSON.stringify(settings)}`,
+        )
+        setClipboardSettingsState(settings)
+      } catch (err) {
+        error(`[preferences] Error getting clipboard settings: ${err}`)
+        await showRcError(
+          'Preferences',
+          'Failed to get clipboard history settings',
+        )
       }
 
       try {
@@ -434,6 +474,51 @@ export default function Page() {
     }
   }
 
+  // 即時保存・即時反映（Saveボタンや確認ダイアログは設けない）。
+  // 失敗時は変更前の値に戻す。
+  const applyClipboardSettings = async (next: ClipboardSettings) => {
+    const prev = clipboardSettings
+    setClipboardSettingsState(next)
+    try {
+      await invoke(ClipboardSettingsAPI.SET_CLIPBOARD_SETTINGS, {
+        settings: next,
+      })
+      debug(
+        `[preferences] invoke '${ClipboardSettingsAPI.SET_CLIPBOARD_SETTINGS}' succeeded: ${JSON.stringify(next)}`,
+      )
+    } catch (err) {
+      error(`[preferences] Error setting clipboard settings: ${err}`)
+      await showRcError(
+        'Preferences',
+        'Failed to save clipboard history settings',
+      )
+      setClipboardSettingsState(prev)
+    }
+  }
+
+  const handleClipboardMonitoringChange = (enabled: boolean) =>
+    applyClipboardSettings({
+      ...clipboardSettings,
+      monitoring_enabled: enabled,
+    })
+
+  const handleMinCharsChange = (value: number) =>
+    // 最小文字数が最大文字数を超えた場合は、最大文字数を同じ値まで引き上げる
+    applyClipboardSettings({
+      ...clipboardSettings,
+      min_chars: value,
+      max_chars: Math.max(clipboardSettings.max_chars, value),
+    })
+
+  const handleMaxCharsChange = (value: number) =>
+    applyClipboardSettings({ ...clipboardSettings, max_chars: value })
+
+  const handleMaxItemsChange = (value: number) =>
+    applyClipboardSettings({ ...clipboardSettings, max_items: value })
+
+  const handleClearOnQuitChange = (enabled: boolean) =>
+    applyClipboardSettings({ ...clipboardSettings, clear_on_quit: enabled })
+
   const handleOpenLatestLog = async () => {
     try {
       await invoke(LogSettingsAPI.OPEN_LATEST_LOG_FILE)
@@ -454,6 +539,176 @@ export default function Page() {
       <Box
         sx={{ p: '4px 20px 16px', display: 'flex', flexDirection: 'column' }}
       >
+        {/* Clipboard History */}
+        <Box sx={{ py: '12px' }}>
+          <Typography
+            sx={{
+              fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+              mb: '10px',
+              color: 'text.primary',
+            }}
+          >
+            Clipboard History
+          </Typography>
+          <Box sx={{ pl: '14px', py: '8px' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+                p: '12px 14px',
+                backgroundColor: theme.palette.glass.panel,
+                border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)'}`,
+                borderRadius: '10px',
+                boxShadow: isDark
+                  ? 'none'
+                  : 'inset 0 1px 0 rgba(255,255,255,0.5)',
+              }}
+            >
+              {/* Row: Clipboard monitoring on/off */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                <PrefRowLabel
+                  label='Clipboard monitoring'
+                  description='Watch the system clipboard and record new copies automatically.'
+                />
+                <ThemedSwitch
+                  checked={clipboardSettings.monitoring_enabled}
+                  onChange={(e) =>
+                    handleClipboardMonitoringChange(e.target.checked)
+                  }
+                />
+              </Box>
+
+              <Divider
+                sx={{
+                  borderBottomWidth: '0.5px',
+                  opacity: clipboardSettings.monitoring_enabled ? 1 : 0.4,
+                  transition: 'opacity 0.14s',
+                }}
+              />
+
+              {/* Rows below are disabled while monitoring is off */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '14px',
+                  opacity: clipboardSettings.monitoring_enabled ? 1 : 0.4,
+                  pointerEvents: clipboardSettings.monitoring_enabled
+                    ? 'auto'
+                    : 'none',
+                  transition: 'opacity 0.14s',
+                }}
+              >
+                {/* Row: Minimum characters to save */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <PrefRowLabel
+                    label='Minimum characters to save'
+                    description='Copies shorter than this are ignored and not saved to history.'
+                  />
+                  <StepperInput
+                    value={clipboardSettings.min_chars}
+                    min={CLIPBOARD_CHARS_LOWER_BOUND}
+                    max={CLIPBOARD_CHARS_UPPER_BOUND}
+                    suffix='chars'
+                    onChange={handleMinCharsChange}
+                  />
+                </Box>
+
+                <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+                {/* Row: Maximum characters to save */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <PrefRowLabel
+                    label='Maximum characters to save'
+                    description={`Copies longer than this are truncated to the first ${clipboardSettings.max_chars} characters.`}
+                  />
+                  <StepperInput
+                    value={clipboardSettings.max_chars}
+                    min={Math.max(
+                      CLIPBOARD_CHARS_LOWER_BOUND,
+                      clipboardSettings.min_chars,
+                    )}
+                    max={CLIPBOARD_CHARS_UPPER_BOUND}
+                    suffix='chars'
+                    onChange={handleMaxCharsChange}
+                  />
+                </Box>
+
+                <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+                {/* Row: Max history entries */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <PrefRowLabel
+                    label='Max history entries'
+                    description='The oldest entries are removed once this limit is reached.'
+                  />
+                  <StepperInput
+                    value={clipboardSettings.max_items}
+                    min={CLIPBOARD_ITEMS_LOWER_BOUND}
+                    max={CLIPBOARD_ITEMS_UPPER_BOUND}
+                    suffix='items'
+                    onChange={handleMaxItemsChange}
+                  />
+                </Box>
+
+                <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+                {/* Row: Clear history on quit */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <PrefRowLabel
+                    label='Clear history on quit'
+                    description='Erase all saved clipboard history when the application exits.'
+                  />
+                  <ThemedSwitch
+                    checked={clipboardSettings.clear_on_quit}
+                    onChange={(e) => handleClearOnQuitChange(e.target.checked)}
+                  />
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
+
         {/* Global Shortcut */}
         <Box sx={{ py: '12px' }}>
           <Typography
@@ -890,6 +1145,48 @@ export default function Page() {
 }
 
 // ─── Sub-components ───────────────────────────────────────────
+
+function PrefRowLabel({
+  label,
+  description,
+}: {
+  label: string
+  description: string
+}) {
+  const theme = useTheme()
+  return (
+    <Box
+      sx={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}
+    >
+      <RowDot />
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '2px',
+          minWidth: 0,
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: scaledPx(theme.custom.fontSize.label),
+            color: 'text.primary',
+          }}
+        >
+          {label}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: scaledPx(theme.custom.fontSize.captionSm),
+            color: 'text.secondary',
+          }}
+        >
+          {description}
+        </Typography>
+      </Box>
+    </Box>
+  )
+}
 
 function RowDot() {
   const theme = useTheme()

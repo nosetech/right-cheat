@@ -1,5 +1,6 @@
 mod application;
 mod cheatsheet;
+mod clipboard_settings;
 mod db_settings;
 mod font_size;
 mod global_shortcut;

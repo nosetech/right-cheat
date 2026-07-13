@@ -24,4 +24,5 @@ pub mod event {
     pub const FONT_SIZE_CHANGED: &str = "font_size_changed";
     pub const WINDOW_FOCUSED: &str = "window_focused";
     pub const OPEN_CHEAT_SHEET: &str = "open_cheat_sheet";
+    pub const CLIPBOARD_SETTINGS_CHANGED: &str = "clipboard_settings_changed";
 }
