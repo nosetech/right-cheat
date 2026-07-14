@@ -11,6 +11,7 @@ import {
 } from '@/components/atoms'
 import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
+import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
 import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
@@ -537,7 +538,20 @@ export default function Page() {
     <>
       <WindowHeader title='Preferences' />
       <Box
-        sx={{ p: '4px 20px 16px', display: 'flex', flexDirection: 'column' }}
+        sx={{
+          p: '4px 20px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          // body ではなくこの Box をスクロールコンテナにして、
+          // チートシート画面（ネイティブスクロールバー）と同じ見た目に合わせる。
+          // ネイティブのサムは背景より暗い黒系半透明のため同じ色を指定する。
+          height: `calc(100vh - ${TITLEBAR_HEIGHT}px)`,
+          overflowY: 'auto',
+          scrollbarWidth: 'thin',
+          scrollbarColor: isDark
+            ? 'rgba(0,0,0,0.55) transparent'
+            : 'rgba(0,0,0,0.5) transparent',
+        }}
       >
         {/* Clipboard History */}
         <Box sx={{ py: '12px' }}>
