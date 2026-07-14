@@ -109,6 +109,7 @@ pub fn run() {
             api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
             api::log_settings::init_log_settings(app.handle())?;
             api::db_settings::init_db_settings(app.handle())?;
+            api::clipboard_settings::init_clipboard_settings(app.handle())?;
 
             if let Some(main_window) = app.get_webview_window("main") {
                 let main_window_clone = main_window.clone();
@@ -161,9 +162,16 @@ pub fn run() {
             api::db_settings::set_db_settings,
             api::db_settings::get_db_path,
             api::db_settings::pick_db_file_path,
+            api::clipboard_settings::get_clipboard_settings,
+            api::clipboard_settings::set_clipboard_settings,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app_handle, event| {
+            if let tauri::RunEvent::Exit = event {
+                api::clipboard_settings::clear_history_on_quit_if_enabled(app_handle);
+            }
+        });
 }
 
 fn menu_configuration<R: tauri::Runtime>(
@@ -336,7 +344,7 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             )
             .title("Preferences")
             .inner_size(580.0, 680.0)
-            .max_inner_size(800.0, 680.0)
+            .max_inner_size(800.0, 1100.0)
             .min_inner_size(580.0, 680.0)
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
