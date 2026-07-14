@@ -111,6 +111,13 @@ pub fn run() {
             api::db_settings::init_db_settings(app.handle())?;
             api::clipboard_settings::init_clipboard_settings(app.handle())?;
 
+            #[cfg(target_os = "macos")]
+            {
+                let monitor = api::clipboard_monitor::ClipboardMonitor::new();
+                monitor.start(app.handle().clone());
+                app.manage(monitor);
+            }
+
             if let Some(main_window) = app.get_webview_window("main") {
                 let main_window_clone = main_window.clone();
                 main_window.on_window_event(move |event| {
@@ -164,11 +171,21 @@ pub fn run() {
             api::db_settings::pick_db_file_path,
             api::clipboard_settings::get_clipboard_settings,
             api::clipboard_settings::set_clipboard_settings,
+            api::clipboard_history::list_clipboard_history,
+            api::clipboard_history::delete_clipboard_history_item,
+            api::clipboard_history::clear_clipboard_history,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app_handle, event| {
             if let tauri::RunEvent::Exit = event {
+                // 終了時全削除の前にモニターを停止し、削除後に新たな履歴が書き込まれないようにする
+                #[cfg(target_os = "macos")]
+                if let Some(monitor) =
+                    app_handle.try_state::<api::clipboard_monitor::ClipboardMonitor>()
+                {
+                    monitor.stop();
+                }
                 api::clipboard_settings::clear_history_on_quit_if_enabled(app_handle);
             }
         });
