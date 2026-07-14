@@ -196,6 +196,9 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[global_shortcut]` - `src-tauri/src/api/global_shortcut.rs`
 - `[visible_on_all_workspaces]` - `src-tauri/src/api/visible_on_all_workspaces.rs`
 - `[application]` - `src-tauri/src/api/application.rs`
+- `[clipboard_settings]` - `src-tauri/src/api/clipboard_settings.rs`
+- `[clipboard_monitor]` - `src-tauri/src/api/clipboard_monitor.rs`
+- `[clipboard_history]` - `src-tauri/src/api/clipboard_history.rs`
 - `[db]` - `src-tauri/src/db/` 配下のモジュール
 
 #### ログレベルの使い分け
