@@ -1,5 +1,8 @@
 pub mod application;
 pub mod cheatsheet;
+pub mod clipboard_history;
+#[cfg(target_os = "macos")]
+pub mod clipboard_monitor;
 pub mod clipboard_settings;
 pub mod db_settings;
 pub mod font_size;
