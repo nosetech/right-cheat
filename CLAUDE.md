@@ -187,6 +187,8 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[useFontSize]` - `src/hooks/useFontSize.ts`
 - `[useWindowSize]` - `src/hooks/useWindowSize.ts`
 - `[useCommandSearch]` - `src/hooks/useCommandSearch.ts`
+- `[useClipboardHistory]` - `src/hooks/useClipboardHistory.ts`
+- `[AddToCheatSheetDialog]` - `src/components/organisms/clipboard-history/AddToCheatSheetDialog.tsx`
 - `[page]` - `src/app/page.tsx`
 - `[search]` - `src/app/search/page.tsx`
 

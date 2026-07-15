@@ -20,6 +20,8 @@ type Props = {
   onToggleEdit: () => void
   isPinned: boolean
   onTogglePin: () => void
+  /** ピン留め非対応のシート（クリップボード履歴など）で無効化する */
+  pinDisabled?: boolean
   sheetSwitchRef: Ref<SheetSwitchButtonHandle>
   pinButtonRef: Ref<HTMLButtonElement>
 }
@@ -36,11 +38,13 @@ export function CheatSheetToolbar({
   onToggleEdit,
   isPinned,
   onTogglePin,
+  pinDisabled = false,
   sheetSwitchRef,
   pinButtonRef,
 }: Props) {
   const theme = useTheme()
   const hasSelection = !!selected
+  const canPin = hasSelection && !editMode && !pinDisabled
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -95,12 +99,12 @@ export function CheatSheetToolbar({
       {/* ピン留めボタン */}
       <IconButton
         ref={pinButtonRef}
-        onClick={hasSelection && !editMode ? onTogglePin : undefined}
+        onClick={canPin ? onTogglePin : undefined}
         size='small'
-        disabled={!hasSelection || editMode}
+        disabled={!canPin}
         title={isPinned ? 'Unpin (p)' : 'Pin (p)'}
         sx={{
-          opacity: hasSelection && !editMode ? 1 : 0.3,
+          opacity: canPin ? 1 : 0.3,
           color: isPinned
             ? theme.palette.accent.main
             : theme.palette.text.disabled,

@@ -11,6 +11,7 @@ import {
   CheatSheetData,
   CheatSheetTitleData,
 } from '@/types/api/CheatSheet'
+import { CLIPBOARD_HISTORY_SHEET_TITLE } from '@/types/api/ClipboardHistory'
 
 type Params = {
   editModeRef: RefObject<boolean>
@@ -69,7 +70,12 @@ export function useCheatSheetData({ editModeRef }: Params) {
 
   useEffect(() => {
     ;(async () => {
-      if (selectCheatSheet !== '') {
+      // クリップボード履歴は DB 上のチートシートではない擬似シートのため
+      // チートシートデータの取得は行わない
+      if (
+        selectCheatSheet !== '' &&
+        selectCheatSheet !== CLIPBOARD_HISTORY_SHEET_TITLE
+      ) {
         const data = await loadCheatSheetData(selectCheatSheet)
         setCheatSheetData(data)
       } else {

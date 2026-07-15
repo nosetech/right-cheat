@@ -3,11 +3,12 @@
 import { Alert, Snackbar } from '@mui/material'
 import { createContext, useCallback, useContext, useState } from 'react'
 
-type Severity = 'error' | 'warning'
+type Severity = 'error' | 'warning' | 'success'
 
 interface NotificationContextValue {
   showError: (message: string) => void
   showWarning: (message: string) => void
+  showSuccess: (message: string) => void
 }
 
 const NotificationContext = createContext<NotificationContextValue | null>(null)
@@ -37,12 +38,18 @@ export function NotificationProvider({
     setNotification({ open: true, message, severity: 'warning' })
   }, [])
 
+  const showSuccess = useCallback((message: string) => {
+    setNotification({ open: true, message, severity: 'success' })
+  }, [])
+
   const handleClose = useCallback(() => {
     setNotification((prev) => ({ ...prev, open: false }))
   }, [])
 
   return (
-    <NotificationContext.Provider value={{ showError, showWarning }}>
+    <NotificationContext.Provider
+      value={{ showError, showWarning, showSuccess }}
+    >
       {children}
       <Snackbar
         open={notification.open}
