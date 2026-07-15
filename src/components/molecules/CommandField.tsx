@@ -3,16 +3,22 @@ import { scaledPx } from '@/utils/css'
 import { forwardRef, useState } from 'react'
 
 import { Box, BoxProps, Stack, Typography } from '@mui/material'
-import { alpha, useTheme } from '@mui/material/styles'
+import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
 import { error as logError } from '@tauri-apps/plugin-log'
 
 import { CheckIcon, CopyIcon, PlayIcon } from '@/components/atoms/icons'
 import { TruncatedText } from '@/components/atoms/TruncatedText'
+import {
+  getActionIconBoxSx,
+  getCommandBoxSx,
+  getCommandTextSx,
+  getNumberHintTextSx,
+  numberHintBoxSx,
+} from '@/components/molecules/commandFieldStyles'
 import { COMMAND_HINT_WIDTH } from '@/constants/layout'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useClipboard } from '@/hooks/useClipboard'
-import { FONT_CODE } from '@/theme/fonts'
 import { CheatSheetAPI, CommandLayout } from '@/types/api/CheatSheet'
 
 const NUMBER_HINT_WIDTH = COMMAND_HINT_WIDTH
@@ -40,7 +46,6 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
     } = props
 
     const theme = useTheme()
-    const isDark = theme.palette.mode === 'dark'
     const { copy, hasCopied, error: copyError } = useClipboard(command)
     const { showError } = useNotificationContext() ?? {}
 
@@ -78,64 +83,10 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
 
     const isMultiLine = command.includes('\n')
 
-    const accentColor = theme.palette.accent.main
-
-    const getCommandBoxSx = () => {
-      if (hasError) {
-        return {
-          background: `${theme.palette.alert.main}20`,
-          border: `0.5px solid ${theme.palette.alert.main}`,
-          borderRadius: 1,
-        }
-      }
-      if (hasDone) {
-        return {
-          background: alpha(theme.palette.accent.main, isDark ? 0.09 : 0.06),
-          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.32 : 0.3)}`,
-          borderRadius: 1,
-        }
-      }
-      if (isFocused) {
-        return {
-          background: theme.palette.glass.field,
-          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.22)}`,
-          borderLeft: `2.5px solid ${accentColor}`,
-          borderRadius: '0 4px 4px 0',
-        }
-      }
-      return {
-        background: isHovered
-          ? theme.palette.glass.field
-          : theme.palette.glass.panel,
-        border: `0.5px solid ${theme.palette.divider}`,
-        borderRadius: 1,
-      }
-    }
-
-    const numberHintColor = isFocused
-      ? accentColor
-      : theme.palette.text.disabled
-
     const numberHintBox = (
-      <Box
-        sx={{
-          width: NUMBER_HINT_WIDTH,
-          minWidth: NUMBER_HINT_WIDTH,
-          flexShrink: 0,
-          textAlign: 'right',
-          paddingTop: '6px',
-          userSelect: 'none',
-        }}
-      >
+      <Box sx={numberHintBoxSx}>
         {numberHint && (
-          <Typography
-            sx={{
-              fontFamily: FONT_CODE,
-              fontSize: scaledPx(theme.custom.fontSize.numberHint),
-              color: numberHintColor,
-              transition: 'color 0.14s',
-            }}
-          >
+          <Typography sx={getNumberHintTextSx(theme, isFocused)}>
             {numberHint}
           </Typography>
         )}
@@ -147,7 +98,12 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
         ref={ref}
         tabIndex={editMode ? -1 : (tabIndex ?? 0)}
         sx={{
-          ...getCommandBoxSx(),
+          ...getCommandBoxSx(theme, {
+            hasError: !!hasError,
+            hasDone,
+            isFocused,
+            isHovered,
+          }),
           padding: '5px 8px',
           cursor: editMode ? 'default' : 'pointer',
           transition: 'all 0.14s ease',
@@ -171,32 +127,10 @@ export const CommandField = forwardRef<HTMLDivElement, CommandFieldProps>(
           }
         }}
       >
-        <Typography
-          sx={{
-            fontFamily: FONT_CODE,
-            fontSize: isMultiLine
-              ? scaledPx(theme.custom.fontSize.commandMultiline)
-              : scaledPx(theme.custom.fontSize.caption),
-            color: hasDone ? accentColor : theme.palette.text.primary,
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all',
-            lineHeight: 1.55,
-            flex: 1,
-            minWidth: 0,
-            transition: 'color 0.14s',
-          }}
-        >
+        <Typography sx={getCommandTextSx(theme, { isMultiLine, hasDone })}>
           {command}
         </Typography>
-        <Box
-          sx={{
-            opacity: hasDone ? 1 : isFocused || isHovered ? 0.55 : 0,
-            transition: 'opacity 0.14s',
-            color: hasDone ? accentColor : theme.palette.text.disabled,
-            flexShrink: 0,
-            paddingTop: '2px',
-          }}
-        >
+        <Box sx={getActionIconBoxSx(theme, { hasDone, isFocused, isHovered })}>
           {hasDone ? (
             <CheckIcon size={11} strokeWidth={2.5} />
           ) : mode === 'execute' ? (

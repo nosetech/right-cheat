@@ -187,6 +187,8 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[useFontSize]` - `src/hooks/useFontSize.ts`
 - `[useWindowSize]` - `src/hooks/useWindowSize.ts`
 - `[useCommandSearch]` - `src/hooks/useCommandSearch.ts`
+- `[useClipboardHistory]` - `src/hooks/useClipboardHistory.ts`
+- `[AddToCheatSheetDialog]` - `src/components/organisms/clipboard-history/AddToCheatSheetDialog.tsx`
 - `[page]` - `src/app/page.tsx`
 - `[search]` - `src/app/search/page.tsx`
 
@@ -220,6 +222,7 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 |------|---------|---------|
 | チートシート画面 | 重大エラー（チートシートが使えない） | MUI `Alert` コンポーネント（画面内固定表示） |
 | チートシート画面 | 軽微エラー（チートシートは使えるが操作が失敗） | MUI `Snackbar`（画面下中央トースト、5秒後自動消去） |
+| チートシート画面 | 成功通知（クリップボード履歴からのコマンド登録完了など） | MUI `Snackbar`（`showSuccess`、success severity、画面下中央トースト、5秒後自動消去） |
 | Preferences 画面 | エラー・通知 | MUI Dialog（`RcDialog` コンポーネント） |
 | Preferences 画面 | 確認（Yes/No） | MUI Dialog（`RcDialog` コンポーネント） |
 | Edit Cheatsheets 画面 | エラー・通知 | MUI `Snackbar`（`NotificationContext`） |
@@ -240,9 +243,10 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 
 **使用方法**:
 ```tsx
-const { showError } = useNotificationContext() ?? {}
+const { showError, showWarning, showSuccess } = useNotificationContext() ?? {}
 // ...
 showError?.('エラーメッセージ')
+showSuccess?.('成功メッセージ')
 ```
 
 `useNotificationContext()` は `NotificationProvider` の外（`ThemeProviderWrapper` 内など）では `null` を返す。`?? {}` と `?.` でnull-safeに呼び出す。
