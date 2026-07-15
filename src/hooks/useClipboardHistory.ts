@@ -111,19 +111,20 @@ export function useClipboardHistory({ active }: Params) {
       debug(
         `[useClipboardHistory] saved edit mode: deleted ${ids.length} item(s)`,
       )
-      snapshotRef.current = null
-      pendingDeleteIdsRef.current = []
-      setDirty(false)
-      setEditMode(false)
     } catch (err) {
       logError(
         `[useClipboardHistory] Failed to delete history item(s): ${String(err)}`,
       )
       showError?.('Failed to delete clipboard history item')
     } finally {
+      // 途中で削除に失敗しても一部は DB 上で削除済みのため、スナップショットを
+      // 破棄して編集モードを終了し、reload で DB の実状態に同期する
+      snapshotRef.current = null
+      pendingDeleteIdsRef.current = []
+      setDirty(false)
+      setEditMode(false)
       setIsSaving(false)
     }
-    // 削除に失敗した項目があっても DB の実状態に合わせる
     await reload()
   }, [reload, showError])
 

@@ -40,6 +40,10 @@ export const CheatSheet = () => {
     editModeRef.current = editMode
   }, [editMode])
 
+  // クリップボード履歴シートの編集モードを RELOAD_CHEAT_SHEET リスナーから
+  // 参照するための ref（値の更新は useClipboardHistory 呼び出し後の effect で行う）
+  const historyEditModeRef = useRef(false)
+
   // ─── チートシートデータ ───────────────────────────────────
   const {
     cheatSheetTitles,
@@ -50,11 +54,14 @@ export const CheatSheet = () => {
     errorMessage,
     reloading,
     loadCheatSheetData,
-  } = useCheatSheetData({ editModeRef })
+  } = useCheatSheetData({ editModeRef, historyEditModeRef })
 
   // ─── クリップボード履歴（擬似シート） ─────────────────────
   const isHistorySheet = selectCheatSheet === CLIPBOARD_HISTORY_SHEET_TITLE
   const history = useClipboardHistory({ active: isHistorySheet })
+  useEffect(() => {
+    historyEditModeRef.current = history.editMode
+  }, [history.editMode])
 
   // 履歴シートから離れたら編集モードを解除する（インポート等による
   // シート再読み込みで選択が切り替わるケース）
