@@ -1,11 +1,10 @@
 'use client'
-import { scaledPx } from '@/utils/css'
-import { Box, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
 import { AddRowButton } from '@/components/atoms/AddRowButton'
 import { SaveIcon } from '@/components/atoms/icons'
-import { FooterButton } from '@/components/molecules/FooterButton'
+import { EditModeActionRow } from '@/components/molecules/EditModeActionRow'
 
 type Props = {
   isShortcuts: boolean
@@ -54,54 +53,14 @@ export function EditModeFooter({
         sx={{
           borderTop: `0.5px solid ${theme.palette.divider}`,
           p: '10px 14px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '10px',
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            minHeight: '18px',
-          }}
-        >
-          {editDirty ? (
-            <Box
-              sx={{
-                fontSize: scaledPx(theme.custom.fontSize.captionSm),
-                color: 'text.secondary',
-                fontStyle: 'italic',
-              }}
-            >
-              Unsaved changes
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                fontSize: scaledPx(theme.custom.fontSize.captionSm),
-                color: 'text.disabled',
-              }}
-            >
-              No changes
-            </Box>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {isSaving && <CircularProgress size={14} />}
-          <FooterButton onClick={onCancel} disabled={isSaving}>
-            Cancel
-          </FooterButton>
-          <FooterButton
-            primary
-            disabled={!editDirty || isSaving}
-            onClick={onSave}
-          >
-            Save
-          </FooterButton>
-        </Box>
+        <EditModeActionRow
+          editDirty={editDirty}
+          isSaving={isSaving}
+          onCancel={onCancel}
+          onSave={onSave}
+        />
       </Box>
     </Box>
   )
