@@ -206,7 +206,16 @@ fn toggle_clipboard_history_window<R: tauri::Runtime>(handle: &tauri::AppHandle<
                     log::error!("[lib] Failed to hide clipboard history window: {}", e);
                 }
             }
-            _ => {
+            Ok(false) => {
+                let _ = win.show();
+                let _ = win.set_focus();
+            }
+            Err(e) => {
+                // 可視状態の取得に失敗した場合は表示側に倒す
+                log::error!(
+                    "[lib] Failed to get clipboard history window visibility: {}",
+                    e
+                );
                 let _ = win.show();
                 let _ = win.set_focus();
             }
@@ -658,6 +667,13 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
                     }
                 }
             }
+        } else {
+            // 通常は init_*_shortcut_settings がデフォルトを書き込むため到達しないが、
+            // 設定ファイルの欠損時にメニュー・グローバルショートカットが無言で無効化
+            // されないよう、原因が追えるようログを残す。
+            log::error!(
+                "[lib] Shortcut settings are missing; menu and global shortcuts were not configured"
+            );
         }
     }
     Ok(())
