@@ -1,6 +1,8 @@
 pub mod config {
     pub const SETTING_FILENAME: &str = "rightcheat-settings.json";
     pub const TOGGLE_VISIBLE_SHORTCUT: &str = "toggle_visibe_shortcut_settings";
+    pub const CLIPBOARD_HISTORY_SHORTCUT: &str = "clipboard_history_shortcut_settings";
+    pub const CLIPBOARD_HISTORY_WINDOW_SIZE: &str = "clipboard_history_window_size";
     pub const LOG_SETTINGS: &str = "log_settings";
     pub const DB_SETTINGS: &str = "db_settings";
 }

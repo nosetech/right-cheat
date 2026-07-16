@@ -24,7 +24,11 @@ import {
   ClipboardSettingsAPI,
 } from '@/types/api/ClipboardSettings'
 import { DbSettings, DbSettingsAPI } from '@/types/api/DbSettings'
-import { GlobalShortcutAPI, ShortcutDef } from '@/types/api/GlobalShortcut'
+import {
+  GlobalShortcutAPI,
+  isSameShortcut,
+  ShortcutDef,
+} from '@/types/api/GlobalShortcut'
 import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
 import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
@@ -61,6 +65,10 @@ export default function Page() {
   const theme = useTheme()
 
   const [shortcutDialogOpen, setShortcutDialogOpen] = useState<boolean>(false)
+  const [
+    clipboardHistoryShortcutDialogOpen,
+    setClipboardHistoryShortcutDialogOpen,
+  ] = useState<boolean>(false)
   const [visibleOnAllWorkspaces, setVisibleOnAllWorkspaces] =
     useState<boolean>(true)
   const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
@@ -77,6 +85,8 @@ export default function Page() {
   } = useThemeStore()
 
   const [toggleVisibleShortcut, setToggleVisibleShortcut] =
+    useState<ShortcutDef>()
+  const [clipboardHistoryShortcut, setClipboardHistoryShortcut] =
     useState<ShortcutDef>()
 
   const [logSettings, setLogSettings] = useState<LogSettings>({
@@ -229,6 +239,36 @@ export default function Page() {
       }
 
       try {
+        const response = await invoke<string>(
+          GlobalShortcutAPI.GET_CLIPBOARD_HISTORY_SHORTCUT_SETTINGS,
+        )
+        debug(
+          `[preferences] invoke '${GlobalShortcutAPI.GET_CLIPBOARD_HISTORY_SHORTCUT_SETTINGS}' response=${response}`,
+        )
+        const res_json = JSON.parse(response)
+        if (res_json.status === 'success') {
+          const shortcut: ShortcutDef = res_json.message
+          setClipboardHistoryShortcut(shortcut)
+        } else {
+          error(
+            `[preferences] Failed to get clipboard history shortcut settings: ${res_json.message}`,
+          )
+          await showRcError(
+            'Preferences',
+            'Failed to get global shortcut settings',
+          )
+        }
+      } catch (err) {
+        error(
+          `[preferences] Error getting clipboard history shortcut settings: ${err}`,
+        )
+        await showRcError(
+          'Preferences',
+          'Failed to get global shortcut settings',
+        )
+      }
+
+      try {
         const [settings, logDir] = await Promise.all([
           invoke<LogSettings>(LogSettingsAPI.GET_LOG_SETTINGS),
           invoke<string>(LogSettingsAPI.GET_LOG_DIR),
@@ -332,6 +372,43 @@ export default function Page() {
       }
     } catch (err) {
       error(`[preferences] Error setting shortcut: ${err}`)
+      await showRcError(
+        'Preferences',
+        'Failed to save global shortcut settings',
+      )
+    }
+
+    if (saved) {
+      await showRestartConfirmationDialog()
+    }
+  }
+
+  const handleClipboardHistoryShortcutSave = async (shortcut: ShortcutDef) => {
+    setClipboardHistoryShortcutDialogOpen(false)
+    let saved = false
+    try {
+      const response = await invoke<string>(
+        GlobalShortcutAPI.SET_CLIPBOARD_HISTORY_SHORTCUT_SETTINGS,
+        { shortcut },
+      )
+      debug(
+        `[preferences] invoke '${GlobalShortcutAPI.SET_CLIPBOARD_HISTORY_SHORTCUT_SETTINGS}' response=${response}`,
+      )
+      const res_json = JSON.parse(response)
+      if (res_json.status === 'success') {
+        setClipboardHistoryShortcut(shortcut)
+        saved = true
+      } else {
+        error(
+          `[preferences] Failed to set clipboard history shortcut settings: ${res_json.message}`,
+        )
+        await showRcError(
+          'Preferences',
+          'Failed to save global shortcut settings',
+        )
+      }
+    } catch (err) {
+      error(`[preferences] Error setting clipboard history shortcut: ${err}`)
       await showRcError(
         'Preferences',
         'Failed to save global shortcut settings',
@@ -818,6 +895,88 @@ export default function Page() {
               </Tooltip>
             </Box>
           </Box>
+          <Box sx={{ pl: '14px', py: '8px' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Typography
+                sx={{
+                  fontSize: scaledPx(theme.custom.fontSize.label),
+                  fontWeight: 500,
+                  color: 'text.primary',
+                }}
+              >
+                Clipboard History
+              </Typography>
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: scaledPx(theme.custom.fontSize.label),
+                }}
+              >
+                :
+              </Typography>
+              {clipboardHistoryShortcut && (
+                <Box
+                  sx={{
+                    backgroundColor: isDark
+                      ? 'rgba(255,255,255,0.06)'
+                      : 'rgba(255,255,255,0.9)',
+                    backdropFilter: 'blur(12px)',
+                    border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                    borderRadius: '6px',
+                    padding: '4px 11px',
+                    fontFamily: 'monospace',
+                    fontSize: scaledPx(theme.custom.fontSize.body),
+                    color: 'text.primary',
+                    boxShadow: !isDark
+                      ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
+                      : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {(
+                    [
+                      clipboardHistoryShortcut.ctrl && '^',
+                      clipboardHistoryShortcut.option && '⌥',
+                      clipboardHistoryShortcut.command && '⌘',
+                      clipboardHistoryShortcut.hotkey,
+                    ] as (string | false)[]
+                  )
+                    .filter(Boolean)
+                    .map((c, i) => (
+                      <span key={i}>{c}</span>
+                    ))}
+                </Box>
+              )}
+              <Tooltip title='Edit global shortcut…'>
+                <span>
+                  <IconButton
+                    size='small'
+                    disabled={!clipboardHistoryShortcut}
+                    onClick={() => setClipboardHistoryShortcutDialogOpen(true)}
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '7px',
+                      border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                      backgroundColor: alpha(
+                        theme.palette.accent.main,
+                        isDark ? 0.1 : 0.07,
+                      ),
+                      color: theme.palette.text.disabled,
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                        color: theme.palette.primary.main,
+                      },
+                    }}
+                  >
+                    <SettingsOutlinedIcon sx={{ fontSize: '14px' }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
+          </Box>
         </Box>
 
         <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
@@ -1131,9 +1290,21 @@ export default function Page() {
       {toggleVisibleShortcut && (
         <ShortcutSettingsDialog
           open={shortcutDialogOpen}
+          label='Toggle Visible'
           shortcut={toggleVisibleShortcut}
+          conflictShortcut={clipboardHistoryShortcut}
           onSave={handleShortcutSave}
           onCancel={() => setShortcutDialogOpen(false)}
+        />
+      )}
+      {clipboardHistoryShortcut && (
+        <ShortcutSettingsDialog
+          open={clipboardHistoryShortcutDialogOpen}
+          label='Clipboard History'
+          shortcut={clipboardHistoryShortcut}
+          conflictShortcut={toggleVisibleShortcut}
+          onSave={handleClipboardHistoryShortcutSave}
+          onCancel={() => setClipboardHistoryShortcutDialogOpen(false)}
         />
       )}
       {rcDialog.isYesNo ? (
@@ -1588,14 +1759,20 @@ function HotkeyInput({ value, onChange, invalid }: HotkeyInputProps) {
 
 type ShortcutSettingsDialogProps = {
   open: boolean
+  /** ダイアログタイトルに表示する対象名（例: "Toggle Visible"） */
+  label: string
   shortcut: ShortcutDef
+  /** 重複を禁止するもう一方のショートカット（同一の組み合わせは保存不可） */
+  conflictShortcut?: ShortcutDef
   onSave: (shortcut: ShortcutDef) => void
   onCancel: () => void
 }
 
 function ShortcutSettingsDialog({
   open: dialogOpen,
+  label,
   shortcut,
+  conflictShortcut,
   onSave,
   onCancel,
 }: ShortcutSettingsDialogProps) {
@@ -1627,7 +1804,12 @@ function ShortcutSettingsDialog({
     option !== shortcut.option ||
     command !== shortcut.command ||
     hotkey !== shortcut.hotkey
-  const canSave = hasModifier && hasHotkey && dirty
+  const isConflict =
+    hasModifier &&
+    hasHotkey &&
+    conflictShortcut !== undefined &&
+    isSameShortcut({ ctrl, option, command, hotkey }, conflictShortcut)
+  const canSave = hasModifier && hasHotkey && dirty && !isConflict
 
   const handleSave = () => {
     if (!canSave) {
@@ -1659,7 +1841,7 @@ function ShortcutSettingsDialog({
           borderBottom: `0.5px solid ${theme.palette.divider}`,
         }}
       >
-        Global Shortcut — Toggle Visible
+        Global Shortcut — {label}
       </DialogTitle>
       <DialogContent
         sx={{
@@ -1863,6 +2045,17 @@ function ShortcutSettingsDialog({
               }}
             >
               Please enter a hotkey character.
+            </Typography>
+          )}
+          {isConflict && (
+            <Typography
+              sx={{
+                fontSize: scaledPx(theme.custom.fontSize.hint),
+                color: theme.palette.error.main,
+                mt: '2px',
+              }}
+            >
+              This shortcut is already used by another action.
             </Typography>
           )}
         </Box>

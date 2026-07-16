@@ -1,15 +1,22 @@
 'use client'
 import { scaledPx } from '@/utils/css'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { Box, Dialog, MenuItem, Select, TextField } from '@mui/material'
+import { Box, MenuItem, Select, TextField } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
-import { FooterButton } from '@/components/molecules/FooterButton'
+import { Event } from '@/common'
+import {
+  WINDOW_ACTION_FOOTER_HEIGHT,
+  WindowActionFooter,
+} from '@/components/molecules/WindowActionFooter'
+import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { TYPE_META } from '@/components/organisms/edit-cheatsheets/meta'
 import { useNotificationContext } from '@/context/NotificationContext'
+import { useWindowCloseShortcuts } from '@/hooks/useWindowCloseShortcuts'
 import { FONT_CODE } from '@/theme/fonts'
 import {
   CheatSheetAPI,
@@ -30,29 +37,21 @@ type GroupOption = {
   name: string
 }
 
-type Props = {
-  open: boolean
-  /** 履歴エントリのテキスト（Command フィールドの初期値） */
+/** clipboard_history ウィンドウから受け取る初期化ペイロード */
+type AddToCheatSheetInitPayload = {
   text: string
-  onCancel: () => void
-  /** 追加成功時に対象シートのタイトルを通知する */
-  onAdded: (sheetTitle: string) => void
 }
 
 /**
  * クリップボード履歴のエントリを既存チートシートのコマンドとして登録する
- * ダイアログ。対象は command / application タイプのシートのみ。
+ * 別ウィンドウ（label: add_to_cheatsheet）。対象は command / application タイプの
+ * シートのみ。Add 成功時は clipboard_history ウィンドウへ通知して閉じる。
  */
-export function AddToCheatSheetDialog({
-  open,
-  text,
-  onCancel,
-  onAdded,
-}: Props) {
+export default function AddToCheatSheetPage() {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
   const { showError } = useNotificationContext() ?? {}
 
+  const [initialized, setInitialized] = useState(false)
   const [sheets, setSheets] = useState<CheatSheetSummary[]>([])
   const [sheetTitle, setSheetTitle] = useState('')
   const [groups, setGroups] = useState<GroupOption[]>([])
@@ -64,40 +63,44 @@ export function AddToCheatSheetDialog({
 
   const descRef = useRef<HTMLInputElement>(null)
 
-  // ダイアログを開いたときに状態を初期化し、対象シート一覧を取得する
+  // clipboard_history ウィンドウから履歴テキストを受け取り、対象シート一覧を取得する
   useEffect(() => {
-    if (!open) return
-    let cancelled = false
-    setDescription('')
-    setCommandText(text)
-    setLayout('inherit')
-    setGroupId('')
-    ;(async () => {
-      try {
-        const summaries = await invoke<CheatSheetSummary[]>(
-          CheatSheetAPI.LIST_CHEAT_SHEET_SUMMARIES,
-        )
-        if (cancelled) return
-        // shortcut シートはコピー可能なコマンドを持たないため対象外
-        const targets = summaries.filter((s) => s.sheet_type !== 'shortcut')
-        setSheets(targets)
-        setSheetTitle(targets[0]?.title ?? '')
-        setTimeout(() => descRef.current?.focus(), 80)
-      } catch (err) {
-        logError(
-          `[AddToCheatSheetDialog] Failed to load cheat sheet summaries: ${String(err)}`,
-        )
-        showError?.('Failed to load cheat sheets')
-      }
-    })()
-    return () => {
-      cancelled = true
+    const win = getCurrentWebviewWindow()
+
+    const setup = async () => {
+      await win.once<AddToCheatSheetInitPayload>(
+        Event.ADD_TO_CHEATSHEET_INIT,
+        async (event) => {
+          setCommandText(event.payload.text)
+          try {
+            const summaries = await invoke<CheatSheetSummary[]>(
+              CheatSheetAPI.LIST_CHEAT_SHEET_SUMMARIES,
+            )
+            // shortcut シートはコピー可能なコマンドを持たないため対象外
+            const targets = summaries.filter((s) => s.sheet_type !== 'shortcut')
+            setSheets(targets)
+            setSheetTitle(targets[0]?.title ?? '')
+          } catch (err) {
+            logError(
+              `[AddToCheatSheet] Failed to load cheat sheet summaries: ${String(err)}`,
+            )
+            showError?.('Failed to load cheat sheets')
+          }
+          setInitialized(true)
+          setTimeout(() => descRef.current?.focus(), 80)
+        },
+      )
+      await win.emitTo('clipboard_history', Event.ADD_TO_CHEATSHEET_READY, {})
     }
-  }, [open, text, showError])
+
+    setup()
+    // マウント時のみ実行する
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 対象シートの変更時にグループ一覧を取得する
   useEffect(() => {
-    if (!open || !sheetTitle) {
+    if (!sheetTitle) {
       setGroups([])
       return
     }
@@ -115,20 +118,18 @@ export function AddToCheatSheetDialog({
           .map((g) => ({ id: g.id as number, name: g.group }))
         setGroups(groupOptions)
       } catch (err) {
-        logError(
-          `[AddToCheatSheetDialog] Failed to load groups: ${String(err)}`,
-        )
+        logError(`[AddToCheatSheet] Failed to load groups: ${String(err)}`)
         setGroups([])
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [open, sheetTitle])
+  }, [sheetTitle])
 
   const canAdd = sheetTitle !== '' && commandText.trim().length > 0 && !isAdding
 
-  const handleAdd = async () => {
+  const handleAdd = useCallback(async () => {
     if (!canAdd) return
     setIsAdding(true)
     try {
@@ -142,67 +143,45 @@ export function AddToCheatSheetDialog({
         },
       })
       debug(
-        `[AddToCheatSheetDialog] added command to '${sheetTitle}' (group=${groupId || 'none'})`,
+        `[AddToCheatSheet] added command to '${sheetTitle}' (group=${groupId || 'none'})`,
       )
-      onAdded(sheetTitle)
+      const win = getCurrentWebviewWindow()
+      await win.emitTo('clipboard_history', Event.ADD_TO_CHEATSHEET_ADDED, {
+        sheetTitle,
+      })
+      await win.destroy()
     } catch (err) {
-      logError(`[AddToCheatSheetDialog] Failed to add command: ${String(err)}`)
+      logError(`[AddToCheatSheet] Failed to add command: ${String(err)}`)
       showError?.(
         `Failed to add command: ${err instanceof Error ? err.message : String(err)}`,
       )
-    } finally {
       setIsAdding(false)
     }
+  }, [canAdd, sheetTitle, groupId, description, commandText, layout, showError])
+
+  const handleCancel = useCallback(async () => {
+    await getCurrentWebviewWindow().destroy()
+  }, [])
+
+  // Cmd+S で Add / Esc で Cancel（ウィンドウを閉じる）
+  useWindowCloseShortcuts({
+    onSave: () => void handleAdd(),
+    onCancel: () => void handleCancel(),
+  })
+
+  if (!initialized) {
+    return null
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onCancel}
-      aria-labelledby='add-to-cheatsheet-title'
-      slotProps={{
-        backdrop: {
-          sx: {
-            backgroundColor: isDark
-              ? 'rgba(0,0,10,0.45)'
-              : 'rgba(20,30,60,0.28)',
-            backdropFilter: 'blur(3px)',
-            WebkitBackdropFilter: 'blur(3px)',
-          },
-        },
-        paper: {
-          sx: {
-            width: 420,
-            maxWidth: 'calc(100% - 32px)',
-            borderRadius: '14px',
-            border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)'}`,
-            boxShadow: isDark
-              ? '0 24px 64px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.10)'
-              : '0 24px 64px rgba(0,0,50,0.30), 0 0 0 0.5px rgba(255,255,255,0.7)',
-            overflow: 'hidden',
-            m: 0,
-          },
-        },
-      }}
-    >
-      {/* タイトル */}
-      <Box
-        id='add-to-cheatsheet-title'
-        sx={{
-          p: '16px 18px 0',
-          fontSize: scaledPx(theme.custom.fontSize.dialogTitle),
-          fontWeight: 600,
-          color: 'text.primary',
-          letterSpacing: '0.01em',
-        }}
-      >
-        Add to Cheat Sheet
-      </Box>
+    <>
+      <WindowHeader title='Add to Cheat Sheet' />
 
-      {/* フィールド */}
       <Box
         sx={{
-          p: '14px 18px 16px',
+          px: '18px',
+          pt: '12px',
+          pb: `${WINDOW_ACTION_FOOTER_HEIGHT + 12}px`,
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
@@ -299,26 +278,13 @@ export function AddToCheatSheetDialog({
         </FieldRow>
       </Box>
 
-      {/* フッター */}
-      <Box
-        sx={{
-          p: '12px 16px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: '8px',
-          background: theme.palette.glass.panel,
-          borderTop: `0.5px solid ${theme.palette.divider}`,
-        }}
-      >
-        <FooterButton onClick={onCancel} disabled={isAdding}>
-          Cancel
-        </FooterButton>
-        <FooterButton primary disabled={!canAdd} onClick={handleAdd}>
-          Add
-        </FooterButton>
-      </Box>
-    </Dialog>
+      <WindowActionFooter
+        onCancel={handleCancel}
+        onSave={handleAdd}
+        canSave={canAdd}
+        saveLabel='Add'
+      />
+    </>
   )
 }
 

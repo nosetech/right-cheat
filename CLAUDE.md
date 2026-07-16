@@ -186,9 +186,10 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[useThemeStore]` - `src/hooks/useThemeStore.ts`
 - `[useFontSize]` - `src/hooks/useFontSize.ts`
 - `[useWindowSize]` - `src/hooks/useWindowSize.ts`
+- `[useClipboardHistoryWindowSize]` - `src/hooks/useClipboardHistoryWindowSize.ts`
 - `[useCommandSearch]` - `src/hooks/useCommandSearch.ts`
 - `[useClipboardHistory]` - `src/hooks/useClipboardHistory.ts`
-- `[AddToCheatSheetDialog]` - `src/components/organisms/clipboard-history/AddToCheatSheetDialog.tsx`
+- `[AddToCheatSheet]` - `src/app/add-to-cheatsheet/page.tsx`
 - `[page]` - `src/app/page.tsx`
 - `[search]` - `src/app/search/page.tsx`
 
@@ -354,6 +355,8 @@ backgroundColor: alpha(theme.palette.accent.main, isDark ? 0.10 : 0.07)
 ### ファイル構造
 - `src/`: Next.js フロントエンドコード
   - `src/app/export/`: チートシートエクスポート選択画面
+  - `src/app/clipboard-history/`: クリップボード履歴ウィンドウ（独立ウィンドウ。グローバルショートカット ^⌘C / View メニューでトグル表示）
+  - `src/app/add-to-cheatsheet/`: 履歴エントリをチートシートへ登録する別ウィンドウ
 - `src-tauri/`: Rust バックエンドコードと Tauri 設定
   - `src-tauri/src/db/`: SQLite DB 接続・スキーマ・リポジトリ層
   - `src-tauri/src/api/`: Tauri コマンド（チートシート取得・インポート・エクスポート・検索）

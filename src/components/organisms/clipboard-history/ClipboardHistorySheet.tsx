@@ -8,25 +8,29 @@ import { useTheme } from '@mui/material/styles'
 import { CopyIcon } from '@/components/atoms/icons'
 import { ClipboardHistoryFooter } from '@/components/molecules/ClipboardHistoryFooter'
 import { HistoryItemRow } from '@/components/molecules/HistoryItemRow'
-import { AddToCheatSheetDialog } from '@/components/organisms/clipboard-history/AddToCheatSheetDialog'
 import { RcDialog } from '@/components/organisms/RcDialog'
-import { useNotificationContext } from '@/context/NotificationContext'
 import { ClipboardHistoryState } from '@/hooks/useClipboardHistory'
+import { ClipboardHistoryItem } from '@/types/api/ClipboardHistory'
 
 type Props = {
   history: ClipboardHistoryState
   /** 数字キー（1〜9）での再コピー用に各行の要素を登録する */
   itemRefs: RefObject<Array<HTMLDivElement | null>>
+  /** 編集モードの行アクション「Add to Cheat Sheet」で別ウィンドウを開く */
+  onAddToSheet: (item: ClipboardHistoryItem) => void
 }
 
 /**
- * クリップボード履歴シートの本体。
+ * クリップボード履歴ウィンドウの本体。
  * 履歴一覧（空の場合はプレースホルダー）・固定フッター・
- * 全クリア確認ダイアログ・Add to Cheat Sheet ダイアログを描画する。
+ * 全クリア確認ダイアログを描画する。
  */
-export function ClipboardHistorySheet({ history, itemRefs }: Props) {
+export function ClipboardHistorySheet({
+  history,
+  itemRefs,
+  onAddToSheet,
+}: Props) {
   const theme = useTheme()
-  const { showSuccess } = useNotificationContext() ?? {}
 
   const {
     items,
@@ -39,8 +43,6 @@ export function ClipboardHistorySheet({ history, itemRefs }: Props) {
     clearAll,
     confirmClearOpen,
     setConfirmClearOpen,
-    addDialogItem,
-    setAddDialogItem,
   } = history
 
   return (
@@ -64,7 +66,7 @@ export function ClipboardHistorySheet({ history, itemRefs }: Props) {
                 text={item.text}
                 numberHint={(index + 1).toString()}
                 editMode={editMode}
-                onAddToSheet={() => setAddDialogItem(item)}
+                onAddToSheet={() => onAddToSheet(item)}
                 onDelete={() => deleteItem(item.id)}
               />
             ))}
@@ -138,17 +140,6 @@ export function ClipboardHistorySheet({ history, itemRefs }: Props) {
         yesLabel='Clear All'
         onNo={() => setConfirmClearOpen(false)}
         noLabel='Cancel'
-      />
-
-      {/* チートシートへの追加ダイアログ */}
-      <AddToCheatSheetDialog
-        open={addDialogItem !== null}
-        text={addDialogItem?.text ?? ''}
-        onCancel={() => setAddDialogItem(null)}
-        onAdded={(sheetTitle) => {
-          setAddDialogItem(null)
-          showSuccess?.(`Added to "${sheetTitle}"`)
-        }}
       />
     </>
   )

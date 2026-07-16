@@ -9,4 +9,7 @@ export class Event {
   static readonly EDIT_GROUP_READY = 'edit-group-ready'
   static readonly EDIT_GROUP_INIT = 'edit-group-init'
   static readonly EDIT_GROUP_SAVE = 'edit-group-save'
+  static readonly ADD_TO_CHEATSHEET_READY = 'add-to-cheatsheet-ready'
+  static readonly ADD_TO_CHEATSHEET_INIT = 'add-to-cheatsheet-init'
+  static readonly ADD_TO_CHEATSHEET_ADDED = 'add-to-cheatsheet-added'
 }

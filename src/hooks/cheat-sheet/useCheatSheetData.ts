@@ -11,19 +11,16 @@ import {
   CheatSheetData,
   CheatSheetTitleData,
 } from '@/types/api/CheatSheet'
-import { CLIPBOARD_HISTORY_SHEET_TITLE } from '@/types/api/ClipboardHistory'
 
 type Params = {
   editModeRef: RefObject<boolean>
-  /** クリップボード履歴シートの編集モード中かどうか */
-  historyEditModeRef: RefObject<boolean>
 }
 
 /**
  * チートシートのタイトル一覧・選択中シートのデータのロードを管理するフック。
  * 起動時のリロード、`RELOAD_CHEAT_SHEET` イベントの購読、選択変更時のデータ取得を担う。
  */
-export function useCheatSheetData({ editModeRef, historyEditModeRef }: Params) {
+export function useCheatSheetData({ editModeRef }: Params) {
   const [cheatSheetTitles, setCheatSheetTitles] = useState<
     CheatSheetTitleData | undefined
   >()
@@ -43,11 +40,9 @@ export function useCheatSheetData({ editModeRef, historyEditModeRef }: Params) {
     let unlisten: (() => void) | undefined
     ;(async () => {
       unlisten = await listen<{}>(Event.RELOAD_CHEAT_SHEET, () => {
-        // 編集モード中はリロードしない。クリップボード履歴シートの編集モード中も
-        // 同様（Add to Cheat Sheet の add_command が RELOAD_CHEAT_SHEET を emit
-        // するため、リロードすると選択が先頭シートへ切り替わり編集セッションが
-        // 破棄されてしまう）
-        if (editModeRef.current || historyEditModeRef.current) return
+        // 編集モード中はリロードしない（リロードすると選択が先頭シートへ
+        // 切り替わり編集セッションが破棄されてしまう）
+        if (editModeRef.current) return
         ;(async () => {
           setReloading(true)
           setCheatSheet('')
@@ -76,12 +71,7 @@ export function useCheatSheetData({ editModeRef, historyEditModeRef }: Params) {
 
   useEffect(() => {
     ;(async () => {
-      // クリップボード履歴は DB 上のチートシートではない擬似シートのため
-      // チートシートデータの取得は行わない
-      if (
-        selectCheatSheet !== '' &&
-        selectCheatSheet !== CLIPBOARD_HISTORY_SHEET_TITLE
-      ) {
+      if (selectCheatSheet !== '') {
         const data = await loadCheatSheetData(selectCheatSheet)
         setCheatSheetData(data)
       } else {
