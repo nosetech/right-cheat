@@ -12,10 +12,5 @@ export type ClipboardHistoryItem = {
   copied_at: string
 }
 
-// シート切り替えに表示する擬似シートのタイトル。
-// DB 上のチートシートではないため、選択時はチートシートデータの取得や
-// ウィンドウサイズのピン留めを行わない。
-export const CLIPBOARD_HISTORY_SHEET_TITLE = 'Clipboard History'
-
 // 一覧取得時の上限件数。設定の「Max history entries」上限（1000）に合わせる。
 export const CLIPBOARD_HISTORY_LIST_LIMIT = 1000

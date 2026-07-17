@@ -13,38 +13,32 @@ import { useNotificationContext } from '@/context/NotificationContext'
 import { WindowSizeAPI, WindowSizeSettings } from '@/types/api/WindowSize'
 import { restoreFocusAfterWindowOp } from '@/utils/windowFocus'
 
-export const useWindowSize = (selectedTitle: string, editMode = false) => {
+/**
+ * Clipboard History ウィンドウのサイズのピン留め（保存・復元）を管理するフック。
+ *
+ * チートシートウィンドウの {@link useWindowSize} と同等だが、保存先は
+ * チートシートの DB ではなく設定ファイル（tauri-plugin-store）で、単一ウィンドウの
+ * ため対象タイトルを持たない。
+ *
+ * - マウント時: 保存済みサイズがあれば適用してリサイズ不可にする
+ * - ピン留め時: 現在のウィンドウサイズ（論理ピクセル）を保存し `setResizable(false)`
+ * - ピン留め解除時: 保存値を削除し `setResizable(true)`
+ * - 編集モード中はピン留めでもサイズ変更を許容し、終了時にピン留めサイズへ戻す
+ */
+export const useClipboardHistoryWindowSize = (editMode = false) => {
   const [isPinned, setIsPinned] = useState(false)
   const { showError } = useNotificationContext() ?? {}
   const savedSizeRef = useRef<WindowSizeSettings | null>(null)
   const isResizableRef = useRef<boolean | null>(null)
 
+  // マウント時に保存済みサイズを読み込み、あれば適用する
   useEffect(() => {
-    if (!selectedTitle) {
-      setIsPinned(false)
-      savedSizeRef.current = null
-      if (isResizableRef.current !== true) {
-        getCurrentWindow()
-          .setResizable(true)
-          .then(() => {
-            isResizableRef.current = true
-            return restoreFocusAfterWindowOp()
-          })
-          .catch((e) => logError(`Failed to call setResizable: ${e}`))
-      }
-      return
-    }
-
     let cancelled = false
 
     const loadAndApply = async () => {
-      debug(
-        `[useWindowSize] loadAndApply started: title="${selectedTitle}", activeElement=${document.activeElement?.tagName}`,
-      )
       try {
         const savedSize = await invoke<WindowSizeSettings | null>(
-          WindowSizeAPI.GET_CHEAT_SHEET_WINDOW_SIZE,
-          { title: selectedTitle },
+          WindowSizeAPI.GET_CLIPBOARD_HISTORY_WINDOW_SIZE,
         )
         if (cancelled) return
 
@@ -52,46 +46,23 @@ export const useWindowSize = (selectedTitle: string, editMode = false) => {
         setIsPinned(savedSize !== null)
 
         const win = getCurrentWindow()
-        let windowOpPerformed = false
         if (savedSize) {
           debug(
-            `[useWindowSize] setSize: ${savedSize.width}x${savedSize.height} for "${selectedTitle}"`,
+            `[useClipboardHistoryWindowSize] setSize: ${savedSize.width}x${savedSize.height}`,
           )
           await win.setSize(new LogicalSize(savedSize.width, savedSize.height))
-          windowOpPerformed = true
-          if (isResizableRef.current !== false) {
-            debug(
-              `[useWindowSize] Setting window non-resizable: "${selectedTitle}"`,
-            )
-            await win.setResizable(false)
-            isResizableRef.current = false
-          }
+          await win.setResizable(false)
+          isResizableRef.current = false
         } else {
-          if (isResizableRef.current !== true) {
-            debug(
-              `[useWindowSize] Setting window resizable: "${selectedTitle}"`,
-            )
-            await win.setResizable(true)
-            isResizableRef.current = true
-            windowOpPerformed = true
-          }
+          await win.setResizable(true)
+          isResizableRef.current = true
         }
-
-        if (windowOpPerformed) {
-          debug(
-            `[useWindowSize] Restoring focus, starting: activeElement=${document.activeElement?.tagName}`,
-          )
-          await restoreFocusAfterWindowOp()
-          debug(
-            `[useWindowSize] Focus restored: activeElement=${document.activeElement?.tagName}`,
-          )
-        } else {
-          await restoreFocusAfterWindowOp()
-        }
-        debug(`[useWindowSize] loadAndApply complete: title="${selectedTitle}"`)
+        await restoreFocusAfterWindowOp()
       } catch (e) {
         if (!cancelled) {
-          logError(`Failed to load window size: ${e}`)
+          logError(
+            `[useClipboardHistoryWindowSize] Failed to load window size: ${e}`,
+          )
           showError?.('Failed to load window size')
         }
       }
@@ -101,27 +72,19 @@ export const useWindowSize = (selectedTitle: string, editMode = false) => {
 
     return () => {
       cancelled = true
-      savedSizeRef.current = null
-      setIsPinned(false)
     }
-  }, [selectedTitle, showError])
+  }, [showError])
 
   // 編集モードの切り替えに応じてリサイズ可否を制御する。
-  // 編集モード中はピン留め（非リサイズ）でもウィンドウサイズを変更できるようにし、
-  // 編集モード終了時はピン留め状態に応じてリサイズ可否を元に戻す。
+  // 編集モード中は常にリサイズ可、終了時はピン留め状態へ戻す。
   const prevEditModeRef = useRef(editMode)
   useEffect(() => {
     if (prevEditModeRef.current === editMode) return
     prevEditModeRef.current = editMode
-    if (!selectedTitle) return
 
     const win = getCurrentWindow()
-    // 編集モード中は常にリサイズ可。終了時はピン留めなら非リサイズに戻す。
     const savedSize = savedSizeRef.current
     const shouldBeResizable = editMode ? true : savedSize === null
-
-    // 編集モード終了時にピン留めされている場合は、編集中に変更された
-    // ウィンドウサイズをピン留め時のサイズに戻す。
     const shouldRestoreSize = !editMode && savedSize !== null
 
     if (isResizableRef.current === shouldBeResizable && !shouldRestoreSize)
@@ -130,42 +93,37 @@ export const useWindowSize = (selectedTitle: string, editMode = false) => {
       try {
         if (shouldRestoreSize && savedSize) {
           debug(
-            `[useWindowSize] editMode end: restore pinned size ${savedSize.width}x${savedSize.height}`,
+            `[useClipboardHistoryWindowSize] editMode end: restore pinned size ${savedSize.width}x${savedSize.height}`,
           )
           await win.setSize(new LogicalSize(savedSize.width, savedSize.height))
         }
         if (isResizableRef.current !== shouldBeResizable) {
           debug(
-            `[useWindowSize] editMode=${editMode}: setResizable(${shouldBeResizable})`,
+            `[useClipboardHistoryWindowSize] editMode=${editMode}: setResizable(${shouldBeResizable})`,
           )
           await win.setResizable(shouldBeResizable)
           isResizableRef.current = shouldBeResizable
         }
         await restoreFocusAfterWindowOp()
       } catch (e) {
-        logError(`[useWindowSize] Failed to toggle resizable: ${e}`)
+        logError(
+          `[useClipboardHistoryWindowSize] Failed to toggle resizable: ${e}`,
+        )
       }
     })()
-  }, [editMode, selectedTitle])
+  }, [editMode])
 
   const togglePin = useCallback(async () => {
-    if (!selectedTitle) return
-
-    debug(
-      `[useWindowSize] togglePin started: activeElement=${document.activeElement?.tagName}`,
-    )
     const win = getCurrentWindow()
 
     if (savedSizeRef.current) {
-      debug(`[useWindowSize] Unpinning: title="${selectedTitle}"`)
-
+      debug('[useClipboardHistoryWindowSize] Unpinning')
       try {
-        await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
-          title: selectedTitle,
+        await invoke(WindowSizeAPI.SAVE_CLIPBOARD_HISTORY_WINDOW_SIZE, {
           windowSize: null,
         })
       } catch (e) {
-        logError(`Failed to delete window size: ${e}`)
+        logError(`[useClipboardHistoryWindowSize] Failed to unpin: ${e}`)
         showError?.('Failed to unpin')
         return
       }
@@ -179,15 +137,14 @@ export const useWindowSize = (selectedTitle: string, editMode = false) => {
       } catch (e) {
         savedSizeRef.current = prevSavedSize
         setIsPinned(true)
-        logError(`Failed to call setResizable: ${e}`)
+        logError(`[useClipboardHistoryWindowSize] Failed to unpin: ${e}`)
         showError?.('Failed to unpin')
         return
       }
 
       await restoreFocusAfterWindowOp()
-      debug(`[useWindowSize] Unpin complete: title="${selectedTitle}"`)
     } else {
-      debug(`[useWindowSize] Pinning: title="${selectedTitle}"`)
+      debug('[useClipboardHistoryWindowSize] Pinning')
 
       let logicalWidth: number
       let logicalHeight: number
@@ -199,22 +156,18 @@ export const useWindowSize = (selectedTitle: string, editMode = false) => {
         const scaleFactor = monitor?.scaleFactor ?? 1.0
         logicalWidth = Math.round(size.width / scaleFactor)
         logicalHeight = Math.round(size.height / scaleFactor)
-        debug(
-          `[useWindowSize] Pin size: ${logicalWidth}x${logicalHeight} (physical: ${size.width}x${size.height}, scaleFactor: ${scaleFactor})`,
-        )
       } catch (e) {
-        logError(`Failed to get window size: ${e}`)
+        logError(`[useClipboardHistoryWindowSize] Failed to get size: ${e}`)
         showError?.('Failed to get window size')
         return
       }
 
       try {
-        await invoke(WindowSizeAPI.SAVE_CHEAT_SHEET_WINDOW_SIZE, {
-          title: selectedTitle,
+        await invoke(WindowSizeAPI.SAVE_CLIPBOARD_HISTORY_WINDOW_SIZE, {
           windowSize: { width: logicalWidth, height: logicalHeight },
         })
       } catch (e) {
-        logError(`Failed to save window size: ${e}`)
+        logError(`[useClipboardHistoryWindowSize] Failed to save size: ${e}`)
         showError?.('Failed to save window size')
         return
       }
@@ -227,15 +180,14 @@ export const useWindowSize = (selectedTitle: string, editMode = false) => {
       } catch (e) {
         savedSizeRef.current = null
         setIsPinned(false)
-        logError(`Failed to call setResizable: ${e}`)
+        logError(`[useClipboardHistoryWindowSize] Failed to save pin: ${e}`)
         showError?.('Failed to save pin')
         return
       }
 
       await restoreFocusAfterWindowOp()
-      debug(`[useWindowSize] Pin complete: title="${selectedTitle}"`)
     }
-  }, [selectedTitle, showError])
+  }, [showError])
 
   return { isPinned, togglePin }
 }

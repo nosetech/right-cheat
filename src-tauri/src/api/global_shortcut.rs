@@ -257,3 +257,132 @@ pub fn set_toggle_visible_shortcut_settings_with_store<R: tauri::Runtime, S: Set
 
     format!("{{\"status\": {}, \"message\": {}}}", response, message)
 }
+
+pub fn init_clipboard_history_shortcut_settings<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> Result<(), tauri_plugin_store::Error> {
+    let settings_store = TauriSettingsStore;
+    let shortcut_settings =
+        settings_store.get_setting(app, common::config::CLIPBOARD_HISTORY_SHORTCUT);
+
+    match shortcut_settings {
+        Ok(result) => match result {
+            Some(value) => {
+                log::info!(
+                    "[global_shortcut] Clipboard history shortcut settings already exists: {}",
+                    value
+                );
+            }
+            None => {
+                let default_shortcut = ShortcutDef {
+                    ctrl: true,
+                    option: false,
+                    command: true,
+                    hotkey: String::from("C"),
+                };
+                if let Err(err) = settings_store.set_setting(
+                    app,
+                    common::config::CLIPBOARD_HISTORY_SHORTCUT,
+                    json!(default_shortcut),
+                ) {
+                    log::error!(
+                        "[global_shortcut] Failed to set default clipboard history shortcut settings: {}",
+                        err
+                    );
+                    return Err(err);
+                } else {
+                    log::info!(
+                        "[global_shortcut] Default clipboard history shortcut settings initialized."
+                    );
+                }
+            }
+        },
+        Err(err) => {
+            log::error!(
+                "[global_shortcut] Failed to initialize clipboard history shortcut settings: {:?}",
+                err
+            );
+            return Err(err);
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_clipboard_history_shortcut_settings<R: tauri::Runtime>(app: AppHandle<R>) -> String {
+    let settings_store = TauriSettingsStore;
+    get_clipboard_history_shortcut_settings_with_store(&app, &settings_store)
+}
+
+pub fn get_clipboard_history_shortcut_settings_with_store<R: tauri::Runtime, S: SettingsStore>(
+    app: &AppHandle<R>,
+    settings_store: &S,
+) -> String {
+    let shortcut_settings =
+        settings_store.get_setting(app, common::config::CLIPBOARD_HISTORY_SHORTCUT);
+
+    let response;
+    let message;
+    match shortcut_settings {
+        Ok(result) => match result {
+            Some(value) => {
+                response = "\"success\"";
+                message = format!("{}", value);
+            }
+            None => {
+                response = "\"fail\"";
+                message = String::from("\"No settings found for clipboard history shortcut.\"");
+            }
+        },
+        Err(err) => {
+            log::error!(
+                "[global_shortcut] Failed to get clipboard history shortcut settings: {:?}",
+                err
+            );
+            response = "\"fail\"";
+            message = format!("{}", err);
+        }
+    }
+
+    format!("{{\"status\": {}, \"message\": {}}}", response, message)
+}
+
+#[tauri::command]
+pub fn set_clipboard_history_shortcut_settings<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    shortcut: ShortcutDef,
+) -> String {
+    let settings_store = TauriSettingsStore;
+    set_clipboard_history_shortcut_settings_with_store(&app, shortcut, &settings_store)
+}
+
+pub fn set_clipboard_history_shortcut_settings_with_store<R: tauri::Runtime, S: SettingsStore>(
+    app: &AppHandle<R>,
+    shortcut: ShortcutDef,
+    settings_store: &S,
+) -> String {
+    let result = settings_store.set_setting(
+        app,
+        common::config::CLIPBOARD_HISTORY_SHORTCUT,
+        json!(shortcut),
+    );
+
+    let response;
+    let message;
+    match result {
+        Ok(()) => {
+            response = "\"success\"";
+            message = format!("{}", json!(shortcut));
+        }
+        Err(err) => {
+            log::error!(
+                "[global_shortcut] Failed to set clipboard history shortcut settings: {:?}",
+                err
+            );
+            response = "\"fail\"";
+            message = format!("{}", err);
+        }
+    }
+
+    format!("{{\"status\": {}, \"message\": {}}}", response, message)
+}

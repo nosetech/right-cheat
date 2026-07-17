@@ -7,65 +7,37 @@ import { Box, IconButton } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 
 import { PencilIcon } from '@/components/atoms/icons'
-import {
-  SheetSwitchButton,
-  SheetSwitchButtonHandle,
-} from '@/components/molecules/SheetSwitchButton'
 
 type Props = {
-  titles: string[]
-  selected: string
-  onSelect: (value: string) => void
   editMode: boolean
   onToggleEdit: () => void
   isPinned: boolean
   onTogglePin: () => void
-  sheetSwitchRef: Ref<SheetSwitchButtonHandle>
-  pinButtonRef: Ref<HTMLButtonElement>
+  pinButtonRef?: Ref<HTMLButtonElement>
 }
 
 /**
- * ウィンドウヘッダー右側の操作群。
- * シート切り替え・編集モードトグル・ウィンドウサイズのピン留めを提供する。
+ * Clipboard History ウィンドウのヘッダー右側の操作群。
+ * 編集モードトグル（鉛筆）とウィンドウサイズのピン留めを提供する。
+ * チートシートと異なりシート切り替えは持たない。
  */
-export function CheatSheetToolbar({
-  titles,
-  selected,
-  onSelect,
+export function ClipboardHistoryToolbar({
   editMode,
   onToggleEdit,
   isPinned,
   onTogglePin,
-  sheetSwitchRef,
   pinButtonRef,
 }: Props) {
   const theme = useTheme()
-  const hasSelection = !!selected
-  const canPin = hasSelection && !editMode
+  // 編集モード中はサイズ変更を許容するためピン操作を無効化する
+  const canPin = !editMode
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      {/* シート切り替え（編集モード中は無効化） */}
-      <Box
-        sx={{
-          opacity: editMode ? 0.35 : 1,
-          pointerEvents: editMode ? 'none' : 'auto',
-          transition: 'opacity 0.14s',
-        }}
-      >
-        <SheetSwitchButton
-          ref={sheetSwitchRef}
-          titles={titles}
-          selected={selected}
-          onSelect={onSelect}
-        />
-      </Box>
-
       {/* 編集モードトグル（鉛筆アイコン） */}
       <IconButton
         onClick={onToggleEdit}
         size='small'
-        disabled={!hasSelection}
         title={editMode ? 'Cancel edit mode (Esc)' : 'Edit mode (e)'}
         sx={{
           background: editMode
@@ -79,7 +51,6 @@ export function CheatSheetToolbar({
           color: editMode
             ? theme.palette.accent.main
             : theme.palette.text.disabled,
-          opacity: !hasSelection ? 0.3 : 1,
           transition: 'all 0.15s',
           ml: '2px',
           '&.Mui-focusVisible': {

@@ -152,7 +152,11 @@ pub fn run() {
             api::cheatsheet::save_cheat_sheet_commandlist,
             api::global_shortcut::get_toggle_visible_shortcut_settings,
             api::global_shortcut::set_toggle_visible_shortcut_settings,
+            api::global_shortcut::get_clipboard_history_shortcut_settings,
+            api::global_shortcut::set_clipboard_history_shortcut_settings,
             api::window::notify_theme_changed,
+            api::window::get_clipboard_history_window_size,
+            api::window::save_clipboard_history_window_size,
             api::font_size::get_font_size_settings,
             api::font_size::set_font_size_settings,
             api::font_size::increase_font_size,
@@ -191,9 +195,53 @@ pub fn run() {
         });
 }
 
+/// Clipboard History ウィンドウの表示をトグルする。
+/// 未作成なら `/clipboard-history` を開き、表示中なら hide、
+/// 隠れていれば show + フォーカス（メインウィンドウの Toggle Visible と同等の挙動）。
+fn toggle_clipboard_history_window<R: tauri::Runtime>(handle: &tauri::AppHandle<R>) {
+    if let Some(win) = handle.get_webview_window("clipboard_history") {
+        match win.is_visible() {
+            Ok(true) => {
+                if let Err(e) = win.hide() {
+                    log::error!("[lib] Failed to hide clipboard history window: {}", e);
+                }
+            }
+            Ok(false) => {
+                let _ = win.show();
+                let _ = win.set_focus();
+            }
+            Err(e) => {
+                // 可視状態の取得に失敗した場合は表示側に倒す
+                log::error!(
+                    "[lib] Failed to get clipboard history window visibility: {}",
+                    e
+                );
+                let _ = win.show();
+                let _ = win.set_focus();
+            }
+        }
+    } else {
+        let result = tauri::webview::WebviewWindowBuilder::new(
+            handle,
+            "clipboard_history",
+            tauri::WebviewUrl::App("/clipboard-history".into()),
+        )
+        .title("Clipboard History")
+        .inner_size(360.0, 620.0)
+        .min_inner_size(320.0, 400.0)
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true)
+        .build();
+        if let Err(e) = result {
+            log::error!("[lib] Failed to create clipboard history window: {}", e);
+        }
+    }
+}
+
 fn menu_configuration<R: tauri::Runtime>(
     handle: &tauri::AppHandle<R>,
     toggle_visible_shortcut: String,
+    clipboard_history_shortcut: String,
 ) -> Result<Menu<R>, tauri::Error> {
     let window_submenu = Submenu::with_id_and_items(
         handle,
@@ -289,6 +337,14 @@ fn menu_configuration<R: tauri::Runtime>(
                 "View ", // NOTE: デフォルトメニューにならないよう、Viewの後にスペースを入れている。
                 true,
                 &[
+                    &MenuItem::with_id(
+                        handle,
+                        "id_clipboard_history",
+                        "Clipboard History",
+                        true,
+                        Some(clipboard_history_shortcut),
+                    )?,
+                    &PredefinedMenuItem::separator(handle)?,
                     &MenuItem::with_id(handle, "id_find", "Find...", true, Some("Cmd+F"))?,
                     &PredefinedMenuItem::separator(handle)?,
                     &MenuItem::with_id(
@@ -512,6 +568,9 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
                 .emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
                 .unwrap();
         }
+        "id_clipboard_history" => {
+            toggle_clipboard_history_window(handle);
+        }
         "id_increase_font_size" => {
             let _ = api::font_size::increase_font_size(handle.clone());
         }
@@ -534,32 +593,54 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
     {
         let settings_store = TauriSettingsStore;
         api::global_shortcut::init_toggle_visible_shortcut_settings(app.handle())?;
-        let shortcut_settings =
+        api::global_shortcut::init_clipboard_history_shortcut_settings(app.handle())?;
+        let toggle_visible_settings_json =
             settings_store.get_setting(app.handle(), common::config::TOGGLE_VISIBLE_SHORTCUT)?;
-        if let Some(ref json) = shortcut_settings {
-            let settings: api::global_shortcut::ShortcutDef = serde_json::from_value(json.clone())?;
-            let window_visible_shortcut = settings.to_shortcut()?;
+        let clipboard_history_settings_json =
+            settings_store.get_setting(app.handle(), common::config::CLIPBOARD_HISTORY_SHORTCUT)?;
+        if let (Some(ref toggle_json), Some(ref clipboard_json)) = (
+            toggle_visible_settings_json,
+            clipboard_history_settings_json,
+        ) {
+            let toggle_settings: api::global_shortcut::ShortcutDef =
+                serde_json::from_value(toggle_json.clone())?;
+            let clipboard_settings: api::global_shortcut::ShortcutDef =
+                serde_json::from_value(clipboard_json.clone())?;
+            let window_visible_shortcut = toggle_settings.to_shortcut()?;
+            let clipboard_history_shortcut = clipboard_settings.to_shortcut()?;
             log::info!(
                 "[lib] Toggle visible shortcut settings : {}",
                 window_visible_shortcut
+            );
+            log::info!(
+                "[lib] Clipboard history shortcut settings : {}",
+                clipboard_history_shortcut
             );
 
             app.handle().plugin(
                 tauri_plugin_global_shortcut::Builder::new()
                     .with_handler(move |_app, shortcut, event| {
-                        if shortcut == &window_visible_shortcut
-                            && event.state() == ShortcutState::Pressed
-                        {
+                        if event.state() != ShortcutState::Pressed {
+                            return;
+                        }
+                        if shortcut == &window_visible_shortcut {
                             _app.emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
                                 .unwrap();
+                        } else if shortcut == &clipboard_history_shortcut {
+                            toggle_clipboard_history_window(_app);
                         }
                     })
                     .build(),
             )?;
 
             app.global_shortcut().register(window_visible_shortcut)?;
+            app.global_shortcut().register(clipboard_history_shortcut)?;
 
-            let menu = menu_configuration(app.handle(), settings.to_shortcut_for_menu()?)?;
+            let menu = menu_configuration(
+                app.handle(),
+                toggle_settings.to_shortcut_for_menu()?,
+                clipboard_settings.to_shortcut_for_menu()?,
+            )?;
             app.set_menu(menu)?;
             #[cfg(target_os = "macos")]
             {
@@ -586,6 +667,13 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
                     }
                 }
             }
+        } else {
+            // 通常は init_*_shortcut_settings がデフォルトを書き込むため到達しないが、
+            // 設定ファイルの欠損時にメニュー・グローバルショートカットが無言で無効化
+            // されないよう、原因が追えるようログを残す。
+            log::error!(
+                "[lib] Shortcut settings are missing; menu and global shortcuts were not configured"
+            );
         }
     }
     Ok(())
