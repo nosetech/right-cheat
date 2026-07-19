@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 
 import { listen } from '@tauri-apps/api/event'
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
 import { Event } from '@/common'
@@ -43,26 +44,36 @@ export default function Home() {
       // キーボードの first responder を取得できない場合がある。
       // Rust 側の WindowEvent::Focused(true) を検知して emit された
       // イベントを受け取り、WKWebView のフォーカスを復元する。
-      unlistenFocused = await listen<{}>(Event.WINDOW_FOCUSED, async () => {
-        const focused = document.activeElement as HTMLElement | null
-        // Rust の WindowEvent::Focused(true) 検知後に emit されるため、
-        // native イベントの後処理は完了済み。useWindowSize.ts の
-        // restoreFocusAfterWindowOp() と異なり待機は不要。
-        await getCurrentWindow().setFocus()
-        if (
-          focused &&
-          focused !== document.body &&
-          document.body.contains(focused)
-        ) {
-          focused.blur()
-          focused.focus()
-        } else {
-          // フォーカス可能な要素が無い場合（編集モード突入直後など activeElement が
-          // body に戻っているケース）でも、ルートに常設したフォールバック要素へ
-          // フォーカスして WKWebView の native first responder を取り戻す。
-          document.getElementById(FOCUS_FALLBACK_ID)?.focus()
-        }
-      })
+      //
+      // 【重要】WINDOW_FOCUSED は「自ウィンドウ宛」に emit_to されるため、
+      // 必ず webview スコープの listen（getCurrentWebviewWindow().listen）で
+      // 購読する。グローバル listen（@tauri-apps/api/event）はターゲット指定に
+      // 関係なく全ウィンドウの emit を受信するため、複数チートシートウィンドウ
+      // 環境では他ウィンドウ宛の WINDOW_FOCUSED も拾ってしまい、各ウィンドウが
+      // setFocus() でフォーカスを奪い合う無限ループ（再描画の繰り返し）になる。
+      unlistenFocused = await getCurrentWebviewWindow().listen<{}>(
+        Event.WINDOW_FOCUSED,
+        async () => {
+          const focused = document.activeElement as HTMLElement | null
+          // Rust の WindowEvent::Focused(true) 検知後に emit されるため、
+          // native イベントの後処理は完了済み。useWindowSize.ts の
+          // restoreFocusAfterWindowOp() と異なり待機は不要。
+          await getCurrentWindow().setFocus()
+          if (
+            focused &&
+            focused !== document.body &&
+            document.body.contains(focused)
+          ) {
+            focused.blur()
+            focused.focus()
+          } else {
+            // フォーカス可能な要素が無い場合（編集モード突入直後など activeElement が
+            // body に戻っているケース）でも、ルートに常設したフォールバック要素へ
+            // フォーカスして WKWebView の native first responder を取り戻す。
+            document.getElementById(FOCUS_FALLBACK_ID)?.focus()
+          }
+        },
+      )
       if (cancelled) {
         unlistenFocused()
         unlistenFocused = null
