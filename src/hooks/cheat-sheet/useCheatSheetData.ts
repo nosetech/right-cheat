@@ -1,16 +1,10 @@
 import { RefObject, useEffect, useState } from 'react'
 
-import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { debug } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { useCheatSheetLoader } from '@/hooks/useCheatSheetLoader'
-import {
-  CheatSheetAPI,
-  CheatSheetData,
-  CheatSheetTitleData,
-} from '@/types/api/CheatSheet'
+import { CheatSheetData, CheatSheetTitleData } from '@/types/api/CheatSheet'
 
 type Params = {
   editModeRef: RefObject<boolean>
@@ -55,11 +49,12 @@ export function useCheatSheetData({ editModeRef }: Params) {
         unlisten = undefined
         return
       }
-      await invoke<string>(CheatSheetAPI.RELOAD_CHEAT_SHEET).then(
-        (response) => {
-          debug(`[CheatSheet] Reload cheat sheet: response=${response}`)
-        },
-      )
+      // mount 時は自ウィンドウのタイトル一覧を読み込むだけにする。
+      // 以前はここで reload_cheat_sheet を invoke していたが、これは
+      // RELOAD_CHEAT_SHEET を全ウィンドウへブロードキャストするため、
+      // 新規チートシートウィンドウを開くたびに既存の全ウィンドウが
+      // 先頭シートへリセットされてしまう（複数ウィンドウ対応で顕在化）。
+      // Cmd+R メニューや編集後の同期ブロードキャストは別経路で継続する。
       await loadCheatSheetTitles()
     })()
     return () => {
