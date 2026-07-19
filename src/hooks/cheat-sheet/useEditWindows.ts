@@ -28,6 +28,14 @@ type Params = {
   onUpsertGroup: (payload: EditGroupSavePayload) => void
 }
 
+// 複数チートシートウィンドウ対応: 編集ウィンドウのラベルは呼び出し元ウィンドウ
+// ごとに `edit_command-<親ラベル>` / `edit_group-<親ラベル>` とし、別のチート
+// シートウィンドウの編集ウィンドウと衝突しないようにする。
+// ラベル規則はバックエンド（cheatsheet_window.rs の edit_window_labels）と
+// 揃えること。親ウィンドウ破棄時のオーファン掃除がこの規則に依存している。
+const editCommandLabel = (parentLabel: string) => `edit_command-${parentLabel}`
+const editGroupLabel = (parentLabel: string) => `edit_group-${parentLabel}`
+
 /**
  * コマンド/グループ編集用の別ウィンドウ（edit_command / edit_group）の
  * 開閉と、保存イベント（EDIT_COMMAND_SAVE / EDIT_GROUP_SAVE）の受信を管理するフック。
@@ -90,16 +98,19 @@ export function useEditWindows({
       initialGroupEditId: string | null,
       isNew: boolean,
     ) => {
-      const existing = await WebviewWindow.getByLabel('edit_command')
+      const win = getCurrentWebviewWindow()
+      // 編集ウィンドウが READY / SAVE を正しい呼び出し元へ emit できるよう、
+      // 自ウィンドウのラベルを引き継ぐ。
+      const parentLabel = win.label
+      const editLabel = editCommandLabel(parentLabel)
+
+      // 自ウィンドウの編集ウィンドウが既に開いていればフォーカスのみ移す。
+      const existing = await WebviewWindow.getByLabel(editLabel)
       if (existing) {
         await existing.setFocus()
         return
       }
 
-      const win = getCurrentWebviewWindow()
-      // 複数チートシートウィンドウ対応: 編集ウィンドウが READY / SAVE を
-      // 正しい呼び出し元へ emit できるよう、自ウィンドウのラベルを引き継ぐ。
-      const parentLabel = win.label
       const initData: EditCommandInitPayload = {
         // 実際のシート種別（command / application / shortcut）を渡す。
         // command と application は編集画面で現状同じ扱いだが、将来分岐できるようにする
@@ -112,10 +123,10 @@ export function useEditWindows({
       const windowHeight = isShortcuts ? 390 : 570
 
       await win.once(Event.EDIT_COMMAND_READY, async () => {
-        await win.emitTo('edit_command', Event.EDIT_COMMAND_INIT, initData)
+        await win.emitTo(editLabel, Event.EDIT_COMMAND_INIT, initData)
       })
 
-      const editWin = new WebviewWindow('edit_command', {
+      const editWin = new WebviewWindow(editLabel, {
         url: `/edit-command?parent=${encodeURIComponent(parentLabel)}`,
         title: isNew
           ? isShortcuts
@@ -141,25 +152,28 @@ export function useEditWindows({
 
   const openGroupEditWindow = useCallback(
     async (group: EditGroupData | null, isNew: boolean) => {
-      const existing = await WebviewWindow.getByLabel('edit_group')
+      const win = getCurrentWebviewWindow()
+      // 呼び出し元ラベルを引き継ぐ。
+      const parentLabel = win.label
+      const editLabel = editGroupLabel(parentLabel)
+
+      // 自ウィンドウの編集ウィンドウが既に開いていればフォーカスのみ移す。
+      const existing = await WebviewWindow.getByLabel(editLabel)
       if (existing) {
         await existing.setFocus()
         return
       }
 
-      const win = getCurrentWebviewWindow()
-      // 複数チートシートウィンドウ対応: 呼び出し元ラベルを引き継ぐ。
-      const parentLabel = win.label
       const initData: EditGroupInitPayload = {
         group,
         isNew,
       }
 
       await win.once(Event.EDIT_GROUP_READY, async () => {
-        await win.emitTo('edit_group', Event.EDIT_GROUP_INIT, initData)
+        await win.emitTo(editLabel, Event.EDIT_GROUP_INIT, initData)
       })
 
-      const editWin = new WebviewWindow('edit_group', {
+      const editWin = new WebviewWindow(editLabel, {
         url: `/edit-group?parent=${encodeURIComponent(parentLabel)}`,
         title: isNew ? 'Add Group' : 'Rename Group',
         width: 460,
@@ -177,10 +191,15 @@ export function useEditWindows({
     [],
   )
 
-  // 開いている編集ウィンドウをすべて閉じてカウントをリセットする。
+  // 自ウィンドウが開いている編集ウィンドウをすべて閉じてカウントをリセットする。
   const closeEditWindows = useCallback(async () => {
-    await WebviewWindow.getByLabel('edit_command').then((w) => w?.destroy())
-    await WebviewWindow.getByLabel('edit_group').then((w) => w?.destroy())
+    const parentLabel = getCurrentWebviewWindow().label
+    await WebviewWindow.getByLabel(editCommandLabel(parentLabel)).then((w) =>
+      w?.destroy(),
+    )
+    await WebviewWindow.getByLabel(editGroupLabel(parentLabel)).then((w) =>
+      w?.destroy(),
+    )
     setEditWindowOpenCount(0)
   }, [])
 

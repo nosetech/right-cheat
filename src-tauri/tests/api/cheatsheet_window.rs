@@ -176,3 +176,72 @@ mod last_focused_cheatsheet_window {
         assert!(guard.is_none());
     }
 }
+
+#[cfg(test)]
+mod edit_window_labels {
+    use app_lib::api::cheatsheet_window::edit_window_labels;
+
+    // --- 同値分割: 通常のラベル ---
+
+    #[test]
+    fn main_label_returns_edit_command_and_edit_group() {
+        // "main" はメインウィンドウの固定ラベル
+        let labels = edit_window_labels("main");
+        assert_eq!(
+            labels,
+            [
+                "edit_command-main".to_string(),
+                "edit_group-main".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn label_containing_hyphen_is_appended_as_is() {
+        // ラベル自体にハイフンを含むケース（cheatsheet-N 形式）でも
+        // 単純に文字列連結されるだけであることを確認
+        let labels = edit_window_labels("cheatsheet-2");
+        assert_eq!(
+            labels,
+            [
+                "edit_command-cheatsheet-2".to_string(),
+                "edit_group-cheatsheet-2".to_string()
+            ]
+        );
+    }
+
+    // --- ホワイトボックス: 返り値の構造（要素数・順序） ---
+
+    #[test]
+    fn result_has_exactly_two_elements() {
+        // 戻り値の型は [String; 2] で固定長であることの確認
+        let labels = edit_window_labels("main");
+        assert_eq!(labels.len(), 2);
+    }
+
+    #[test]
+    fn first_element_is_edit_command_prefixed() {
+        // [0] は edit_command 系のラベルであること（順序の固定）
+        let labels = edit_window_labels("main");
+        assert!(labels[0].starts_with("edit_command-"));
+    }
+
+    #[test]
+    fn second_element_is_edit_group_prefixed() {
+        // [1] は edit_group 系のラベルであること（順序の固定）
+        let labels = edit_window_labels("main");
+        assert!(labels[1].starts_with("edit_group-"));
+    }
+
+    // --- 境界値: 空文字列（縮退ケース） ---
+
+    #[test]
+    fn empty_parent_label_returns_degenerate_labels() {
+        // parent_label が空文字列の場合の仕様を固定する（縮退ケース）
+        let labels = edit_window_labels("");
+        assert_eq!(
+            labels,
+            ["edit_command-".to_string(), "edit_group-".to_string()]
+        );
+    }
+}

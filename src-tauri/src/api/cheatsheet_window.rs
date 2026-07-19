@@ -53,14 +53,46 @@ pub fn has_cheatsheet_window<R: Runtime>(handle: &AppHandle<R>) -> bool {
         .any(|label| is_cheatsheet_window_label(label))
 }
 
-/// チートシートウィンドウに `WindowEvent::Focused(true)` ハンドラを登録する。
-/// フォーカス時に以下を行う:
-/// - 自ウィンドウへ `WINDOW_FOCUSED` を emit（WKWebView のフォーカス復元用）
-/// - 「最後にフォーカスされたチートシートウィンドウ」の State を更新
-pub fn register_focus_handler<R: Runtime>(window: &WebviewWindow<R>) {
+/// 親チートシートウィンドウに紐づく編集ウィンドウのラベル一覧を返す。
+/// ラベル規則はフロントエンド（useEditWindows.ts）と揃えること。
+pub fn edit_window_labels(parent_label: &str) -> [String; 2] {
+    [
+        format!("edit_command-{}", parent_label),
+        format!("edit_group-{}", parent_label),
+    ]
+}
+
+/// 親チートシートウィンドウに紐づく編集ウィンドウ（`edit_command-<親ラベル>` /
+/// `edit_group-<親ラベル>`）を閉じる。
+/// 親を閉じたまま編集ウィンドウが残ると、SAVE が存在しないラベル宛の emit と
+/// なり入力内容が無言で失われるため、親の破棄時にオーファン化を防ぐ。
+fn close_edit_windows_of<R: Runtime>(handle: &AppHandle<R>, parent_label: &str) {
+    for label in edit_window_labels(parent_label) {
+        if let Some(w) = handle.get_webview_window(&label) {
+            log::info!(
+                "[cheatsheet_window] Closing orphaned edit window: {}",
+                label
+            );
+            if let Err(e) = w.close() {
+                log::error!(
+                    "[cheatsheet_window] Failed to close edit window {}: {}",
+                    label,
+                    e
+                );
+            }
+        }
+    }
+}
+
+/// チートシートウィンドウにウィンドウイベントハンドラを登録する。
+/// - `Focused(true)`: 自ウィンドウへ `WINDOW_FOCUSED` を emit（WKWebView の
+///   フォーカス復元用）し、「最後にフォーカスされたチートシートウィンドウ」の
+///   State を更新する
+/// - `Destroyed`: 自ウィンドウに紐づく編集ウィンドウを閉じる（オーファン化防止）
+pub fn register_window_event_handler<R: Runtime>(window: &WebviewWindow<R>) {
     let win = window.clone();
-    window.on_window_event(move |event| {
-        if let tauri::WindowEvent::Focused(true) = event {
+    window.on_window_event(move |event| match event {
+        tauri::WindowEvent::Focused(true) => {
             let label = win.label().to_string();
             log::debug!("[cheatsheet_window] Window focused: {}", label);
             // 複数ウィンドウ環境で他ウィンドウへ誤ってフォーカス復元処理が走らないよう、
@@ -74,6 +106,12 @@ pub fn register_focus_handler<R: Runtime>(window: &WebviewWindow<R>) {
                 }
             }
         }
+        tauri::WindowEvent::Destroyed => {
+            let label = win.label().to_string();
+            log::debug!("[cheatsheet_window] Window destroyed: {}", label);
+            close_edit_windows_of(win.app_handle(), &label);
+        }
+        _ => {}
     });
 }
 
@@ -106,7 +144,7 @@ pub fn create_cheatsheet_window<R: Runtime>(handle: &AppHandle<R>) -> Result<Str
     .build()
     .map_err(|e| e.to_string())?;
 
-    register_focus_handler(&window);
+    register_window_event_handler(&window);
     log::info!("[cheatsheet_window] Opened cheatsheet window: {}", label);
     Ok(label)
 }

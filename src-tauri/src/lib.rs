@@ -123,9 +123,10 @@ pub fn run() {
                 app.manage(monitor);
             }
 
-            // main ウィンドウにも動的生成ウィンドウと同じフォーカスハンドラを適用する。
+            // main ウィンドウにも動的生成ウィンドウと同じウィンドウイベント
+            // ハンドラ（フォーカス復元・編集ウィンドウのオーファン掃除）を適用する。
             if let Some(main_window) = app.get_webview_window("main") {
-                api::cheatsheet_window::register_focus_handler(&main_window);
+                api::cheatsheet_window::register_window_event_handler(&main_window);
             }
 
             Ok(())
