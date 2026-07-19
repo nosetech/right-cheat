@@ -4,13 +4,10 @@ import { useEffect } from 'react'
 
 import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { error } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
 import { CheatSheet } from '@/components/organisms/CheatSheet'
 import { FOCUS_FALLBACK_ID } from '@/constants/focus'
-import { useNotificationContext } from '@/context/NotificationContext'
-import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 
 const changeWindowVisible = async () => {
   const window = getCurrentWindow()
@@ -23,28 +20,12 @@ const changeWindowVisible = async () => {
 }
 
 export default function Home() {
-  const { getVisibleOnAllWorkspacesSettings } = usePreferencesStore()
-  const { showError } = useNotificationContext() ?? {}
-
   useEffect(() => {
     let cancelled = false
     let unlistenToggle: (() => void) | null = null
     let unlistenFocused: (() => void) | null = null
 
     const setupListener = async () => {
-      // アプリケーション初期化時に設定ファイルから取得した値を使用
-      try {
-        const window = getCurrentWindow()
-        const visibleOnAllWorkspaces = await getVisibleOnAllWorkspacesSettings()
-        if (cancelled) return
-        await window.setVisibleOnAllWorkspaces(visibleOnAllWorkspaces)
-      } catch (err) {
-        if (cancelled) return
-        const errorMessage = err instanceof Error ? err.message : String(err)
-        error(`[page] Failed to set visible on all workspaces: ${errorMessage}`)
-        showError?.('Failed to initialize visible on all workspaces settings')
-      }
-
       if (cancelled) return
       unlistenToggle = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
         ;(async () => {
@@ -99,7 +80,7 @@ export default function Home() {
         unlistenFocused()
       }
     }
-  }, [getVisibleOnAllWorkspacesSettings, showError])
+  }, [])
 
   return <CheatSheet />
 }

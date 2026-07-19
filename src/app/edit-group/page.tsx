@@ -1,6 +1,6 @@
 'use client'
 import { scaledPx } from '@/utils/css'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Box, TextField } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -28,6 +28,14 @@ export default function EditGroupPage() {
 
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // 呼び出し元チートシートウィンドウのラベル（複数ウィンドウ対応）。
+  // クエリパラメータ `parent` で受け取り、READY / SAVE の emit 先に使う。
+  // 未指定時は後方互換で 'main'。
+  const parentLabel = useMemo(() => {
+    if (typeof window === 'undefined') return 'main'
+    return new URLSearchParams(window.location.search).get('parent') || 'main'
+  }, [])
+
   useEffect(() => {
     const win = getCurrentWebviewWindow()
 
@@ -38,11 +46,11 @@ export default function EditGroupPage() {
         setName(payload.group?.group ?? '')
         setTimeout(() => inputRef.current?.focus(), 80)
       })
-      await win.emitTo('main', Event.EDIT_GROUP_READY, {})
+      await win.emitTo(parentLabel, Event.EDIT_GROUP_READY, {})
     }
 
     setup()
-  }, [])
+  }, [parentLabel])
 
   const isNew = initPayload?.isNew ?? true
   const canSave = name.trim().length > 0
@@ -56,9 +64,9 @@ export default function EditGroupPage() {
       isNew,
       name: name.trim(),
     }
-    await win.emitTo('main', Event.EDIT_GROUP_SAVE, payload)
+    await win.emitTo(parentLabel, Event.EDIT_GROUP_SAVE, payload)
     await win.destroy()
-  }, [canSave, initPayload, isNew, name])
+  }, [canSave, initPayload, isNew, name, parentLabel])
 
   const handleCancel = async () => {
     await getCurrentWebviewWindow().destroy()

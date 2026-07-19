@@ -6,7 +6,7 @@
 // - init_clipboard_settings（未設定時のみ既定値を書き込む冪等処理）
 // - clear_history_on_quit_if_enabled（DB のクリップボード履歴全削除）
 //
-// テストは font_size.rs / visible_on_all_workspaces.rs のパターン（tauri::test::mock_app +
+// テストは font_size.rs のパターン（tauri::test::mock_app +
 // TauriSettingsStore）、および DB を伴うテストは db/repository.rs・api/cheatsheet.rs の
 // インメモリ DB 構築パターンに準拠する。
 

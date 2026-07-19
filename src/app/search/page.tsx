@@ -4,7 +4,8 @@ import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { emitTo } from '@tauri-apps/api/event'
+import { invoke } from '@tauri-apps/api/core'
+import { emitTo, listen } from '@tauri-apps/api/event'
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
@@ -17,6 +18,11 @@ import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { useCommandSearch } from '@/hooks/useCommandSearch'
 import { FONT_UI } from '@/theme/fonts'
 import { CommandSearchResult } from '@/types/api/CheatSheet'
+import { WindowAPI } from '@/types/api/Window'
+
+// 新規チートシートウィンドウの READY を待つ最大時間（ミリ秒）。
+// READY が届かなくても取りこぼさないためのフォールバック。
+const CHEAT_SHEET_READY_TIMEOUT_MS = 5000
 
 // コマンド全文検索ウィンドウ（RightCheat Mockup v16 / Search 画面に準拠）。
 export default function SearchPage() {
@@ -52,22 +58,68 @@ export default function SearchPage() {
     }
   }
 
-  // 選択したコマンドの属するチートシートをメインウィンドウに表示して閉じる。
+  // 指定ラベルのチートシートウィンドウへ OPEN_CHEAT_SHEET を emit し、表示・フォーカスする。
+  const emitAndReveal = async (label: string, hit: CommandSearchResult) => {
+    await emitTo(label, Event.OPEN_CHEAT_SHEET, {
+      title: hit.cheatsheet_title,
+      commandId: hit.id,
+    })
+    const win = await WebviewWindow.getByLabel(label)
+    if (win) {
+      await win.show()
+      await win.setFocus()
+    }
+  }
+
+  // チートシートウィンドウが 1 つも無い場合に新規ウィンドウを開き、
+  // OPEN_CHEAT_SHEET を受信できる状態（READY）になってから emit する。
+  const openInNewWindowAndReveal = async (hit: CommandSearchResult) => {
+    let readyResolve: () => void = () => {}
+    const readyPromise = new Promise<void>((resolve) => {
+      readyResolve = resolve
+    })
+    // 生成したウィンドウのラベル。READY 受信時の照合に使う。
+    let targetLabel = ''
+    // READY の取りこぼしを防ぐため、ウィンドウを開く前にリスナーを登録する。
+    const unlisten = await listen<{ label: string }>(
+      Event.CHEAT_SHEET_READY,
+      (e) => {
+        if (e.payload?.label && e.payload.label === targetLabel) {
+          readyResolve()
+        }
+      },
+    )
+    try {
+      targetLabel = await invoke<string>(WindowAPI.OPEN_CHEAT_SHEET_WINDOW)
+      debug(`[search] opened new cheatsheet window '${targetLabel}'`)
+      await Promise.race([
+        readyPromise,
+        new Promise<void>((resolve) =>
+          setTimeout(resolve, CHEAT_SHEET_READY_TIMEOUT_MS),
+        ),
+      ])
+      await emitAndReveal(targetLabel, hit)
+    } finally {
+      unlisten()
+    }
+  }
+
+  // 選択したコマンドの属するチートシートを、最後にフォーカスされたチートシート
+  // ウィンドウに表示して閉じる。該当ウィンドウが無ければ新規ウィンドウで開く。
   // 失敗時はウィンドウを閉じず、エラーをログ出力するに留める。
   const openCheatSheet = async (hit: CommandSearchResult) => {
     try {
-      await emitTo('main', Event.OPEN_CHEAT_SHEET, {
-        title: hit.cheatsheet_title,
-        commandId: hit.id,
-      })
+      const target = await invoke<string | null>(
+        WindowAPI.GET_LAST_FOCUSED_CHEAT_SHEET_WINDOW,
+      )
+      if (target) {
+        await emitAndReveal(target, hit)
+      } else {
+        await openInNewWindowAndReveal(hit)
+      }
       debug(
         `[search] open_cheat_sheet title='${hit.cheatsheet_title}' commandId=${hit.id}`,
       )
-      const main = await WebviewWindow.getByLabel('main')
-      if (main) {
-        await main.show()
-        await main.setFocus()
-      }
       await getCurrentWindow().close()
     } catch (e) {
       logError(`[search] open_cheat_sheet error: ${String(e)}`)

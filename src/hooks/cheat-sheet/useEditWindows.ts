@@ -97,6 +97,9 @@ export function useEditWindows({
       }
 
       const win = getCurrentWebviewWindow()
+      // 複数チートシートウィンドウ対応: 編集ウィンドウが READY / SAVE を
+      // 正しい呼び出し元へ emit できるよう、自ウィンドウのラベルを引き継ぐ。
+      const parentLabel = win.label
       const initData: EditCommandInitPayload = {
         // 実際のシート種別（command / application / shortcut）を渡す。
         // command と application は編集画面で現状同じ扱いだが、将来分岐できるようにする
@@ -113,7 +116,7 @@ export function useEditWindows({
       })
 
       const editWin = new WebviewWindow('edit_command', {
-        url: '/edit-command',
+        url: `/edit-command?parent=${encodeURIComponent(parentLabel)}`,
         title: isNew
           ? isShortcuts
             ? 'Add Shortcut'
@@ -145,6 +148,8 @@ export function useEditWindows({
       }
 
       const win = getCurrentWebviewWindow()
+      // 複数チートシートウィンドウ対応: 呼び出し元ラベルを引き継ぐ。
+      const parentLabel = win.label
       const initData: EditGroupInitPayload = {
         group,
         isNew,
@@ -155,7 +160,7 @@ export function useEditWindows({
       })
 
       const editWin = new WebviewWindow('edit_group', {
-        url: '/edit-group',
+        url: `/edit-group?parent=${encodeURIComponent(parentLabel)}`,
         title: isNew ? 'Add Group' : 'Rename Group',
         width: 460,
         height: 220,

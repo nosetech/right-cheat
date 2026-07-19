@@ -7,7 +7,8 @@ import {
   useRef,
 } from 'react'
 
-import { listen } from '@tauri-apps/api/event'
+import { emit, listen } from '@tauri-apps/api/event'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { debug } from '@tauri-apps/plugin-log'
 
 import { Event } from '@/common'
@@ -136,6 +137,17 @@ export function useScrollToCommand({
       if (cancelled) {
         unlisten()
         unlisten = undefined
+        return
+      }
+      // OPEN_CHEAT_SHEET を受信できる状態になったことを通知する。
+      // 検索ウィンドウが新規チートシートウィンドウを開いた際、この READY を
+      // 待ってから emit することで、リスナー登録前に emit してしまう取りこぼしを防ぐ。
+      try {
+        await emit(Event.CHEAT_SHEET_READY, {
+          label: getCurrentWindow().label,
+        })
+      } catch (e) {
+        debug(`[CheatSheet] failed to emit cheat_sheet_ready: ${String(e)}`)
       }
     })()
     return () => {

@@ -30,7 +30,6 @@ import {
   ShortcutDef,
 } from '@/types/api/GlobalShortcut'
 import { LogSettings, LogSettingsAPI } from '@/types/api/LogSettings'
-import { VisibleOnAllWorkspacesAPI } from '@/types/api/VisibleOnAllWorkspaces'
 import { WindowAPI } from '@/types/api/Window'
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
@@ -69,15 +68,9 @@ export default function Page() {
     clipboardHistoryShortcutDialogOpen,
     setClipboardHistoryShortcutDialogOpen,
   ] = useState<boolean>(false)
-  const [visibleOnAllWorkspaces, setVisibleOnAllWorkspaces] =
-    useState<boolean>(true)
   const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
 
-  const {
-    getVisibleOnAllWorkspacesSettings,
-    getConfirmActions,
-    setConfirmActions,
-  } = usePreferencesStore()
+  const { getConfirmActions, setConfirmActions } = usePreferencesStore()
   const {
     themeMode,
     setThemeMode: setStoredThemeMode,
@@ -197,10 +190,6 @@ export default function Page() {
 
   useEffect(() => {
     ;(async () => {
-      const visibleOnAllWorkspacesValue =
-        await getVisibleOnAllWorkspacesSettings()
-      setVisibleOnAllWorkspaces(visibleOnAllWorkspacesValue)
-
       try {
         const confirmActionsValue = await getConfirmActions()
         setConfirmActionsState(confirmActionsValue)
@@ -438,40 +427,6 @@ export default function Page() {
       error(`[preferences] Error notifying theme change: ${err}`)
       await showRcError('Preferences', 'Failed to apply theme change')
     }
-  }
-
-  const handleVisibleOnAllWorkspacesChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const newValue = event.target.checked
-    setVisibleOnAllWorkspaces(newValue)
-    ;(async () => {
-      let saved = false
-      try {
-        await invoke(
-          VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING,
-          {
-            settings: {
-              enabled: newValue,
-            },
-          },
-        )
-        debug(
-          `[preferences] invoke '${VisibleOnAllWorkspacesAPI.SET_VISIBLE_ON_ALL_WORKSPACES_SETTING}' succeeded`,
-        )
-        saved = true
-      } catch (err) {
-        error(`[preferences] Error setting visible on all workspaces: ${err}`)
-        await showRcError(
-          'Preferences',
-          'Failed to save visible on all workspaces settings',
-        )
-      }
-
-      if (saved) {
-        await showRestartConfirmationDialog()
-      }
-    })()
   }
 
   const handleLogSettingsSave = (
@@ -1033,34 +988,6 @@ export default function Page() {
                   : 'inset 0 1px 0 rgba(255,255,255,0.5)',
               }}
             >
-              {/* Visible on all workspaces */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  py: '6px',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <RowDot />
-                  <Typography
-                    sx={{
-                      fontSize: scaledPx(theme.custom.fontSize.label),
-                      color: 'text.primary',
-                    }}
-                  >
-                    Visible on all workspaces
-                  </Typography>
-                </Box>
-                <ThemedSwitch
-                  checked={visibleOnAllWorkspaces}
-                  onChange={handleVisibleOnAllWorkspacesChange}
-                />
-              </Box>
-
-              <Divider sx={{ borderBottomWidth: '0.5px' }} />
-
               {/* Confirm before actions */}
               <Box
                 sx={{

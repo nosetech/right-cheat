@@ -105,8 +105,13 @@ pub fn run() {
                     };
                 }
             }
+            // チートシートウィンドウのラベル採番カウンタと最終フォーカスラベルを State 登録。
+            // フォーカスハンドラが LastFocusedCheatsheetWindow を参照するため、
+            // ハンドラ登録より前に manage する。
+            app.manage(api::cheatsheet_window::NextCheatsheetWindowId::default());
+            app.manage(api::cheatsheet_window::LastFocusedCheatsheetWindow::new_with_main());
+
             global_shortcut_configuration(app)?;
-            api::visible_on_all_workspaces::init_visible_on_all_workspaces_settings(app.handle())?;
             api::log_settings::init_log_settings(app.handle())?;
             api::db_settings::init_db_settings(app.handle())?;
             api::clipboard_settings::init_clipboard_settings(app.handle())?;
@@ -118,16 +123,9 @@ pub fn run() {
                 app.manage(monitor);
             }
 
+            // main ウィンドウにも動的生成ウィンドウと同じフォーカスハンドラを適用する。
             if let Some(main_window) = app.get_webview_window("main") {
-                let main_window_clone = main_window.clone();
-                main_window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::Focused(true) = event {
-                        log::debug!("[lib] Window focused: emitting window_focused event");
-                        main_window_clone
-                            .emit(common::event::WINDOW_FOCUSED, ())
-                            .ok();
-                    }
-                });
+                api::cheatsheet_window::register_focus_handler(&main_window);
             }
 
             Ok(())
@@ -162,8 +160,8 @@ pub fn run() {
             api::font_size::increase_font_size,
             api::font_size::decrease_font_size,
             api::font_size::reset_font_size,
-            api::visible_on_all_workspaces::get_visible_on_all_workspaces_setting,
-            api::visible_on_all_workspaces::set_visible_on_all_workspaces_setting,
+            api::cheatsheet_window::open_cheatsheet_window,
+            api::cheatsheet_window::get_last_focused_cheatsheet_window,
             api::application::run_application,
             api::log_settings::get_log_settings,
             api::log_settings::set_log_settings,
@@ -238,6 +236,24 @@ fn toggle_clipboard_history_window<R: tauri::Runtime>(handle: &tauri::AppHandle<
     }
 }
 
+/// すべてのチートシートウィンドウの表示をトグルする。
+/// チートシートウィンドウが 1 つも開いていない場合は、復帰導線として
+/// 新しいチートシートウィンドウを開く（`New Cheatsheet Window` と同等）。
+fn toggle_cheatsheet_windows_visible<R: tauri::Runtime>(handle: &tauri::AppHandle<R>) {
+    if api::cheatsheet_window::has_cheatsheet_window(handle) {
+        // 各チートシートウィンドウが listen している WINDOW_VISIABLE_TOGGLE を
+        // ブロードキャストし、全ウィンドウを一括でトグルする。
+        if let Err(e) = handle.emit(common::event::WINDOW_VISIABLE_TOGGLE, ()) {
+            log::error!("[lib] Failed to emit window_visible_toggle: {}", e);
+        }
+    } else if let Err(e) = api::cheatsheet_window::create_cheatsheet_window(handle) {
+        log::error!(
+            "[lib] Failed to open cheatsheet window on toggle visible: {}",
+            e
+        );
+    }
+}
+
 fn menu_configuration<R: tauri::Runtime>(
     handle: &tauri::AppHandle<R>,
     toggle_visible_shortcut: String,
@@ -294,6 +310,14 @@ fn menu_configuration<R: tauri::Runtime>(
                 "File",
                 true,
                 &[
+                    &MenuItem::with_id(
+                        handle,
+                        "id_new_cheatsheet_window",
+                        "New Cheatsheet Window",
+                        true,
+                        Some("Cmd+N"),
+                    )?,
+                    &PredefinedMenuItem::separator(handle)?,
                     &MenuItem::with_id(
                         handle,
                         "id_edit_cheatsheets",
@@ -422,6 +446,11 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
             .build();
+        }
+        "id_new_cheatsheet_window" => {
+            if let Err(e) = api::cheatsheet_window::create_cheatsheet_window(handle) {
+                log::error!("[lib] Failed to open new cheatsheet window: {}", e);
+            }
         }
         "id_edit_cheatsheets" => {
             let _ = tauri::webview::WebviewWindowBuilder::new(
@@ -564,9 +593,7 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             let _ = api::cheatsheet::reload_cheat_sheet(handle.clone());
         }
         "id_toggle_visible" => {
-            handle
-                .emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
-                .unwrap();
+            toggle_cheatsheet_windows_visible(handle);
         }
         "id_clipboard_history" => {
             toggle_clipboard_history_window(handle);
@@ -624,8 +651,7 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
                             return;
                         }
                         if shortcut == &window_visible_shortcut {
-                            _app.emit(common::event::WINDOW_VISIABLE_TOGGLE, ())
-                                .unwrap();
+                            toggle_cheatsheet_windows_visible(_app);
                         } else if shortcut == &clipboard_history_shortcut {
                             toggle_clipboard_history_window(_app);
                         }
