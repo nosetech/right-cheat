@@ -304,3 +304,56 @@ mod resolve_toggle_target_visible {
         assert!(resolve_toggle_target_visible(&visibilities));
     }
 }
+
+#[cfg(test)]
+mod cascade_position {
+    use app_lib::api::cheatsheet_window::cascade_position;
+
+    // --- 同値分割: 基準位置からのオフセット ---
+
+    #[test]
+    fn first_additional_window_offsets_by_forty() {
+        // id=2（最初の追加ウィンドウ）は step=0 のため、基準位置から (40, 40) ずれる
+        assert_eq!(cascade_position((0.0, 0.0), 2), (40.0, 40.0));
+    }
+
+    #[test]
+    fn second_additional_window_offsets_by_seventy() {
+        // id=3 は step=1 のため、基準位置から (70, 70) ずれる
+        assert_eq!(cascade_position((0.0, 0.0), 3), (70.0, 70.0));
+    }
+
+    #[test]
+    fn base_position_is_preserved_as_origin() {
+        // マルチディスプレイ対応: 基準位置が原点でない場合、オフセットは
+        // 基準位置に加算される（絶対座標 (0, 0) 基準に固定されない）
+        assert_eq!(cascade_position((1920.0, 100.0), 2), (1960.0, 140.0));
+    }
+
+    // --- ホワイトボックス: 折り返し（10ウィンドウごとに step がリセット） ---
+
+    #[test]
+    fn offset_wraps_after_ten_windows() {
+        // id=2 (step=0) と id=12 (step=(12-2)%10=0) は同じオフセットになる
+        assert_eq!(
+            cascade_position((0.0, 0.0), 2),
+            cascade_position((0.0, 0.0), 12)
+        );
+    }
+
+    // --- 境界値分析 ---
+
+    #[test]
+    fn id_below_two_saturates_to_zero_step() {
+        // 境界値: id が採番開始値 (2) を下回るケース（本来発生しないが
+        // saturating_sub により panic せず step=0 として扱われることを固定する）
+        assert_eq!(cascade_position((0.0, 0.0), 0), (40.0, 40.0));
+    }
+
+    #[test]
+    fn negative_base_position_is_supported() {
+        // 境界値: セカンダリディスプレイがプライマリの左/上にある場合、
+        // 基準位置が負の座標になり得ることを想定する
+        assert_eq!(cascade_position((-500.0, -200.0), 2), (-460.0, -160.0));
+    }
+}

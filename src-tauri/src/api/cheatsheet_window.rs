@@ -115,9 +115,42 @@ pub fn register_window_event_handler<R: Runtime>(window: &WebviewWindow<R>) {
     });
 }
 
+/// カスケード表示のオフセット量（基準位置からの相対値、論理ピクセル）を返す。
+/// id に応じて右下へずらし、一定数（10ウィンドウ）で折り返す。
+fn cascade_offset(id: u32) -> f64 {
+    let step = ((id.saturating_sub(2)) % 10) as f64;
+    40.0 + step * 30.0
+}
+
+/// カスケード表示の基準位置（論理ピクセル）を、id に応じたオフセット分
+/// ずらした絶対位置に変換する。
+pub fn cascade_position(base: (f64, f64), id: u32) -> (f64, f64) {
+    let offset = cascade_offset(id);
+    (base.0 + offset, base.1 + offset)
+}
+
+/// カスケード表示の基準位置を、最後にフォーカスされたチートシートウィンドウの
+/// 実際の画面座標（論理ピクセル）から求める。
+/// 絶対座標 (0, 0) を基準にすると、ユーザーがセカンダリディスプレイで作業して
+/// いる場合に新規ウィンドウが常にプライマリディスプレイの左上に生成されて
+/// しまうため、既存ウィンドウの実座標を基準にすることでマルチディスプレイ
+/// 環境に対応する。基準ウィンドウの座標が取得できない場合は `None` を返し、
+/// 呼び出し側は position 指定を省略して OS のデフォルト配置に委ねる。
+fn cascade_base_position<R: Runtime>(handle: &AppHandle<R>) -> Option<(f64, f64)> {
+    let state = handle.try_state::<LastFocusedCheatsheetWindow>()?;
+    let label = state.0.lock().ok()?.clone()?;
+    let window = handle.get_webview_window(&label)?;
+    let scale_factor = window.scale_factor().ok()?;
+    let physical = window.outer_position().ok()?;
+    let logical = physical.to_logical::<f64>(scale_factor);
+    Some((logical.x, logical.y))
+}
+
 /// 新しいチートシートウィンドウを生成する。
 /// ラベルは連番方式（`cheatsheet-N`）で採番し、生成したウィンドウのラベルを返す。
-/// 表示位置は少しずらして既存ウィンドウと重ならないようにする（カスケード表示）。
+/// 表示位置は最後にフォーカスされたチートシートウィンドウの実座標を基準に
+/// 少しずらして重ならないようにする（カスケード表示）。基準ウィンドウの座標が
+/// 取得できない場合は OS のデフォルト配置に委ねる。
 pub fn create_cheatsheet_window<R: Runtime>(handle: &AppHandle<R>) -> Result<String, String> {
     let id = handle
         .state::<NextCheatsheetWindowId>()
@@ -125,11 +158,7 @@ pub fn create_cheatsheet_window<R: Runtime>(handle: &AppHandle<R>) -> Result<Str
         .fetch_add(1, Ordering::SeqCst);
     let label = format!("{}{}", CHEATSHEET_WINDOW_LABEL_PREFIX, id);
 
-    // カスケード表示: 追加ウィンドウごとに右下へずらす（一定数で折り返す）。
-    let step = ((id.saturating_sub(2)) % 10) as f64;
-    let offset = 40.0 + step * 30.0;
-
-    let window = tauri::webview::WebviewWindowBuilder::new(
+    let mut builder = tauri::webview::WebviewWindowBuilder::new(
         handle,
         &label,
         tauri::WebviewUrl::App("/".into()),
@@ -137,12 +166,16 @@ pub fn create_cheatsheet_window<R: Runtime>(handle: &AppHandle<R>) -> Result<Str
     .title("RightCheat")
     .inner_size(CHEATSHEET_WINDOW_WIDTH, CHEATSHEET_WINDOW_HEIGHT)
     .min_inner_size(CHEATSHEET_WINDOW_MIN_WIDTH, CHEATSHEET_WINDOW_MIN_HEIGHT)
-    .position(offset, offset)
     .resizable(true)
     .title_bar_style(tauri::TitleBarStyle::Overlay)
-    .hidden_title(true)
-    .build()
-    .map_err(|e| e.to_string())?;
+    .hidden_title(true);
+
+    if let Some(base) = cascade_base_position(handle) {
+        let (x, y) = cascade_position(base, id);
+        builder = builder.position(x, y);
+    }
+
+    let window = builder.build().map_err(|e| e.to_string())?;
 
     register_window_event_handler(&window);
     log::info!("[cheatsheet_window] Opened cheatsheet window: {}", label);
