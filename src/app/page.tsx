@@ -10,13 +10,17 @@ import { Event } from '@/common'
 import { CheatSheet } from '@/components/organisms/CheatSheet'
 import { FOCUS_FALLBACK_ID } from '@/constants/focus'
 
-const changeWindowVisible = async () => {
+// バックエンド（toggle_cheatsheet_windows_visible）が全チートシートウィンドウの
+// 現在の表示状態を集約して決定した目標状態を受け取り、その通りに適用する。
+// 各ウィンドウが自分の表示状態だけを見て独立にトグルすると、ウィンドウごとに
+// 表示/非表示がバラバラになり得るため、必ずバックエンドから渡された値に従う。
+const setWindowVisible = async (visible: boolean) => {
   const window = getCurrentWindow()
-  if (await window.isVisible()) {
-    await window.hide()
-  } else {
+  if (visible) {
     await window.show()
     await window.setFocus()
+  } else {
+    await window.hide()
   }
 }
 
@@ -28,11 +32,14 @@ export default function Home() {
 
     const setupListener = async () => {
       if (cancelled) return
-      unlistenToggle = await listen<{}>(Event.WINDOW_VISIABLE_TOGGLE, () => {
-        ;(async () => {
-          await changeWindowVisible()
-        })()
-      })
+      unlistenToggle = await listen<boolean>(
+        Event.WINDOW_VISIABLE_TOGGLE,
+        (event) => {
+          ;(async () => {
+            await setWindowVisible(event.payload)
+          })()
+        },
+      )
       // cleanup が先に実行された場合は即座に解除
       if (cancelled) {
         unlistenToggle()

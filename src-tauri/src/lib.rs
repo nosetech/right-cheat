@@ -9,7 +9,6 @@ use tauri::image::Image;
 use tauri::menu::{
     AboutMetadataBuilder, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu, WINDOW_SUBMENU_ID,
 };
-use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
@@ -234,24 +233,6 @@ fn toggle_clipboard_history_window<R: tauri::Runtime>(handle: &tauri::AppHandle<
         if let Err(e) = result {
             log::error!("[lib] Failed to create clipboard history window: {}", e);
         }
-    }
-}
-
-/// すべてのチートシートウィンドウの表示をトグルする。
-/// チートシートウィンドウが 1 つも開いていない場合は、復帰導線として
-/// 新しいチートシートウィンドウを開く（`New Cheatsheet Window` と同等）。
-fn toggle_cheatsheet_windows_visible<R: tauri::Runtime>(handle: &tauri::AppHandle<R>) {
-    if api::cheatsheet_window::has_cheatsheet_window(handle) {
-        // 各チートシートウィンドウが listen している WINDOW_VISIABLE_TOGGLE を
-        // ブロードキャストし、全ウィンドウを一括でトグルする。
-        if let Err(e) = handle.emit(common::event::WINDOW_VISIABLE_TOGGLE, ()) {
-            log::error!("[lib] Failed to emit window_visible_toggle: {}", e);
-        }
-    } else if let Err(e) = api::cheatsheet_window::create_cheatsheet_window(handle) {
-        log::error!(
-            "[lib] Failed to open cheatsheet window on toggle visible: {}",
-            e
-        );
     }
 }
 
@@ -594,7 +575,7 @@ fn on_menu_event_configuration<R: tauri::Runtime>(handle: &tauri::AppHandle<R>, 
             let _ = api::cheatsheet::reload_cheat_sheet(handle.clone());
         }
         "id_toggle_visible" => {
-            toggle_cheatsheet_windows_visible(handle);
+            api::cheatsheet_window::toggle_cheatsheet_windows_visible(handle);
         }
         "id_clipboard_history" => {
             toggle_clipboard_history_window(handle);
@@ -652,7 +633,7 @@ fn global_shortcut_configuration<R: tauri::Runtime>(
                             return;
                         }
                         if shortcut == &window_visible_shortcut {
-                            toggle_cheatsheet_windows_visible(_app);
+                            api::cheatsheet_window::toggle_cheatsheet_windows_visible(_app);
                         } else if shortcut == &clipboard_history_shortcut {
                             toggle_clipboard_history_window(_app);
                         }

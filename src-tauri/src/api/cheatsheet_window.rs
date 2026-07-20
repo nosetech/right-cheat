@@ -149,6 +149,51 @@ pub fn create_cheatsheet_window<R: Runtime>(handle: &AppHandle<R>) -> Result<Str
     Ok(label)
 }
 
+/// 各チートシートウィンドウの現在の表示状態から、トグル後の目標表示状態を決定する。
+/// 個々のウィンドウが自身の表示状態だけを見て独立にトグルすると、ウィンドウごとに
+/// 表示/非表示の状態がバラバラになり得るため、集約した目標状態をここで一箇所に
+/// 決定し、全ウィンドウへ同じ状態を適用させる。
+/// いずれか1つでも表示中なら非表示（false）を、全て非表示なら表示（true）を返す。
+pub fn resolve_toggle_target_visible(visibilities: &[bool]) -> bool {
+    !visibilities.iter().any(|&visible| visible)
+}
+
+/// すべてのチートシートウィンドウの表示をトグルする。
+/// チートシートウィンドウが 1 つも開いていない場合は、復帰導線として
+/// 新しいチートシートウィンドウを開く（`New Cheatsheet Window` と同等）。
+///
+/// 各ウィンドウが `WINDOW_VISIABLE_TOGGLE` を受けて自分の現在の表示状態だけを
+/// 見て独立にトグルすると、ウィンドウごとに表示/非表示の状態がバラバラになり
+/// 得る。ここで全チートシートウィンドウの現在の表示状態を集約して目標状態
+/// （bool）を一箇所で決定し、その値をペイロードとしてブロードキャストする
+/// ことで、全ウィンドウが同じ目標状態に揃うようにする。
+pub fn toggle_cheatsheet_windows_visible<R: Runtime>(handle: &AppHandle<R>) {
+    let visibilities: Vec<bool> = handle
+        .webview_windows()
+        .into_iter()
+        .filter(|(label, _)| is_cheatsheet_window_label(label))
+        .map(|(_, w)| w.is_visible().unwrap_or(false))
+        .collect();
+
+    if visibilities.is_empty() {
+        if let Err(e) = create_cheatsheet_window(handle) {
+            log::error!(
+                "[cheatsheet_window] Failed to open cheatsheet window on toggle visible: {}",
+                e
+            );
+        }
+        return;
+    }
+
+    let target_visible = resolve_toggle_target_visible(&visibilities);
+    if let Err(e) = handle.emit(common::event::WINDOW_VISIABLE_TOGGLE, target_visible) {
+        log::error!(
+            "[cheatsheet_window] Failed to emit window_visible_toggle: {}",
+            e
+        );
+    }
+}
+
 /// 新しいチートシートウィンドウを開き、生成したウィンドウのラベルを返す。
 #[tauri::command]
 pub fn open_cheatsheet_window<R: Runtime>(app: AppHandle<R>) -> Result<String, String> {

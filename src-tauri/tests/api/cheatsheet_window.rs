@@ -245,3 +245,62 @@ mod edit_window_labels {
         );
     }
 }
+
+#[cfg(test)]
+mod resolve_toggle_target_visible {
+    use app_lib::api::cheatsheet_window::resolve_toggle_target_visible;
+
+    // --- 同値分割: 全ウィンドウが同じ状態 ---
+
+    #[test]
+    fn all_visible_targets_hidden() {
+        // 全ウィンドウが表示中なら、目標状態は「非表示にする」(false)
+        assert!(!resolve_toggle_target_visible(&[true, true, true]));
+    }
+
+    #[test]
+    fn all_hidden_targets_visible() {
+        // 全ウィンドウが非表示なら、目標状態は「表示する」(true)
+        assert!(resolve_toggle_target_visible(&[false, false, false]));
+    }
+
+    // --- 同値分割: 状態が混在している ---
+
+    #[test]
+    fn mixed_visibility_targets_hidden() {
+        // 1つでも表示中のウィンドウがあれば「非表示にする」(false) を優先し、
+        // 全ウィンドウの状態を揃える
+        assert!(!resolve_toggle_target_visible(&[true, false, false]));
+    }
+
+    #[test]
+    fn single_visible_among_many_targets_hidden() {
+        // 大多数が非表示でも1つでも表示中なら false
+        assert!(!resolve_toggle_target_visible(&[
+            false, false, false, false, true
+        ]));
+    }
+
+    // --- 境界値分析 ---
+
+    #[test]
+    fn single_visible_window_targets_hidden() {
+        // 要素数1（境界値）: 表示中なら非表示へ
+        assert!(!resolve_toggle_target_visible(&[true]));
+    }
+
+    #[test]
+    fn single_hidden_window_targets_visible() {
+        // 要素数1（境界値）: 非表示なら表示へ
+        assert!(resolve_toggle_target_visible(&[false]));
+    }
+
+    #[test]
+    fn empty_slice_targets_visible() {
+        // 境界値: 空スライス。「表示中のウィンドウが1つもない」と同じ扱いになり
+        // true を返す（呼び出し側は空の場合は別途新規ウィンドウを開く経路を通る
+        // ため、この関数自体はあくまで縮退ケースの仕様を固定するだけ）
+        let visibilities: [bool; 0] = [];
+        assert!(resolve_toggle_target_visible(&visibilities));
+    }
+}
