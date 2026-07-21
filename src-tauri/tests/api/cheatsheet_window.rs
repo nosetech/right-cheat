@@ -357,3 +357,92 @@ mod cascade_position {
         assert_eq!(cascade_position((-500.0, -200.0), 2), (-460.0, -160.0));
     }
 }
+
+#[cfg(test)]
+mod resolve_cheatsheet_window_size {
+    use app_lib::api::cheatsheet_window::{resolve_cheatsheet_window_size, CheatsheetWindowSize};
+    use tauri::utils::config::WindowConfig;
+
+    // --- 同値分割: main ウィンドウ定義が見つかり、min_width / min_height も指定済み ---
+
+    #[test]
+    fn uses_main_window_values_when_all_specified() {
+        // tauri.conf.json の main ウィンドウ定義相当（width/height/minWidth/minHeight 全指定）
+        let main_window = WindowConfig {
+            width: 500.0,
+            height: 800.0,
+            min_width: Some(400.0),
+            min_height: Some(300.0),
+            ..Default::default()
+        };
+
+        let size = resolve_cheatsheet_window_size(Some(&main_window));
+
+        assert_eq!(
+            size,
+            CheatsheetWindowSize {
+                width: 500.0,
+                height: 800.0,
+                min_width: 400.0,
+                min_height: 300.0,
+            }
+        );
+    }
+
+    #[test]
+    fn width_and_height_always_come_from_main_window() {
+        // width / height は Option ではないため、main の値をそのまま使う
+        // （tauri.conf.json のデフォルト値 500/800 と異なる値でも反映されること）
+        let main_window = WindowConfig {
+            width: 640.0,
+            height: 480.0,
+            min_width: Some(400.0),
+            min_height: Some(300.0),
+            ..Default::default()
+        };
+
+        let size = resolve_cheatsheet_window_size(Some(&main_window));
+
+        assert_eq!(size.width, 640.0);
+        assert_eq!(size.height, 480.0);
+    }
+
+    // --- 同値分割: main ウィンドウ定義はあるが min_width / min_height が省略されている ---
+
+    #[test]
+    fn falls_back_to_default_min_size_when_omitted() {
+        // tauri.conf.json のスキーマ上 minWidth / minHeight は省略可能。
+        // 省略時（None）はフォールバック値 (400.0, 300.0) を使う。
+        let main_window = WindowConfig {
+            width: 500.0,
+            height: 800.0,
+            min_width: None,
+            min_height: None,
+            ..Default::default()
+        };
+
+        let size = resolve_cheatsheet_window_size(Some(&main_window));
+
+        assert_eq!(size.min_width, 400.0);
+        assert_eq!(size.min_height, 300.0);
+    }
+
+    // --- 境界値: main ウィンドウ定義自体が見つからない ---
+
+    #[test]
+    fn falls_back_entirely_when_main_window_not_found() {
+        // tauri.conf.json に main ウィンドウの定義が存在しない場合
+        // （実運用では発生しない想定の防御的フォールバック）
+        let size = resolve_cheatsheet_window_size(None);
+
+        assert_eq!(
+            size,
+            CheatsheetWindowSize {
+                width: 500.0,
+                height: 800.0,
+                min_width: 400.0,
+                min_height: 300.0,
+            }
+        );
+    }
+}

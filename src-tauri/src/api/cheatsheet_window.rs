@@ -5,12 +5,14 @@ use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewWindow};
 
 use crate::common;
 
-/// チートシートウィンドウ（`main` / `cheatsheet-*`）の設定値。
-/// `main`（tauri.conf.json）と揃える。
-const CHEATSHEET_WINDOW_WIDTH: f64 = 500.0;
-const CHEATSHEET_WINDOW_HEIGHT: f64 = 800.0;
-const CHEATSHEET_WINDOW_MIN_WIDTH: f64 = 400.0;
-const CHEATSHEET_WINDOW_MIN_HEIGHT: f64 = 300.0;
+/// チートシートウィンドウのサイズ設定のフォールバック値。
+/// 通常は `tauri.conf.json` の `main` ウィンドウ定義（`app.windows`）から取得する
+/// ため使用されないが、当該定義が見つからない場合や `minWidth` / `minHeight` が
+/// 省略されている場合にのみ使う。値は tauri.conf.json の main ウィンドウ定義と揃える。
+const CHEATSHEET_WINDOW_WIDTH_FALLBACK: f64 = 500.0;
+const CHEATSHEET_WINDOW_HEIGHT_FALLBACK: f64 = 800.0;
+const CHEATSHEET_WINDOW_MIN_WIDTH_FALLBACK: f64 = 400.0;
+const CHEATSHEET_WINDOW_MIN_HEIGHT_FALLBACK: f64 = 300.0;
 
 /// 追加チートシートウィンドウのラベル接頭辞（`cheatsheet-2`, `cheatsheet-3`, ...）。
 const CHEATSHEET_WINDOW_LABEL_PREFIX: &str = "cheatsheet-";
@@ -146,8 +148,63 @@ fn cascade_base_position<R: Runtime>(handle: &AppHandle<R>) -> Option<(f64, f64)
     Some((logical.x, logical.y))
 }
 
+/// チートシートウィンドウの生成に使うウィンドウサイズ設定値。
+#[derive(Debug, PartialEq)]
+pub struct CheatsheetWindowSize {
+    pub width: f64,
+    pub height: f64,
+    pub min_width: f64,
+    pub min_height: f64,
+}
+
+/// `main` ウィンドウの `tauri.conf.json` 設定（`WindowConfig`）から、追加チート
+/// シートウィンドウ生成に使うサイズ設定を解決する。ハードコードされた値との
+/// 二重管理を避けるため、`width` / `height` は `main` の定義をそのまま使う。
+/// `min_width` / `min_height` はスキーマ上 Option のため、省略されていれば
+/// フォールバック値を使う。`main` の定義自体が見つからない場合（実運用では
+/// 発生しない）もフォールバック値を使う。
+pub fn resolve_cheatsheet_window_size(
+    main_window: Option<&tauri::utils::config::WindowConfig>,
+) -> CheatsheetWindowSize {
+    match main_window {
+        Some(w) => CheatsheetWindowSize {
+            width: w.width,
+            height: w.height,
+            min_width: w.min_width.unwrap_or(CHEATSHEET_WINDOW_MIN_WIDTH_FALLBACK),
+            min_height: w
+                .min_height
+                .unwrap_or(CHEATSHEET_WINDOW_MIN_HEIGHT_FALLBACK),
+        },
+        None => CheatsheetWindowSize {
+            width: CHEATSHEET_WINDOW_WIDTH_FALLBACK,
+            height: CHEATSHEET_WINDOW_HEIGHT_FALLBACK,
+            min_width: CHEATSHEET_WINDOW_MIN_WIDTH_FALLBACK,
+            min_height: CHEATSHEET_WINDOW_MIN_HEIGHT_FALLBACK,
+        },
+    }
+}
+
+/// `tauri.conf.json` から `main` ウィンドウのサイズ設定を読み取る。
+fn cheatsheet_window_size<R: Runtime>(handle: &AppHandle<R>) -> CheatsheetWindowSize {
+    let main_window = handle
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == MAIN_WINDOW_LABEL);
+    if main_window.is_none() {
+        log::warn!(
+            "[cheatsheet_window] \"{}\" window config not found in tauri.conf.json; using fallback size",
+            MAIN_WINDOW_LABEL
+        );
+    }
+    resolve_cheatsheet_window_size(main_window)
+}
+
 /// 新しいチートシートウィンドウを生成する。
 /// ラベルは連番方式（`cheatsheet-N`）で採番し、生成したウィンドウのラベルを返す。
+/// ウィンドウサイズは `tauri.conf.json` の `main` ウィンドウ定義と揃える
+/// （ハードコードされた値との二重管理を避ける）。
 /// 表示位置は最後にフォーカスされたチートシートウィンドウの実座標を基準に
 /// 少しずらして重ならないようにする（カスケード表示）。基準ウィンドウの座標が
 /// 取得できない場合は OS のデフォルト配置に委ねる。
@@ -157,6 +214,7 @@ pub fn create_cheatsheet_window<R: Runtime>(handle: &AppHandle<R>) -> Result<Str
         .0
         .fetch_add(1, Ordering::SeqCst);
     let label = format!("{}{}", CHEATSHEET_WINDOW_LABEL_PREFIX, id);
+    let size = cheatsheet_window_size(handle);
 
     let mut builder = tauri::webview::WebviewWindowBuilder::new(
         handle,
@@ -164,8 +222,8 @@ pub fn create_cheatsheet_window<R: Runtime>(handle: &AppHandle<R>) -> Result<Str
         tauri::WebviewUrl::App("/".into()),
     )
     .title("RightCheat")
-    .inner_size(CHEATSHEET_WINDOW_WIDTH, CHEATSHEET_WINDOW_HEIGHT)
-    .min_inner_size(CHEATSHEET_WINDOW_MIN_WIDTH, CHEATSHEET_WINDOW_MIN_HEIGHT)
+    .inner_size(size.width, size.height)
+    .min_inner_size(size.min_width, size.min_height)
     .resizable(true)
     .title_bar_style(tauri::TitleBarStyle::Overlay)
     .hidden_title(true);

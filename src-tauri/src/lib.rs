@@ -13,14 +13,11 @@ use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
-const TAURI_CONF: &str = include_str!("../tauri.conf.json");
-
-fn get_copyright() -> String {
-    let v: serde_json::Value = serde_json::from_str(TAURI_CONF).unwrap_or_default();
-    v["bundle"]["copyright"]
-        .as_str()
-        .unwrap_or_default()
-        .to_string()
+/// `tauri.conf.json` の `bundle.copyright` を返す。
+/// Tauri が起動時に解析済みの設定（`AppHandle::config()`）を参照するため、
+/// ファイルを自前で再読み込み・再パースする必要はない。
+fn get_copyright<R: tauri::Runtime>(handle: &tauri::AppHandle<R>) -> String {
+    handle.config().bundle.copyright.clone().unwrap_or_default()
 }
 
 pub fn run() {
@@ -268,7 +265,7 @@ fn menu_configuration<R: tauri::Runtime>(
                             let mut metadata = AboutMetadataBuilder::new()
                                 .version(Some(format!("Version {}", app_version)))
                                 .short_version(Some(app_version))
-                                .copyright(Some(get_copyright()));
+                                .copyright(Some(get_copyright(handle)));
                             metadata = metadata.icon(Some(Image::from_bytes(include_bytes!(
                                 "../icons/icon.png"
                             ))?));
