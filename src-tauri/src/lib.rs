@@ -170,6 +170,7 @@ pub fn run() {
             api::db_settings::pick_db_file_path,
             api::clipboard_settings::get_clipboard_settings,
             api::clipboard_settings::set_clipboard_settings,
+            api::clipboard::copy_text_to_clipboard,
             api::clipboard_history::list_clipboard_history,
             api::clipboard_history::delete_clipboard_history_item,
             api::clipboard_history::clear_clipboard_history,

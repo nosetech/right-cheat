@@ -1249,8 +1249,11 @@ fn replace_commandlist_by_title_old_commands_are_not_searchable_after_replace() 
 // ブラックボックス テスト設計:
 //   [同値分割]
 //     有効クラス①: 新規テキストの挿入 → 新規行が作成される
-//     有効クラス②: 直前（最新）の履歴と同一テキストの挿入 → 重複排除（INSERT されず既存 id を返す）
-//     有効クラス③: 直前とは異なるが過去に存在したテキストの挿入 → 重複排除されず新規行が作成される
+//     有効クラス②: 履歴テーブル中のいずれかの行と同一テキストの挿入（直前行との一致を含む）
+//                   → INSERT されず、一致した既存行の copied_at が更新され先頭（最新）へ
+//                   move-to-top される。既存 id を返し、件数は増えない
+//     有効クラス③: 履歴の先頭でも末尾でもない「中間」に一致するテキストが存在する場合も
+//                   ②と同様に move-to-top される（一致位置に依存しない）
 //     有効クラス④: ASCII テキスト vs マルチバイト（日本語）テキストでの char_count 計算
 //     境界クラス⑤: 空文字列テキスト（NOT NULL だが空文字は許容される）
 //   [境界値分析]
@@ -1259,8 +1262,9 @@ fn replace_commandlist_by_title_old_commands_are_not_searchable_after_replace() 
 //     件数 0 件（空テーブル）時の count / list / clear / delete_oldest
 //
 // ホワイトボックス テスト設計:
-//   - insert_clipboard_history: 「直前の履歴が存在しない（初回挿入）」
-//     「直前と同一テキスト」「直前と異なるテキスト」の3分岐を網羅
+//   - insert_clipboard_history: 「同一テキストが履歴に存在しない（新規 INSERT 経路）」
+//     「同一テキストが既に存在する（UPDATE による move-to-top 経路）」の2分岐を網羅。
+//     後者は一致行が最新行・中間行のいずれであっても同一コードパスを通ることを検証する
 //   - list_clipboard_history / delete_oldest_clipboard_history: copied_at が同一秒の場合の
 //     id によるタイブレーク（ORDER BY copied_at DESC, id DESC）を明示的な copied_at 指定で検証
 
@@ -1366,20 +1370,110 @@ fn insert_clipboard_history_deduplicates_three_consecutive_same_text() {
 }
 
 #[test]
-fn insert_clipboard_history_does_not_deduplicate_non_consecutive_same_text() {
-    // Arrange: A → B → A の順で挿入（Aが連続していないため重複排除されない）
+fn insert_clipboard_history_moves_non_consecutive_same_text_to_top() {
+    // Arrange: A → B の順で、A は過去の固定タイムスタンプで作成する。
+    // 新仕様では「直前」だけでなく履歴全体を対象に一致を探すため、
+    // Aが連続していなくても再挿入時に新規行にならず、1回目のAの行が
+    // move-to-top（copied_at 更新）される。
+    //
+    // 注: A・B の挿入を両方とも insert_clipboard_history（内部で
+    // datetime('now') を使用）で行うと、テストは1秒未満で実行されるため
+    // 両行の copied_at が同一秒となり、ORDER BY copied_at DESC, id DESC の
+    // タイブレークが id（挿入順）に依存してしまい非決定的になる。
+    // そのため A の初期挿入は insert_history_with_timestamp で過去の
+    // 固定日時を明示し、move-to-top 後の「本物の現在時刻」が確実に
+    // B の固定日時より新しくなるようにしている
+    // （tests/db/repository.rs 内の他の順序検証テストと同じパターン）。
     let conn = setup();
-    let id_a1 = insert_clipboard_history(&conn, "A").unwrap();
-    insert_clipboard_history(&conn, "B").unwrap();
+    let id_a1 = insert_history_with_timestamp(&conn, "A", "2024-01-01 00:00:00");
+    insert_history_with_timestamp(&conn, "B", "2024-01-02 00:00:00");
 
     // Act
     let id_a2 = insert_clipboard_history(&conn, "A").unwrap();
 
-    // Assert: 直前（最新）はBなので、2回目のAは新規行として作成される
-    assert_ne!(
+    // Assert: 新規行は作成されず、1回目のAと同じIDが返り、件数は2件（A, B）のまま
+    assert_eq!(
         id_a1, id_a2,
-        "直前でなければ同じテキストでも重複排除されないこと"
+        "履歴中に同一テキストが存在すれば直前でなくても move-to-top され同じIDが返ること"
     );
+    assert_eq!(count_clipboard_history(&conn).unwrap(), 2);
+
+    // move-to-top により A が最新（先頭）になっていること
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(rows[0].text, "A", "move-to-top により A が先頭になること");
+    assert_eq!(rows[0].id, id_a1);
+    assert_eq!(rows[1].text, "B");
+}
+
+#[test]
+fn insert_clipboard_history_moves_middle_entry_to_top() {
+    // Arrange: 履歴の先頭でも末尾でもない「中間」に一致するテキストがあるケース。
+    // copied_at を明示的に指定し、挿入順序に依存しない位置関係を作る。
+    // 並び順（copied_at 降順）: C(最新) → A(中間) → B(最古)
+    let conn = setup();
+    let id_b = insert_history_with_timestamp(&conn, "B", "2024-01-01 00:00:00");
+    let id_a = insert_history_with_timestamp(&conn, "A", "2024-01-02 00:00:00");
+    let id_c = insert_history_with_timestamp(&conn, "C", "2024-01-03 00:00:00");
+    assert_eq!(count_clipboard_history(&conn).unwrap(), 3);
+
+    // Act: 中間に位置する "A" を再度挿入
+    let id_a_again = insert_clipboard_history(&conn, "A").unwrap();
+
+    // Assert: 新規行は作成されず、中間にあったAの行がそのまま move-to-top されること
+    assert_eq!(
+        id_a_again, id_a,
+        "中間に一致するテキストでも既存行のIDがそのまま返ること"
+    );
+    // move-to-top しても総件数は増えないこと
+    assert_eq!(
+        count_clipboard_history(&conn).unwrap(),
+        3,
+        "move-to-top 後も総件数は変わらないこと"
+    );
+
+    // Assert: A が先頭（最新）へ移動し、C・B の順に続くこと
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    let texts: Vec<&str> = rows.iter().map(|r| r.text.as_str()).collect();
+    assert_eq!(
+        texts,
+        vec!["A", "C", "B"],
+        "中間にあった A が move-to-top で先頭に来ること"
+    );
+    // id自体は不変（新規行ではなく既存行が更新される）
+    assert_eq!(rows[0].id, id_a);
+    assert_eq!(rows[1].id, id_c);
+    assert_eq!(rows[2].id, id_b);
+}
+
+#[test]
+fn insert_clipboard_history_repeated_reinsert_keeps_same_id_across_timings() {
+    // Arrange: 同じテキストを異なるタイミング（間に別テキストを挟みつつ）で
+    // 複数回挿入しても、対応する行の id が変わらないことを検証する。
+    //
+    // 注: このテストの主眼は「id が不変であること」と「件数が増えないこと」であり、
+    // どちらも copied_at の実時刻には依存しない決定論的な検証が可能。
+    // 一方で「move-to-top 後の並び順」は、テストが1秒未満で実行されるため
+    // 複数回の insert_clipboard_history 呼び出しの copied_at（datetime('now')）が
+    // 同一秒になり ORDER BY copied_at DESC, id DESC のタイブレークが id に
+    // 依存してしまい非決定的になる（後から新規 INSERT された行の方が id が
+    // 大きく、move-to-top で UPDATE された既存行より先頭に来てしまうことがある）。
+    // そのため並び順の検証は insert_clipboard_history_moves_non_consecutive_same_text_to_top /
+    // insert_clipboard_history_moves_middle_entry_to_top（insert_history_with_timestamp で
+    // 明示的な過去日時を与えて決定論的に検証）に譲り、本テストでは行わない。
+    let conn = setup();
+    let id_x1 = insert_clipboard_history(&conn, "X").unwrap();
+    insert_clipboard_history(&conn, "Y").unwrap();
+
+    // Act: X を再挿入（move-to-top） → 別テキスト挿入 → X を再々挿入
+    let id_x2 = insert_clipboard_history(&conn, "X").unwrap();
+    insert_clipboard_history(&conn, "Z").unwrap();
+    let id_x3 = insert_clipboard_history(&conn, "X").unwrap();
+
+    // Assert: X の id は常に不変
+    assert_eq!(id_x1, id_x2);
+    assert_eq!(id_x2, id_x3);
+
+    // Assert: ユニークなテキストは X, Y, Z の3件のみ（move-to-top では増えない）
     assert_eq!(count_clipboard_history(&conn).unwrap(), 3);
 }
 

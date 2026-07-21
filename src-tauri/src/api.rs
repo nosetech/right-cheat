@@ -1,6 +1,7 @@
 pub mod application;
 pub mod cheatsheet;
 pub mod cheatsheet_window;
+pub mod clipboard;
 pub mod clipboard_history;
 #[cfg(target_os = "macos")]
 pub mod clipboard_monitor;
