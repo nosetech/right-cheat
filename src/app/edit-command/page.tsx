@@ -1,6 +1,6 @@
 'use client'
 import { scaledPx } from '@/utils/css'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Box, MenuItem, Select, TextField } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -41,6 +41,14 @@ export default function EditCommandPage() {
 
   const descRef = useRef<HTMLInputElement>(null)
 
+  // 呼び出し元チートシートウィンドウのラベル（複数ウィンドウ対応）。
+  // クエリパラメータ `parent` で受け取り、READY / SAVE の emit 先に使う。
+  // 未指定時は後方互換で 'main'。
+  const parentLabel = useMemo(() => {
+    if (typeof window === 'undefined') return 'main'
+    return new URLSearchParams(window.location.search).get('parent') || 'main'
+  }, [])
+
   useEffect(() => {
     const win = getCurrentWebviewWindow()
 
@@ -67,11 +75,11 @@ export default function EditCommandPage() {
           setTimeout(() => descRef.current?.focus(), 80)
         },
       )
-      await win.emitTo('main', Event.EDIT_COMMAND_READY, {})
+      await win.emitTo(parentLabel, Event.EDIT_COMMAND_READY, {})
     }
 
     setup()
-  }, [])
+  }, [parentLabel])
 
   const isShortcut = initPayload?.kind === 'shortcut'
   const isNew = initPayload?.isNew ?? true
@@ -102,7 +110,7 @@ export default function EditCommandPage() {
       layout,
       targetGroupEditId: groupEditId || null,
     }
-    await win.emitTo('main', Event.EDIT_COMMAND_SAVE, payload)
+    await win.emitTo(parentLabel, Event.EDIT_COMMAND_SAVE, payload)
     await win.destroy()
   }, [
     canSave,
@@ -113,6 +121,7 @@ export default function EditCommandPage() {
     key,
     layout,
     groupEditId,
+    parentLabel,
   ])
 
   const handleCancel = async () => {

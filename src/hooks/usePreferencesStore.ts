@@ -39,15 +39,6 @@ export const usePreferencesStore = (options?: StoreOptions) => {
     [loadPreferencesFile],
   )
 
-  const getVisibleOnAllWorkspacesSettings =
-    useCallback(async (): Promise<boolean> => {
-      const store = await loadPreferencesFile()
-      const settings = await store.get<{ enabled: boolean }>(
-        'visible_on_all_workspaces_settings',
-      )
-      return settings?.enabled ?? true
-    }, [loadPreferencesFile])
-
   const getConfirmActions = useCallback(async (): Promise<boolean> => {
     const store = await loadPreferencesFile()
     const setting = await store.get<{ enabled: boolean }>('confirm_actions')
@@ -68,7 +59,6 @@ export const usePreferencesStore = (options?: StoreOptions) => {
     setCheatSheetFilePath,
     getThemeMode,
     setThemeMode,
-    getVisibleOnAllWorkspacesSettings,
     getConfirmActions,
     setConfirmActions,
   }

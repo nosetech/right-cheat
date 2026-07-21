@@ -197,7 +197,7 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[lib]` - `src-tauri/src/lib.rs`
 - `[cheatsheet]` - `src-tauri/src/api/cheatsheet.rs`
 - `[global_shortcut]` - `src-tauri/src/api/global_shortcut.rs`
-- `[visible_on_all_workspaces]` - `src-tauri/src/api/visible_on_all_workspaces.rs`
+- `[cheatsheet_window]` - `src-tauri/src/api/cheatsheet_window.rs`
 - `[application]` - `src-tauri/src/api/application.rs`
 - `[clipboard_settings]` - `src-tauri/src/api/clipboard_settings.rs`
 - `[clipboard_monitor]` - `src-tauri/src/api/clipboard_monitor.rs`
