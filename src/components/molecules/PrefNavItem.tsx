@@ -18,6 +18,7 @@ export function PrefNavItem({ label, active, onClick }: PrefNavItemProps) {
       component='button'
       type='button'
       onClick={onClick}
+      aria-current={active ? 'page' : undefined}
       sx={{
         textAlign: 'left',
         width: '100%',
@@ -26,7 +27,7 @@ export function PrefNavItem({ label, active, onClick }: PrefNavItemProps) {
         padding: '7px 11px',
         borderRadius: '7px',
         fontFamily: 'inherit',
-        fontSize: scaledPx(theme.custom.fontSize.dialogMessage),
+        fontSize: scaledPx(theme.custom.fontSize.label),
         fontWeight: active ? 600 : 500,
         color: active ? 'text.primary' : 'text.secondary',
         backgroundColor: active
@@ -34,6 +35,7 @@ export function PrefNavItem({ label, active, onClick }: PrefNavItemProps) {
           : 'transparent',
         transition: 'background-color 0.12s, color 0.12s',
         outline: 'none',
+        position: 'relative',
         '&:hover': {
           backgroundColor: active
             ? theme.palette.surface.selected
@@ -42,7 +44,9 @@ export function PrefNavItem({ label, active, onClick }: PrefNavItemProps) {
         },
         '&:focus-visible': {
           outline: `2px solid ${theme.palette.primary.main}`,
-          outlineOffset: '-2px',
+          outlineOffset: '1px',
+          borderRadius: '7px',
+          zIndex: 2,
         },
       }}
     >

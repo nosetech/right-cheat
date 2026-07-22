@@ -61,10 +61,9 @@ import { relaunch } from '@tauri-apps/plugin-process'
 const DEFAULT_MAX_FILE_SIZE_BYTES = 1_048_576
 const DEFAULT_ROTATION_COUNT = 3
 
-const PREF_SECTIONS: {
-  key: 'clipboard' | 'shortcut' | 'ui' | 'other'
-  label: string
-}[] = [
+type PrefSectionKey = 'clipboard' | 'shortcut' | 'ui' | 'other'
+
+const PREF_SECTIONS: { key: PrefSectionKey; label: string }[] = [
   { key: 'clipboard', label: 'Clipboard History' },
   { key: 'shortcut', label: 'Global Shortcut' },
   { key: 'ui', label: 'UI' },
@@ -80,9 +79,16 @@ export default function Page() {
     setClipboardHistoryShortcutDialogOpen,
   ] = useState<boolean>(false)
   const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
-  const [activeSection, setActiveSection] = useState<
-    'clipboard' | 'shortcut' | 'ui' | 'other'
-  >('clipboard')
+  const [activeSection, setActiveSection] =
+    useState<PrefSectionKey>('clipboard')
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  // セクション切り替え時、前セクションのスクロール位置を引き継がないようにする。
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0
+    }
+  }, [activeSection])
 
   const { getConfirmActions, setConfirmActions } = usePreferencesStore()
   const {
@@ -611,6 +617,7 @@ export default function Page() {
 
         {/* Content */}
         <Box
+          ref={contentRef}
           sx={{
             flex: 1,
             minWidth: 0,
