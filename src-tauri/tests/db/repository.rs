@@ -1477,6 +1477,42 @@ fn insert_clipboard_history_repeated_reinsert_keeps_same_id_across_timings() {
     assert_eq!(count_clipboard_history(&conn).unwrap(), 3);
 }
 
+#[test]
+fn insert_clipboard_history_new_row_uses_millisecond_precision_copied_at() {
+    // Arrange & Act: 新規 INSERT 経路
+    let conn = setup();
+    insert_clipboard_history(&conn, "precision check").unwrap();
+
+    // Assert: copied_at はミリ秒精度（小数点以下を含む）で記録されること。
+    // SQLite の datetime('now') は秒精度のため、これに依存すると同一秒内の
+    // 複数操作（新規INSERTと他行のmove-to-top等）でタイブレークが
+    // 実際の操作順序と矛盾しうる（コードレビューで指摘された回帰）。
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert!(
+        rows[0].copied_at.contains('.'),
+        "copied_at はミリ秒精度（小数点以下を含む）であること: {}",
+        rows[0].copied_at
+    );
+}
+
+#[test]
+fn insert_clipboard_history_move_to_top_uses_millisecond_precision_copied_at() {
+    // Arrange: 既存行を用意し、move-to-top（UPDATE）経路を実行する
+    let conn = setup();
+    insert_clipboard_history(&conn, "A").unwrap();
+
+    // Act: 同一テキストの再挿入（既存行の copied_at を UPDATE）
+    insert_clipboard_history(&conn, "A").unwrap();
+
+    // Assert: move-to-top による UPDATE 後の copied_at もミリ秒精度であること
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert!(
+        rows[0].copied_at.contains('.'),
+        "move-to-top 更新後の copied_at もミリ秒精度であること: {}",
+        rows[0].copied_at
+    );
+}
+
 // ── list_clipboard_history ────────────────────────────────────
 
 #[test]

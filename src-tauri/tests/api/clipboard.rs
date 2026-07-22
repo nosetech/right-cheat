@@ -7,17 +7,21 @@
 // ブラックボックス／ホワイトボックス テスト設計と、テスト対象外とする理由:
 //
 // `copy_text_to_clipboard` は `#[cfg(target_os = "macos")]` ブロック内で
-// `AppHandle::run_on_main_thread` 経由で実際の NSPasteboard
+// `ClipboardMonitor::write_text()` を呼び出し、実際の書き込みは
+// `ClipboardMonitor` が保持する専用バックグラウンドスレッドへチャネル経由で
+// 委譲される。そのスレッド内で実際の NSPasteboard
 // （`NSPasteboard::generalPasteboard()`、プロセス外・OS 全体で共有されるシステム
-// リソース）に対して `clearContents` / `declareTypes_owner` / `setString_forType`
-// を呼び出す。これをユニットテストで検証しようとすると、以下の理由で
-// テストが困難、あるいは有害である:
+// リソース）に対して `declareTypes_owner` / `setString_forType` を呼び出す
+// （`write_text_with_marker`）。これをユニットテストで検証しようとすると、
+// 以下の理由でテストが困難、あるいは有害である:
 //
-//   1. `tauri::test::mock_app()` が返す `MockRuntime` はイベントループを
-//      実際には駆動しないため、`run_on_main_thread` に登録したクロージャが
-//      いつ・本当に実行されるかを保証できない
-//      （`src-tauri/src/api/db_settings.rs` の `pick_db_file_path` も同様の
-//      理由で既存テスト `tests/api/db_settings.rs` の対象外となっている）。
+//   1. `copy_text_to_clipboard` は Tauri State として登録された
+//      `ClipboardMonitor`（`app.try_state::<ClipboardMonitor>()`）を必要と
+//      するが、`ClipboardMonitor::start()` を呼び出すと実際にバックグラウンド
+//      スレッドを起動し、そのスレッドが実際の NSPasteboard をポーリング
+//      し続ける。`tauri::test::mock_app()` ベースのテストでこれを起動・停止
+//      すると、テスト間で状態が残留したり、他のテストと同一プロセス内で
+//      グローバルな NSPasteboard を奪い合う可能性がある。
 //   2. 実行できたとしても、テスト実行中のマシンの「本物の」システム
 //      クリップボードを実際に書き換えてしまう副作用があり、CI 環境は
 //      もちろん開発者のローカル環境でも実行中の作業（他アプリのクリップ
@@ -27,8 +31,8 @@
 //      欠けるためテスト対象外とする）にも合致する。
 //
 // 以上の理由により `copy_text_to_clipboard` 自体（および macOS 専用ヘルパー
-// `write_text_with_marker`、非 macOS 向けの `Err("Unsupported platform")`
-// フォールバック分岐）はテスト対象外とする。
+// `write_text_with_marker`、`ClipboardMonitor::write_text()`、非 macOS 向けの
+// `Err("Unsupported platform")` フォールバック分岐）はテスト対象外とする。
 //
 // 一方で `SELF_COPY_TYPE` 定数はテスト可能かつ重要な値である。この定数は
 // `clipboard_monitor::skip_reason()` が「アプリ内コピーかどうか」を判定する

@@ -36,7 +36,7 @@ fn migrate_v3(conn: &Connection) -> Result<(), rusqlite::Error> {
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             text       TEXT NOT NULL,
             char_count INTEGER NOT NULL,
-            copied_at  TEXT NOT NULL DEFAULT (datetime('now'))
+            copied_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now'))
         );
 
         CREATE INDEX IF NOT EXISTS idx_clipboard_history_copied_at
