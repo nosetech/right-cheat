@@ -186,6 +186,7 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[useThemeStore]` - `src/hooks/useThemeStore.ts`
 - `[useFontSize]` - `src/hooks/useFontSize.ts`
 - `[useWindowSize]` - `src/hooks/useWindowSize.ts`
+- `[useClipboard]` - `src/hooks/useClipboard.ts`
 - `[useClipboardHistoryWindowSize]` - `src/hooks/useClipboardHistoryWindowSize.ts`
 - `[useCommandSearch]` - `src/hooks/useCommandSearch.ts`
 - `[useClipboardHistory]` - `src/hooks/useClipboardHistory.ts`
@@ -199,6 +200,7 @@ Rust の慣習ではパッケージ名に小文字（`right-cheat`）を推奨�
 - `[global_shortcut]` - `src-tauri/src/api/global_shortcut.rs`
 - `[cheatsheet_window]` - `src-tauri/src/api/cheatsheet_window.rs`
 - `[application]` - `src-tauri/src/api/application.rs`
+- `[clipboard]` - `src-tauri/src/api/clipboard.rs`
 - `[clipboard_settings]` - `src-tauri/src/api/clipboard_settings.rs`
 - `[clipboard_monitor]` - `src-tauri/src/api/clipboard_monitor.rs`
 - `[clipboard_history]` - `src-tauri/src/api/clipboard_history.rs`

@@ -699,28 +699,40 @@ pub struct ClipboardHistoryRow {
     pub copied_at: String,
 }
 
+/// SQLite の `datetime('now')` は秒精度のため、同一秒内に複数回のコピー操作
+/// （新規 INSERT と既存行の move-to-top 更新など）が発生すると `copied_at` が
+/// 同値になり、`ORDER BY copied_at DESC, id DESC` のタイブレークが実際の操作順序と
+/// 矛盾する場合がある（move-to-top で更新された行は id が古いまま据え置かれるため）。
+/// ミリ秒精度にすることでこの取り違えを実用上ほぼ排除する。
+const COPIED_AT_NOW_EXPR: &str = "strftime('%Y-%m-%d %H:%M:%f', 'now')";
+
 /// クリップボード履歴を追加する。
-/// 直前（最新）の履歴と同一テキストの場合は INSERT せず、既存行の id を返す（重複排除）。
+/// 同一テキストが履歴全体に既に存在する場合は INSERT せず、既存行の `copied_at` を
+/// 現在時刻に更新して先頭（最新）へ移動し、既存行の id を返す（move-to-top）。
 pub fn insert_clipboard_history(conn: &Connection, text: &str) -> Result<i64> {
-    let last: Option<(i64, String)> = match conn.query_row(
-        "SELECT id, text FROM clipboard_history ORDER BY copied_at DESC, id DESC LIMIT 1",
-        [],
-        |row| Ok((row.get(0)?, row.get(1)?)),
+    let existing: Option<i64> = match conn.query_row(
+        "SELECT id FROM clipboard_history WHERE text = ?1 ORDER BY copied_at DESC, id DESC LIMIT 1",
+        params![text],
+        |row| row.get(0),
     ) {
-        Ok(row) => Some(row),
+        Ok(id) => Some(id),
         Err(rusqlite::Error::QueryReturnedNoRows) => None,
         Err(e) => return Err(e),
     };
 
-    if let Some((last_id, last_text)) = last {
-        if last_text == text {
-            return Ok(last_id);
-        }
+    if let Some(id) = existing {
+        conn.execute(
+            &format!("UPDATE clipboard_history SET copied_at = {COPIED_AT_NOW_EXPR} WHERE id = ?1"),
+            params![id],
+        )?;
+        return Ok(id);
     }
 
     let char_count = text.chars().count() as i64;
     conn.execute(
-        "INSERT INTO clipboard_history (text, char_count) VALUES (?1, ?2)",
+        &format!(
+            "INSERT INTO clipboard_history (text, char_count, copied_at) VALUES (?1, ?2, {COPIED_AT_NOW_EXPR})"
+        ),
         params![text, char_count],
     )?;
     Ok(conn.last_insert_rowid())
