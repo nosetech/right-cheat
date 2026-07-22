@@ -9,6 +9,7 @@ import {
   ThemedSwitch,
   ThemeToggle,
 } from '@/components/atoms'
+import { PrefNavItem } from '@/components/molecules/PrefNavItem'
 import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
@@ -60,6 +61,15 @@ import { relaunch } from '@tauri-apps/plugin-process'
 const DEFAULT_MAX_FILE_SIZE_BYTES = 1_048_576
 const DEFAULT_ROTATION_COUNT = 3
 
+type PrefSectionKey = 'clipboard' | 'shortcut' | 'ui' | 'other'
+
+const PREF_SECTIONS: { key: PrefSectionKey; label: string }[] = [
+  { key: 'clipboard', label: 'Clipboard History' },
+  { key: 'shortcut', label: 'Global Shortcut' },
+  { key: 'ui', label: 'UI' },
+  { key: 'other', label: 'Other Settings' },
+]
+
 export default function Page() {
   const theme = useTheme()
 
@@ -69,6 +79,16 @@ export default function Page() {
     setClipboardHistoryShortcutDialogOpen,
   ] = useState<boolean>(false)
   const [confirmActions, setConfirmActionsState] = useState<boolean>(true)
+  const [activeSection, setActiveSection] =
+    useState<PrefSectionKey>('clipboard')
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  // セクション切り替え時、前セクションのスクロール位置を引き継がないようにする。
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0
+    }
+  }, [activeSection])
 
   const { getConfirmActions, setConfirmActions } = usePreferencesStore()
   const {
@@ -570,49 +590,51 @@ export default function Page() {
     <>
       <WindowHeader title='Preferences' />
       <Box
-        sx={{
-          p: '4px 20px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          // body ではなくこの Box をスクロールコンテナにして、
-          // チートシート画面（ネイティブスクロールバー）と同じ見た目に合わせる。
-          // ネイティブのサムは背景より暗い黒系半透明のため同じ色を指定する。
-          height: `calc(100vh - ${TITLEBAR_HEIGHT}px)`,
-          overflowY: 'auto',
-          scrollbarWidth: 'thin',
-          scrollbarColor: isDark
-            ? 'rgba(0,0,0,0.55) transparent'
-            : 'rgba(0,0,0,0.5) transparent',
-        }}
+        sx={{ display: 'flex', height: `calc(100vh - ${TITLEBAR_HEIGHT}px)` }}
       >
-        {/* Clipboard History */}
-        <Box sx={{ py: '12px' }}>
-          <Typography
-            sx={{
-              fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
-              fontWeight: 600,
-              letterSpacing: '0.01em',
-              mb: '10px',
-              color: 'text.primary',
-            }}
-          >
-            Clipboard History
-          </Typography>
-          <Box sx={{ pl: '14px', py: '8px' }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px',
-                p: '12px 14px',
-                backgroundColor: theme.palette.glass.panel,
-                border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)'}`,
-                borderRadius: '10px',
-                boxShadow: isDark
-                  ? 'none'
-                  : 'inset 0 1px 0 rgba(255,255,255,0.5)',
-              }}
-            >
+        {/* Sidebar */}
+        <Box
+          sx={{
+            width: 180,
+            flexShrink: 0,
+            borderRight: `0.5px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.ui.sidebarBg,
+            padding: '14px 10px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+          }}
+        >
+          {PREF_SECTIONS.map((s) => (
+            <PrefNavItem
+              key={s.key}
+              label={s.label}
+              active={activeSection === s.key}
+              onClick={() => setActiveSection(s.key)}
+            />
+          ))}
+        </Box>
+
+        {/* Content */}
+        <Box
+          ref={contentRef}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflowY: 'auto',
+            padding: '18px 22px 20px',
+            // body ではなくこの Box をスクロールコンテナにして、
+            // チートシート画面（ネイティブスクロールバー）と同じ見た目に合わせる。
+            // ネイティブのサムは背景より暗い黒系半透明のため同じ色を指定する。
+            scrollbarWidth: 'thin',
+            scrollbarColor: isDark
+              ? 'rgba(0,0,0,0.55) transparent'
+              : 'rgba(0,0,0,0.5) transparent',
+          }}
+        >
+          {/* Clipboard History */}
+          {activeSection === 'clipboard' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {/* Row: Clipboard monitoring on/off */}
               <Box
                 sx={{
@@ -750,251 +772,220 @@ export default function Page() {
                 </Box>
               </Box>
             </Box>
-          </Box>
-        </Box>
+          )}
 
-        <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
-
-        {/* Global Shortcut */}
-        <Box sx={{ py: '12px' }}>
-          <Typography
-            sx={{
-              fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
-              fontWeight: 600,
-              letterSpacing: '0.01em',
-              mb: '10px',
-              color: 'text.primary',
-            }}
-          >
-            Global Shortcut
-          </Typography>
-          <Box sx={{ pl: '14px', py: '8px' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Typography
-                sx={{
-                  fontSize: scaledPx(theme.custom.fontSize.label),
-                  fontWeight: 500,
-                  color: 'text.primary',
-                }}
-              >
-                Toggle Visible
-              </Typography>
-              <Typography
-                sx={{
-                  color: 'text.secondary',
-                  fontSize: scaledPx(theme.custom.fontSize.label),
-                }}
-              >
-                :
-              </Typography>
-              {toggleVisibleShortcut && (
-                <Box
+          {/* Global Shortcut */}
+          {activeSection === 'shortcut' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Typography
                   sx={{
-                    backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.06)'
-                      : 'rgba(255,255,255,0.9)',
-                    backdropFilter: 'blur(12px)',
-                    border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                    borderRadius: '6px',
-                    padding: '4px 11px',
-                    fontFamily: 'monospace',
-                    fontSize: scaledPx(theme.custom.fontSize.body),
+                    fontSize: scaledPx(theme.custom.fontSize.label),
+                    fontWeight: 500,
                     color: 'text.primary',
-                    boxShadow: !isDark
-                      ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
-                      : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
                   }}
                 >
-                  {(
-                    [
-                      toggleVisibleShortcut.ctrl && '^',
-                      toggleVisibleShortcut.option && '⌥',
-                      toggleVisibleShortcut.command && '⌘',
-                      toggleVisibleShortcut.hotkey,
-                    ] as (string | false)[]
-                  )
-                    .filter(Boolean)
-                    .map((c, i) => (
-                      <span key={i}>{c}</span>
-                    ))}
-                </Box>
-              )}
-              <Tooltip title='Edit global shortcut…'>
-                <span>
-                  <IconButton
-                    size='small'
-                    disabled={!toggleVisibleShortcut}
-                    onClick={() => setShortcutDialogOpen(true)}
-                    sx={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '7px',
-                      border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
-                      backgroundColor: alpha(
-                        theme.palette.accent.main,
-                        isDark ? 0.1 : 0.07,
-                      ),
-                      color: theme.palette.text.disabled,
-                      '&:hover': {
-                        borderColor: theme.palette.primary.main,
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  >
-                    <SettingsOutlinedIcon sx={{ fontSize: '14px' }} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-          </Box>
-          <Box sx={{ pl: '14px', py: '8px' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Typography
-                sx={{
-                  fontSize: scaledPx(theme.custom.fontSize.label),
-                  fontWeight: 500,
-                  color: 'text.primary',
-                }}
-              >
-                Clipboard History
-              </Typography>
-              <Typography
-                sx={{
-                  color: 'text.secondary',
-                  fontSize: scaledPx(theme.custom.fontSize.label),
-                }}
-              >
-                :
-              </Typography>
-              {clipboardHistoryShortcut && (
-                <Box
+                  Toggle Visible
+                </Typography>
+                <Typography
                   sx={{
-                    backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.06)'
-                      : 'rgba(255,255,255,0.9)',
-                    backdropFilter: 'blur(12px)',
-                    border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                    borderRadius: '6px',
-                    padding: '4px 11px',
-                    fontFamily: 'monospace',
-                    fontSize: scaledPx(theme.custom.fontSize.body),
-                    color: 'text.primary',
-                    boxShadow: !isDark
-                      ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
-                      : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
+                    color: 'text.secondary',
+                    fontSize: scaledPx(theme.custom.fontSize.label),
                   }}
                 >
-                  {(
-                    [
-                      clipboardHistoryShortcut.ctrl && '^',
-                      clipboardHistoryShortcut.option && '⌥',
-                      clipboardHistoryShortcut.command && '⌘',
-                      clipboardHistoryShortcut.hotkey,
-                    ] as (string | false)[]
-                  )
-                    .filter(Boolean)
-                    .map((c, i) => (
-                      <span key={i}>{c}</span>
-                    ))}
-                </Box>
-              )}
-              <Tooltip title='Edit global shortcut…'>
-                <span>
-                  <IconButton
-                    size='small'
-                    disabled={!clipboardHistoryShortcut}
-                    onClick={() => setClipboardHistoryShortcutDialogOpen(true)}
+                  :
+                </Typography>
+                {toggleVisibleShortcut && (
+                  <Box
                     sx={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '7px',
-                      border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
-                      backgroundColor: alpha(
-                        theme.palette.accent.main,
-                        isDark ? 0.1 : 0.07,
-                      ),
-                      color: theme.palette.text.disabled,
-                      '&:hover': {
-                        borderColor: theme.palette.primary.main,
-                        color: theme.palette.primary.main,
-                      },
+                      backgroundColor: isDark
+                        ? 'rgba(255,255,255,0.06)'
+                        : 'rgba(255,255,255,0.9)',
+                      backdropFilter: 'blur(12px)',
+                      border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                      borderRadius: '6px',
+                      padding: '4px 11px',
+                      fontFamily: 'monospace',
+                      fontSize: scaledPx(theme.custom.fontSize.body),
+                      color: 'text.primary',
+                      boxShadow: !isDark
+                        ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
+                        : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
                     }}
                   >
-                    <SettingsOutlinedIcon sx={{ fontSize: '14px' }} />
-                  </IconButton>
-                </span>
-              </Tooltip>
+                    {(
+                      [
+                        toggleVisibleShortcut.ctrl && '^',
+                        toggleVisibleShortcut.option && '⌥',
+                        toggleVisibleShortcut.command && '⌘',
+                        toggleVisibleShortcut.hotkey,
+                      ] as (string | false)[]
+                    )
+                      .filter(Boolean)
+                      .map((c, i) => (
+                        <span key={i}>{c}</span>
+                      ))}
+                  </Box>
+                )}
+                <Tooltip title='Edit global shortcut…'>
+                  <span>
+                    <IconButton
+                      size='small'
+                      disabled={!toggleVisibleShortcut}
+                      onClick={() => setShortcutDialogOpen(true)}
+                      sx={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: '7px',
+                        border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                        backgroundColor: alpha(
+                          theme.palette.accent.main,
+                          isDark ? 0.1 : 0.07,
+                        ),
+                        color: theme.palette.text.disabled,
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                          color: theme.palette.primary.main,
+                        },
+                      }}
+                    >
+                      <SettingsOutlinedIcon sx={{ fontSize: '14px' }} />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
+
+              <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Typography
+                  sx={{
+                    fontSize: scaledPx(theme.custom.fontSize.label),
+                    fontWeight: 500,
+                    color: 'text.primary',
+                  }}
+                >
+                  Clipboard History
+                </Typography>
+                <Typography
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: scaledPx(theme.custom.fontSize.label),
+                  }}
+                >
+                  :
+                </Typography>
+                {clipboardHistoryShortcut && (
+                  <Box
+                    sx={{
+                      backgroundColor: isDark
+                        ? 'rgba(255,255,255,0.06)'
+                        : 'rgba(255,255,255,0.9)',
+                      backdropFilter: 'blur(12px)',
+                      border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                      borderRadius: '6px',
+                      padding: '4px 11px',
+                      fontFamily: 'monospace',
+                      fontSize: scaledPx(theme.custom.fontSize.body),
+                      color: 'text.primary',
+                      boxShadow: !isDark
+                        ? 'inset 0 1px 0 rgba(255,255,255,0.8)'
+                        : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    {(
+                      [
+                        clipboardHistoryShortcut.ctrl && '^',
+                        clipboardHistoryShortcut.option && '⌥',
+                        clipboardHistoryShortcut.command && '⌘',
+                        clipboardHistoryShortcut.hotkey,
+                      ] as (string | false)[]
+                    )
+                      .filter(Boolean)
+                      .map((c, i) => (
+                        <span key={i}>{c}</span>
+                      ))}
+                  </Box>
+                )}
+                <Tooltip title='Edit global shortcut…'>
+                  <span>
+                    <IconButton
+                      size='small'
+                      disabled={!clipboardHistoryShortcut}
+                      onClick={() =>
+                        setClipboardHistoryShortcutDialogOpen(true)
+                      }
+                      sx={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: '7px',
+                        border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                        backgroundColor: alpha(
+                          theme.palette.accent.main,
+                          isDark ? 0.1 : 0.07,
+                        ),
+                        color: theme.palette.text.disabled,
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                          color: theme.palette.primary.main,
+                        },
+                      }}
+                    >
+                      <SettingsOutlinedIcon sx={{ fontSize: '14px' }} />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
             </Box>
-          </Box>
-        </Box>
+          )}
 
-        <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
+          {/* UI */}
+          {activeSection === 'ui' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Row: Theme */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RowDot />
+                  <Typography
+                    sx={{
+                      fontSize: scaledPx(theme.custom.fontSize.label),
+                      color: 'text.primary',
+                    }}
+                  >
+                    Theme
+                  </Typography>
+                </Box>
+                <ThemeToggle
+                  themeMode={themeMode}
+                  onChange={handleThemeChange}
+                  disabled={isLoading}
+                />
+              </Box>
+            </Box>
+          )}
 
-        {/* Theme */}
-        <Box sx={{ py: '12px' }}>
-          <Typography
-            sx={{
-              fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
-              fontWeight: 600,
-              letterSpacing: '0.01em',
-              mb: '10px',
-              color: 'text.primary',
-            }}
-          >
-            Theme
-          </Typography>
-          <Box sx={{ pl: '14px', py: '8px' }}>
-            <ThemeToggle
-              themeMode={themeMode}
-              onChange={handleThemeChange}
-              disabled={isLoading}
-            />
-          </Box>
-        </Box>
-
-        <Divider sx={{ mx: '-20px', borderBottomWidth: '0.5px' }} />
-
-        {/* Other Settings */}
-        <Box sx={{ py: '12px' }}>
-          <Typography
-            sx={{
-              fontSize: scaledPx(theme.custom.fontSize.sectionHeader),
-              fontWeight: 600,
-              letterSpacing: '0.01em',
-              mb: '10px',
-              color: 'text.primary',
-            }}
-          >
-            Other Settings
-          </Typography>
-          <Box sx={{ pl: '14px', py: '8px' }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px',
-                p: '12px 14px',
-                backgroundColor: theme.palette.glass.panel,
-                border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)'}`,
-                borderRadius: '10px',
-                boxShadow: isDark
-                  ? 'none'
-                  : 'inset 0 1px 0 rgba(255,255,255,0.5)',
-              }}
-            >
+          {/* Other Settings */}
+          {activeSection === 'other' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {/* Confirm before actions */}
               <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  py: '6px',
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1017,7 +1008,7 @@ export default function Page() {
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
               {/* CheatSheet DB section */}
-              <Box sx={{ py: '6px' }}>
+              <Box>
                 <Box
                   sx={{
                     display: 'flex',
@@ -1104,7 +1095,7 @@ export default function Page() {
               <Divider sx={{ borderBottomWidth: '0.5px' }} />
 
               {/* Log section */}
-              <Box sx={{ py: '6px' }}>
+              <Box>
                 {/* Header row */}
                 <Box
                   sx={{
@@ -1203,7 +1194,7 @@ export default function Page() {
                 </Box>
               </Box>
             </Box>
-          </Box>
+          )}
         </Box>
       </Box>
 

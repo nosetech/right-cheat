@@ -104,6 +104,7 @@ declare module '@mui/material/styles' {
       footerBg: string
       fieldRowBg: string
       borderSubtle: string
+      sidebarBg: string
     }
   }
   interface PaletteOptions {
@@ -151,6 +152,7 @@ declare module '@mui/material/styles' {
       footerBg: string
       fieldRowBg: string
       borderSubtle: string
+      sidebarBg: string
     }
   }
 }
@@ -260,6 +262,7 @@ const getLightPalette = () => ({
     footerBg: 'rgba(255,255,255,0.30)',
     fieldRowBg: 'rgba(255,255,255,0.48)',
     borderSubtle: 'rgba(0,0,0,0.08)',
+    sidebarBg: 'rgba(0,0,0,0.015)',
   },
   background: {
     default: '#dce5f2',
@@ -343,6 +346,7 @@ const getDarkPalette = () => ({
     footerBg: 'rgba(255,255,255,0.018)',
     fieldRowBg: 'rgba(255,255,255,0.055)',
     borderSubtle: 'rgba(255,255,255,0.08)',
+    sidebarBg: 'rgba(255,255,255,0.02)',
   },
   background: {
     default: '#0f2236',

@@ -134,7 +134,8 @@ export function StepperInput({
           alignItems: 'center',
           gap: '4px',
           px: '8px',
-          width: boxWidth,
+          width: scaledPx(boxWidth),
+          flexShrink: 0,
           justifyContent: 'center',
           borderLeft: `0.5px solid ${theme.palette.divider}`,
           borderRight: `0.5px solid ${theme.palette.divider}`,
@@ -153,7 +154,7 @@ export function StepperInput({
             e.currentTarget.select()
           }
           sx={{
-            width: inputWidth,
+            width: scaledPx(inputWidth),
             textAlign: 'right',
             background: 'transparent',
             border: 'none',
