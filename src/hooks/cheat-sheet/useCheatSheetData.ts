@@ -10,6 +10,9 @@ type Params = {
   editModeRef: RefObject<boolean>
 }
 
+const firstTitleOf = (titles: CheatSheetTitleData): string =>
+  titles.title.length > 0 ? titles.title[0] : ''
+
 /**
  * チートシートのタイトル一覧・選択中シートのデータのロードを管理するフック。
  * 起動時のリロード、`RELOAD_CHEAT_SHEET` イベントの購読、選択変更時のデータ取得を担う。
@@ -51,13 +54,18 @@ export function useCheatSheetData({ editModeRef }: Params) {
             if (currentTitle !== '' && titles.title.includes(currentTitle)) {
               // 表示中のチートシートを維持したまま、コマンドデータのみ再取得する
               // （selectCheatSheet 自体は変化しないため、下の useEffect には
-              // 任せられず明示的に呼び出す必要がある）
+              // 任せられず明示的に呼び出す必要がある）。
+              // この await 中にユーザーが手動でシートを切り替える可能性があるため、
+              // 完了後に selectCheatSheetRef が currentTitle のままかを再確認してから
+              // 反映する（切り替え後のシートを古いデータで上書きしないためのガード）。
               const data = await loadCheatSheetData(currentTitle)
-              setCheatSheetData(data)
+              if (selectCheatSheetRef.current === currentTitle) {
+                setCheatSheetData(data)
+              }
             } else {
               // 表示中のチートシートがリロード後の一覧に存在しない場合のみ
               // 先頭のチートシートへフォールバックする
-              setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+              setCheatSheet(firstTitleOf(titles))
             }
           }
           setReloading(false)
@@ -76,7 +84,7 @@ export function useCheatSheetData({ editModeRef }: Params) {
       // Cmd+R メニューや編集後の同期ブロードキャストは別経路で継続する。
       const titles = await loadCheatSheetTitles()
       if (titles) {
-        setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+        setCheatSheet(firstTitleOf(titles))
       }
     })()
     return () => {
