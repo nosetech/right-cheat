@@ -10,16 +10,16 @@ import {
 
 interface UseCheatSheetLoaderProps {
   setCheatSheetTitles: (titles: CheatSheetTitleData | undefined) => void
-  setCheatSheet: (title: string) => void
   setErrorMessage: (message: string | undefined) => void
 }
 
 export const useCheatSheetLoader = ({
   setCheatSheetTitles,
-  setCheatSheet,
   setErrorMessage,
 }: UseCheatSheetLoaderProps) => {
-  const loadCheatSheetTitles = useCallback(async () => {
+  const loadCheatSheetTitles = useCallback(async (): Promise<
+    CheatSheetTitleData | undefined
+  > => {
     try {
       setErrorMessage(undefined)
       const response = await invoke<string>(CheatSheetAPI.GET_CHEAT_TITLES)
@@ -32,11 +32,12 @@ export const useCheatSheetLoader = ({
       if (parsedResponse.success === false && parsedResponse.error) {
         setErrorMessage(parsedResponse.error)
         setCheatSheetTitles(undefined)
+        return undefined
       } else {
         const titles: CheatSheetTitleData = parsedResponse
         setCheatSheetTitles(titles)
-        setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
         setErrorMessage(undefined)
+        return titles
       }
     } catch (error) {
       const errorMessage =
@@ -46,8 +47,9 @@ export const useCheatSheetLoader = ({
       )
       setErrorMessage(errorMessage)
       setCheatSheetTitles(undefined)
+      return undefined
     }
-  }, [setCheatSheetTitles, setCheatSheet, setErrorMessage])
+  }, [setCheatSheetTitles, setErrorMessage])
 
   const loadCheatSheetData = useCallback(
     async (title: string) => {

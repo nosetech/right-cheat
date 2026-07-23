@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react'
+import { RefObject, useEffect, useRef, useState } from 'react'
 
 import { listen } from '@tauri-apps/api/event'
 
@@ -23,9 +23,15 @@ export function useCheatSheetData({ editModeRef }: Params) {
   const [errorMessage, setErrorMessage] = useState<string>()
   const [reloading, setReloading] = useState<boolean>(false)
 
+  // RELOAD_CHEAT_SHEET リスナーはマウント時に一度だけ登録されるため、
+  // 内部のクロージャが selectCheatSheet の古い値を参照しないよう ref で保持する
+  const selectCheatSheetRef = useRef<string>('')
+  useEffect(() => {
+    selectCheatSheetRef.current = selectCheatSheet
+  }, [selectCheatSheet])
+
   const { loadCheatSheetTitles, loadCheatSheetData } = useCheatSheetLoader({
     setCheatSheetTitles,
-    setCheatSheet,
     setErrorMessage,
   })
 
@@ -39,8 +45,21 @@ export function useCheatSheetData({ editModeRef }: Params) {
         if (editModeRef.current) return
         ;(async () => {
           setReloading(true)
-          setCheatSheet('')
-          await loadCheatSheetTitles()
+          const currentTitle = selectCheatSheetRef.current
+          const titles = await loadCheatSheetTitles()
+          if (titles) {
+            if (currentTitle !== '' && titles.title.includes(currentTitle)) {
+              // 表示中のチートシートを維持したまま、コマンドデータのみ再取得する
+              // （selectCheatSheet 自体は変化しないため、下の useEffect には
+              // 任せられず明示的に呼び出す必要がある）
+              const data = await loadCheatSheetData(currentTitle)
+              setCheatSheetData(data)
+            } else {
+              // 表示中のチートシートがリロード後の一覧に存在しない場合のみ
+              // 先頭のチートシートへフォールバックする
+              setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+            }
+          }
           setReloading(false)
         })()
       })
@@ -55,7 +74,10 @@ export function useCheatSheetData({ editModeRef }: Params) {
       // 新規チートシートウィンドウを開くたびに既存の全ウィンドウが
       // 先頭シートへリセットされてしまう（複数ウィンドウ対応で顕在化）。
       // Cmd+R メニューや編集後の同期ブロードキャストは別経路で継続する。
-      await loadCheatSheetTitles()
+      const titles = await loadCheatSheetTitles()
+      if (titles) {
+        setCheatSheet(titles.title.length > 0 ? titles.title[0] : '')
+      }
     })()
     return () => {
       cancelled = true
