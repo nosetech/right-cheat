@@ -10,6 +10,8 @@ pub struct ClipboardHistoryItem {
     pub text: String,
     pub char_count: i64,
     pub copied_at: String,
+    pub copy_count: i64,
+    pub first_copied_at: String,
 }
 
 impl From<repository::ClipboardHistoryRow> for ClipboardHistoryItem {
@@ -19,6 +21,8 @@ impl From<repository::ClipboardHistoryRow> for ClipboardHistoryItem {
             text: row.text,
             char_count: row.char_count,
             copied_at: row.copied_at,
+            copy_count: row.copy_count,
+            first_copied_at: row.first_copied_at,
         }
     }
 }
@@ -38,6 +42,26 @@ pub fn list_clipboard_history<R: Runtime>(
         limit
     );
     Ok(rows.into_iter().map(ClipboardHistoryItem::from).collect())
+}
+
+/// Clipboard History ウィンドウ内で既存のエントリを再コピーした際に呼び出す。
+/// 再コピーは自前マーカー（[`crate::api::clipboard::SELF_COPY_TYPE`]）付きで
+/// NSPasteboard に書き込まれ `clipboard_monitor` に検知されないため、
+/// このコマンドで明示的に `copy_count` のインクリメントと `copied_at` の更新
+/// （`insert_clipboard_history` の既存テキスト分岐と同じ move-to-top 更新）を記録する。
+#[tauri::command]
+pub fn record_clipboard_history_recopy<R: Runtime>(
+    app: AppHandle<R>,
+    text: String,
+) -> Result<(), String> {
+    let db = app.state::<DbConnection>();
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    repository::insert_clipboard_history(&conn, &text).map_err(|e| e.to_string())?;
+    log::debug!(
+        "[clipboard_history] record_clipboard_history_recopy: {} char(s)",
+        text.chars().count()
+    );
+    Ok(())
 }
 
 /// クリップボード履歴を1件削除する。

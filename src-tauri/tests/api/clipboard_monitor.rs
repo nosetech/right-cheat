@@ -61,6 +61,7 @@ mod save_clipboard_text {
             max_chars,
             max_items,
             clear_on_quit: false,
+            heat_bar_color: "orange".to_string(),
         }
     }
 

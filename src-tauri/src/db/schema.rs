@@ -25,8 +25,26 @@ pub fn apply_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     if version < 3 {
         migrate_v3(conn)?;
     }
+    if version < 4 {
+        migrate_v4(conn)?;
+    }
 
     Ok(())
+}
+
+/// クリップボード履歴にコピー回数（copy_count）と初回コピー日時（first_copied_at）を追加する。
+/// 既存行は copy_count = 1（DEFAULT）、first_copied_at は既存の copied_at 値で backfill する。
+fn migrate_v4(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(
+        "
+        ALTER TABLE clipboard_history ADD COLUMN copy_count INTEGER NOT NULL DEFAULT 1;
+        ALTER TABLE clipboard_history ADD COLUMN first_copied_at TEXT;
+
+        UPDATE clipboard_history SET first_copied_at = copied_at WHERE first_copied_at IS NULL;
+
+        INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('schema_version', '4');
+        ",
+    )
 }
 
 fn migrate_v3(conn: &Connection) -> Result<(), rusqlite::Error> {

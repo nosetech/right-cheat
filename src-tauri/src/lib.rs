@@ -174,6 +174,7 @@ pub fn run() {
             api::clipboard_history::list_clipboard_history,
             api::clipboard_history::delete_clipboard_history_item,
             api::clipboard_history::clear_clipboard_history,
+            api::clipboard_history::record_clipboard_history_recopy,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

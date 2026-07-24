@@ -697,6 +697,8 @@ pub struct ClipboardHistoryRow {
     pub text: String,
     pub char_count: i64,
     pub copied_at: String,
+    pub copy_count: i64,
+    pub first_copied_at: String,
 }
 
 /// SQLite の `datetime('now')` は秒精度のため、同一秒内に複数回のコピー操作
@@ -706,9 +708,14 @@ pub struct ClipboardHistoryRow {
 /// ミリ秒精度にすることでこの取り違えを実用上ほぼ排除する。
 const COPIED_AT_NOW_EXPR: &str = "strftime('%Y-%m-%d %H:%M:%f', 'now')";
 
+/// ヒートバーの表示レベルが 1〜5（5でキャップ）のため、`copy_count` 自体もこの値を
+/// 上限としてカウントアップを止める（issue #195 フォローアップ）。
+pub const MAX_COPY_COUNT: i64 = 5;
+
 /// クリップボード履歴を追加する。
 /// 同一テキストが履歴全体に既に存在する場合は INSERT せず、既存行の `copied_at` を
-/// 現在時刻に更新して先頭（最新）へ移動し、既存行の id を返す（move-to-top）。
+/// 現在時刻に更新して先頭（最新）へ移動し、`copy_count` を `MAX_COPY_COUNT` を上限に
+/// インクリメントして既存行の id を返す（move-to-top）。
 pub fn insert_clipboard_history(conn: &Connection, text: &str) -> Result<i64> {
     let existing: Option<i64> = match conn.query_row(
         "SELECT id FROM clipboard_history WHERE text = ?1 ORDER BY copied_at DESC, id DESC LIMIT 1",
@@ -722,7 +729,9 @@ pub fn insert_clipboard_history(conn: &Connection, text: &str) -> Result<i64> {
 
     if let Some(id) = existing {
         conn.execute(
-            &format!("UPDATE clipboard_history SET copied_at = {COPIED_AT_NOW_EXPR} WHERE id = ?1"),
+            &format!(
+                "UPDATE clipboard_history SET copied_at = {COPIED_AT_NOW_EXPR}, copy_count = MIN(copy_count + 1, {MAX_COPY_COUNT}) WHERE id = ?1"
+            ),
             params![id],
         )?;
         return Ok(id);
@@ -731,7 +740,8 @@ pub fn insert_clipboard_history(conn: &Connection, text: &str) -> Result<i64> {
     let char_count = text.chars().count() as i64;
     conn.execute(
         &format!(
-            "INSERT INTO clipboard_history (text, char_count, copied_at) VALUES (?1, ?2, {COPIED_AT_NOW_EXPR})"
+            "INSERT INTO clipboard_history (text, char_count, copied_at, first_copied_at, copy_count)
+             VALUES (?1, ?2, {COPIED_AT_NOW_EXPR}, {COPIED_AT_NOW_EXPR}, 1)"
         ),
         params![text, char_count],
     )?;
@@ -741,7 +751,7 @@ pub fn insert_clipboard_history(conn: &Connection, text: &str) -> Result<i64> {
 /// クリップボード履歴を新しい順に取得する。
 pub fn list_clipboard_history(conn: &Connection, limit: u32) -> Result<Vec<ClipboardHistoryRow>> {
     let mut stmt = conn.prepare(
-        "SELECT id, text, char_count, copied_at FROM clipboard_history
+        "SELECT id, text, char_count, copied_at, copy_count, first_copied_at FROM clipboard_history
          ORDER BY copied_at DESC, id DESC LIMIT ?1",
     )?;
     let rows = stmt
@@ -751,6 +761,8 @@ pub fn list_clipboard_history(conn: &Connection, limit: u32) -> Result<Vec<Clipb
                 text: row.get(1)?,
                 char_count: row.get(2)?,
                 copied_at: row.get(3)?,
+                copy_count: row.get(4)?,
+                first_copied_at: row.get(5)?,
             })
         })?
         .collect::<Result<Vec<_>>>()?;

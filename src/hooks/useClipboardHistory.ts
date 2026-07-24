@@ -4,12 +4,14 @@ import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
+import { MAX_COPY_COUNT } from '@/constants/heatPalette'
 import { useNotificationContext } from '@/context/NotificationContext'
 import {
   CLIPBOARD_HISTORY_LIST_LIMIT,
   ClipboardHistoryAPI,
   ClipboardHistoryItem,
 } from '@/types/api/ClipboardHistory'
+import { nowAsCopiedAtString } from '@/utils/date'
 
 /**
  * クリップボード履歴ウィンドウの状態を管理するフック。
@@ -78,6 +80,37 @@ export function useClipboardHistory() {
       unlisten?.()
     }
   }, [reload])
+
+  // ─── 再コピー（copy_count のカウントアップ） ───────────────────
+  // Clipboard History ウィンドウ内での再コピーは自前マーカー付きで
+  // NSPasteboard へ書き込まれ ClipboardMonitor に検知されないため、専用コマンドで
+  // copy_count のインクリメントを明示的に記録する。DB への反映を待たずに一覧へ
+  // 即時反映するため、まずローカル state を楽観的に更新する（失敗してもログのみで
+  // ロールバックはしない。次回リロードで DB の実状態に自然と同期される）。
+  // バックエンド（insert_clipboard_history の MIN(copy_count + 1, MAX_COPY_COUNT)）と
+  // 同じ上限でカウントアップを止めないと、同一セッション内で連続再コピーした際に
+  // 表示上のカウントだけ上限を超えて増え続けてしまう。
+  const recordRecopy = useCallback((id: number, text: string) => {
+    const copiedAt = nowAsCopiedAtString()
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              copy_count: Math.min(item.copy_count + 1, MAX_COPY_COUNT),
+              copied_at: copiedAt,
+            }
+          : item,
+      ),
+    )
+    invoke(ClipboardHistoryAPI.RECORD_CLIPBOARD_HISTORY_RECOPY, { text }).catch(
+      (err) => {
+        logError(
+          `[useClipboardHistory] Failed to record recopy: ${String(err)}`,
+        )
+      },
+    )
+  }, [])
 
   // ─── 編集モード ─────────────────────────────────────────────
   const enterEditMode = useCallback(() => {
@@ -165,6 +198,7 @@ export function useClipboardHistory() {
     cancelEditMode,
     saveEditMode,
     deleteItem,
+    recordRecopy,
     clearAll,
     confirmClearOpen,
     setConfirmClearOpen,

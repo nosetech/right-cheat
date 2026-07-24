@@ -40,6 +40,7 @@ mod normalized {
             max_chars,
             max_items,
             clear_on_quit,
+            heat_bar_color: "orange".to_string(),
         }
     }
 
@@ -278,6 +279,85 @@ mod normalized {
         let twice = once.clone().normalized();
         assert_eq!(once, twice);
     }
+
+    // ── heat_bar_color の同値分割・境界値分析（issue #195） ─────
+    //
+    // 同値分割:
+    //   有効クラス: HEAT_BAR_COLORS の許容値8色（red/orange/amber/green/teal/blue/purple/none）
+    //   無効クラス①: 空文字列（境界値: 最小長の無効値）
+    //   無効クラス②: 大文字小文字違い（許容値と文字列として厳密一致しない）
+    //   無効クラス③: 前後に空白を含む値（許容値と厳密一致しない）
+    //   無効クラス④: 未知の値（許容値に含まれない任意の文字列）
+
+    /// 許容値8色はすべてそのまま保持される
+    #[test]
+    fn heat_bar_color_allowed_values_are_kept_unchanged() {
+        for color in [
+            "red", "orange", "amber", "green", "teal", "blue", "purple", "none",
+        ] {
+            let input = ClipboardSettings {
+                heat_bar_color: color.to_string(),
+                ..settings(true, 5, 50, 20, false)
+            };
+            let result = input.normalized();
+            assert_eq!(
+                result.heat_bar_color, color,
+                "許容値 {color} はそのまま保持されること"
+            );
+        }
+    }
+
+    /// 未知の値（許容値に含まれない文字列）は既定値 "orange" に補正される
+    #[test]
+    fn heat_bar_color_unknown_value_is_corrected_to_default() {
+        let input = ClipboardSettings {
+            heat_bar_color: "pink".to_string(),
+            ..settings(true, 5, 50, 20, false)
+        };
+        let result = input.normalized();
+        assert_eq!(result.heat_bar_color, "orange");
+    }
+
+    /// 空文字列（境界値: 最小長の無効値）は既定値 "orange" に補正される
+    #[test]
+    fn heat_bar_color_empty_string_is_corrected_to_default() {
+        let input = ClipboardSettings {
+            heat_bar_color: "".to_string(),
+            ..settings(true, 5, 50, 20, false)
+        };
+        let result = input.normalized();
+        assert_eq!(result.heat_bar_color, "orange");
+    }
+
+    /// 大文字小文字違い（"Orange"）は許容値と厳密一致しないため補正される
+    #[test]
+    fn heat_bar_color_case_mismatch_is_corrected_to_default() {
+        let input = ClipboardSettings {
+            heat_bar_color: "Orange".to_string(),
+            ..settings(true, 5, 50, 20, false)
+        };
+        let result = input.normalized();
+        assert_eq!(result.heat_bar_color, "orange");
+    }
+
+    /// 前後に空白を含む値も許容値と厳密一致しないため補正される
+    #[test]
+    fn heat_bar_color_value_with_surrounding_whitespace_is_corrected_to_default() {
+        let input = ClipboardSettings {
+            heat_bar_color: " orange ".to_string(),
+            ..settings(true, 5, 50, 20, false)
+        };
+        let result = input.normalized();
+        assert_eq!(result.heat_bar_color, "orange");
+    }
+
+    /// heat_bar_color がデフォルト値の場合は正規化しても変化しない
+    #[test]
+    fn heat_bar_color_default_value_is_unchanged() {
+        let input = settings(true, 5, 50, 20, false);
+        let result = input.normalized();
+        assert_eq!(result.heat_bar_color, "orange");
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -327,6 +407,7 @@ mod get_clipboard_settings {
             max_chars: 300,
             max_items: 50,
             clear_on_quit: true,
+            heat_bar_color: "orange".to_string(),
         };
         settings_store
             .set_setting(
@@ -362,6 +443,7 @@ mod get_clipboard_settings {
             max_chars: 5000, // 上限超過 -> 1000 に補正されるはず
             max_items: 1,    // 下限未満 -> 10 に補正されるはず
             clear_on_quit: false,
+            heat_bar_color: "orange".to_string(),
         };
         settings_store
             .set_setting(
@@ -375,6 +457,104 @@ mod get_clipboard_settings {
         assert_eq!(result.min_chars, 2);
         assert_eq!(result.max_chars, 1000);
         assert_eq!(result.max_items, 10);
+    }
+
+    /// 同値クラス: heat_bar_color に許容値（"purple"）が保存済み
+    /// 期待値: 保存されている値をそのまま返す
+    #[test]
+    fn get_returns_persisted_heat_bar_color() {
+        let app = mock_app();
+        let _ = app
+            .handle()
+            .plugin(tauri_plugin_store::Builder::new().build());
+        let settings_store = TauriSettingsStore;
+        settings_store.initialize_settings("unittest-clipboard-get-heat-bar-color.json");
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
+
+        let custom = ClipboardSettings {
+            heat_bar_color: "purple".to_string(),
+            ..ClipboardSettings::default()
+        };
+        settings_store
+            .set_setting(
+                &app.handle().clone(),
+                "clipboard_settings",
+                serde_json::to_value(&custom).unwrap(),
+            )
+            .unwrap();
+
+        let result = get_clipboard_settings(app.handle().clone()).unwrap();
+        assert_eq!(result.heat_bar_color, "purple");
+    }
+
+    /// ホワイトボックス: ストアに許容値以外の heat_bar_color が直接保存されている場合
+    /// （手動編集された設定ファイル等を想定）、normalized() により
+    /// 既定値 "orange" に補正されて返る
+    #[test]
+    fn get_normalizes_unknown_heat_bar_color_persisted_value() {
+        let app = mock_app();
+        let _ = app
+            .handle()
+            .plugin(tauri_plugin_store::Builder::new().build());
+        let settings_store = TauriSettingsStore;
+        settings_store.initialize_settings("unittest-clipboard-get-heat-bar-color-invalid.json");
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
+
+        let raw_invalid = ClipboardSettings {
+            heat_bar_color: "pink".to_string(),
+            ..ClipboardSettings::default()
+        };
+        settings_store
+            .set_setting(
+                &app.handle().clone(),
+                "clipboard_settings",
+                serde_json::to_value(&raw_invalid).unwrap(),
+            )
+            .unwrap();
+
+        let result = get_clipboard_settings(app.handle().clone()).unwrap();
+        assert_eq!(result.heat_bar_color, "orange");
+    }
+
+    /// 後方互換性の回帰テスト（issue #195）: heat_bar_color 追加前の
+    /// バージョンで永続化された設定ファイルには heat_bar_color キー自体が
+    /// 存在しない。`#[serde(default)]` が付いていないと serde_json::from_value
+    /// が Err を返し、get_clipboard_settings 全体が失敗して Preferences 画面が
+    /// 「Failed to get clipboard history settings」エラーで起動できなくなる。
+    #[test]
+    fn get_succeeds_when_persisted_json_predates_heat_bar_color_field() {
+        let app = mock_app();
+        let _ = app
+            .handle()
+            .plugin(tauri_plugin_store::Builder::new().build());
+        let settings_store = TauriSettingsStore;
+        settings_store.initialize_settings("unittest-clipboard-get-legacy-no-heat-bar-color.json");
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
+
+        // heat_bar_color フィールドを持たない、issue #195 以前の形式の JSON を直接書き込む
+        let legacy_json = serde_json::json!({
+            "monitoring_enabled": true,
+            "min_chars": 2,
+            "max_chars": 200,
+            "max_items": 100,
+            "clear_on_quit": false,
+        });
+        settings_store
+            .set_setting(&app.handle().clone(), "clipboard_settings", legacy_json)
+            .unwrap();
+
+        let result = get_clipboard_settings(app.handle().clone());
+        assert!(
+            result.is_ok(),
+            "heat_bar_color 欠落時もエラーにならないこと: {result:?}"
+        );
+        assert_eq!(result.unwrap().heat_bar_color, "orange");
     }
 }
 
@@ -409,6 +589,7 @@ mod set_clipboard_settings {
             max_chars: 100,
             max_items: 30,
             clear_on_quit: true,
+            heat_bar_color: "orange".to_string(),
         };
         set_clipboard_settings(app.handle().clone(), custom.clone()).unwrap();
 
@@ -436,6 +617,7 @@ mod set_clipboard_settings {
             max_chars: 99999,
             max_items: 3,
             clear_on_quit: false,
+            heat_bar_color: "orange".to_string(),
         };
         set_clipboard_settings(app.handle().clone(), out_of_range).unwrap();
 
@@ -464,6 +646,7 @@ mod set_clipboard_settings {
             max_chars: 10,
             max_items: 100,
             clear_on_quit: false,
+            heat_bar_color: "orange".to_string(),
         };
         set_clipboard_settings(app.handle().clone(), inconsistent).unwrap();
 
@@ -530,6 +713,54 @@ mod set_clipboard_settings {
         let result = set_clipboard_settings(app.handle().clone(), ClipboardSettings::default());
         assert!(result.is_ok());
     }
+
+    /// 同値クラス: heat_bar_color に許容値（"teal"）を設定
+    /// 期待値: そのまま永続化される
+    #[test]
+    fn set_persists_valid_heat_bar_color() {
+        let app = mock_app();
+        let _ = app
+            .handle()
+            .plugin(tauri_plugin_store::Builder::new().build());
+        let settings_store = TauriSettingsStore;
+        settings_store.initialize_settings("unittest-clipboard-set-heat-bar-color-valid.json");
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
+
+        let custom = ClipboardSettings {
+            heat_bar_color: "teal".to_string(),
+            ..ClipboardSettings::default()
+        };
+        set_clipboard_settings(app.handle().clone(), custom.clone()).unwrap();
+
+        let result = get_clipboard_settings(app.handle().clone()).unwrap();
+        assert_eq!(result.heat_bar_color, "teal");
+    }
+
+    /// 同値クラス: heat_bar_color に許容値以外（"pink"）を設定
+    /// 期待値: normalized() により既定値 "orange" に補正されて永続化される
+    #[test]
+    fn set_normalizes_invalid_heat_bar_color_before_persisting() {
+        let app = mock_app();
+        let _ = app
+            .handle()
+            .plugin(tauri_plugin_store::Builder::new().build());
+        let settings_store = TauriSettingsStore;
+        settings_store.initialize_settings("unittest-clipboard-set-heat-bar-color-invalid.json");
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
+
+        let invalid = ClipboardSettings {
+            heat_bar_color: "pink".to_string(),
+            ..ClipboardSettings::default()
+        };
+        set_clipboard_settings(app.handle().clone(), invalid).unwrap();
+
+        let result = get_clipboard_settings(app.handle().clone()).unwrap();
+        assert_eq!(result.heat_bar_color, "orange");
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -583,6 +814,7 @@ mod init_clipboard_settings {
             max_chars: 500,
             max_items: 200,
             clear_on_quit: true,
+            heat_bar_color: "orange".to_string(),
         };
         set_clipboard_settings(app.handle().clone(), custom.clone()).unwrap();
 
@@ -617,6 +849,7 @@ mod init_clipboard_settings {
             max_chars: 400,
             max_items: 150,
             clear_on_quit: true,
+            heat_bar_color: "orange".to_string(),
         };
         set_clipboard_settings(app.handle().clone(), custom.clone()).unwrap();
 

@@ -5,7 +5,7 @@ import { error as logError } from '@tauri-apps/plugin-log'
 
 import { ClipboardAPI } from '@/types/api/Clipboard'
 
-export const useClipboard = (value: string) => {
+export const useClipboard = (value: string, onCopied?: () => void) => {
   const [hasCopied, setHasCopied] = useState<boolean>(false)
   const [error, setError] = useState<Error>()
 
@@ -15,6 +15,7 @@ export const useClipboard = (value: string) => {
     try {
       await invoke(ClipboardAPI.COPY_TEXT_TO_CLIPBOARD, { text: value })
       setHasCopied(true)
+      onCopied?.()
       setTimeout(() => {
         setHasCopied(false)
       }, 1000)

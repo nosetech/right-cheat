@@ -9,6 +9,7 @@ import { CopyIcon } from '@/components/atoms/icons'
 import { ClipboardHistoryFooter } from '@/components/molecules/ClipboardHistoryFooter'
 import { HistoryItemRow } from '@/components/molecules/HistoryItemRow'
 import { RcDialog } from '@/components/organisms/RcDialog'
+import { DEFAULT_HEAT_BAR_COLOR, HeatBarColorId } from '@/constants/heatPalette'
 import { ClipboardHistoryState } from '@/hooks/useClipboardHistory'
 import { ClipboardHistoryItem } from '@/types/api/ClipboardHistory'
 
@@ -18,6 +19,8 @@ type Props = {
   itemRefs: RefObject<Array<HTMLDivElement | null>>
   /** 編集モードの行アクション「Add to Cheat Sheet」で別ウィンドウを開く */
   onAddToSheet: (item: ClipboardHistoryItem) => void
+  /** Preferences → Clipboard History の Heat bar color 設定 */
+  heatBarColor?: HeatBarColorId
 }
 
 /**
@@ -29,6 +32,7 @@ export function ClipboardHistorySheet({
   history,
   itemRefs,
   onAddToSheet,
+  heatBarColor = DEFAULT_HEAT_BAR_COLOR,
 }: Props) {
   const theme = useTheme()
 
@@ -40,6 +44,7 @@ export function ClipboardHistorySheet({
     cancelEditMode,
     saveEditMode,
     deleteItem,
+    recordRecopy,
     clearAll,
     confirmClearOpen,
     setConfirmClearOpen,
@@ -68,6 +73,11 @@ export function ClipboardHistorySheet({
                 editMode={editMode}
                 onAddToSheet={() => onAddToSheet(item)}
                 onDelete={() => deleteItem(item.id)}
+                onCopied={() => recordRecopy(item.id, item.text)}
+                copyCount={item.copy_count}
+                firstCopiedAt={item.first_copied_at}
+                lastCopiedAt={item.copied_at}
+                heatColor={heatBarColor}
               />
             ))}
           </Box>
