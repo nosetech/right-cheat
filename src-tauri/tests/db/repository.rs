@@ -1293,7 +1293,7 @@ fn insert_clipboard_history_inserts_new_row_and_returns_id() {
     let conn = setup();
 
     // Act
-    let id = insert_clipboard_history(&conn, "hello").unwrap();
+    let id = insert_clipboard_history(&conn, "hello", None).unwrap();
 
     // Assert: 正のIDが返り、1件だけ登録されること
     assert!(id > 0);
@@ -1306,7 +1306,7 @@ fn insert_clipboard_history_computes_char_count_for_ascii() {
     let conn = setup();
 
     // Act
-    insert_clipboard_history(&conn, "hello").unwrap();
+    insert_clipboard_history(&conn, "hello", None).unwrap();
 
     // Assert: ASCII文字はバイト数と文字数が一致する
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1319,7 +1319,7 @@ fn insert_clipboard_history_computes_char_count_for_multibyte() {
     let conn = setup();
 
     // Act
-    insert_clipboard_history(&conn, "こんにちは").unwrap();
+    insert_clipboard_history(&conn, "こんにちは", None).unwrap();
 
     // Assert: char_count はバイト数ではなく chars().count() の文字数であること
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1335,7 +1335,7 @@ fn insert_clipboard_history_empty_string_is_allowed() {
     let conn = setup();
 
     // Act
-    let id = insert_clipboard_history(&conn, "").unwrap();
+    let id = insert_clipboard_history(&conn, "", None).unwrap();
 
     // Assert: 挿入が成功し char_count は 0
     assert!(id > 0);
@@ -1348,10 +1348,10 @@ fn insert_clipboard_history_empty_string_is_allowed() {
 fn insert_clipboard_history_deduplicates_consecutive_same_text() {
     // Arrange: 直前の履歴と同一テキストを連続で挿入
     let conn = setup();
-    let first_id = insert_clipboard_history(&conn, "same text").unwrap();
+    let first_id = insert_clipboard_history(&conn, "same text", None).unwrap();
 
     // Act
-    let second_id = insert_clipboard_history(&conn, "same text").unwrap();
+    let second_id = insert_clipboard_history(&conn, "same text", None).unwrap();
 
     // Assert: 新規行は作成されず、同じIDが返り、件数は1件のまま
     assert_eq!(second_id, first_id, "重複排除により同じIDが返ること");
@@ -1362,11 +1362,11 @@ fn insert_clipboard_history_deduplicates_consecutive_same_text() {
 fn insert_clipboard_history_deduplicates_three_consecutive_same_text() {
     // Arrange: 直前と同一のテキストを3回連続で挿入
     let conn = setup();
-    let id1 = insert_clipboard_history(&conn, "repeat").unwrap();
+    let id1 = insert_clipboard_history(&conn, "repeat", None).unwrap();
 
     // Act
-    let id2 = insert_clipboard_history(&conn, "repeat").unwrap();
-    let id3 = insert_clipboard_history(&conn, "repeat").unwrap();
+    let id2 = insert_clipboard_history(&conn, "repeat", None).unwrap();
+    let id3 = insert_clipboard_history(&conn, "repeat", None).unwrap();
 
     // Assert: すべて同じIDが返り、件数は1件のまま
     assert_eq!(id1, id2);
@@ -1394,7 +1394,7 @@ fn insert_clipboard_history_moves_non_consecutive_same_text_to_top() {
     insert_history_with_timestamp(&conn, "B", "2024-01-02 00:00:00");
 
     // Act
-    let id_a2 = insert_clipboard_history(&conn, "A").unwrap();
+    let id_a2 = insert_clipboard_history(&conn, "A", None).unwrap();
 
     // Assert: 新規行は作成されず、1回目のAと同じIDが返り、件数は2件（A, B）のまま
     assert_eq!(
@@ -1422,7 +1422,7 @@ fn insert_clipboard_history_moves_middle_entry_to_top() {
     assert_eq!(count_clipboard_history(&conn).unwrap(), 3);
 
     // Act: 中間に位置する "A" を再度挿入
-    let id_a_again = insert_clipboard_history(&conn, "A").unwrap();
+    let id_a_again = insert_clipboard_history(&conn, "A", None).unwrap();
 
     // Assert: 新規行は作成されず、中間にあったAの行がそのまま move-to-top されること
     assert_eq!(
@@ -1466,13 +1466,13 @@ fn insert_clipboard_history_repeated_reinsert_keeps_same_id_across_timings() {
     // insert_clipboard_history_moves_middle_entry_to_top（insert_history_with_timestamp で
     // 明示的な過去日時を与えて決定論的に検証）に譲り、本テストでは行わない。
     let conn = setup();
-    let id_x1 = insert_clipboard_history(&conn, "X").unwrap();
-    insert_clipboard_history(&conn, "Y").unwrap();
+    let id_x1 = insert_clipboard_history(&conn, "X", None).unwrap();
+    insert_clipboard_history(&conn, "Y", None).unwrap();
 
     // Act: X を再挿入（move-to-top） → 別テキスト挿入 → X を再々挿入
-    let id_x2 = insert_clipboard_history(&conn, "X").unwrap();
-    insert_clipboard_history(&conn, "Z").unwrap();
-    let id_x3 = insert_clipboard_history(&conn, "X").unwrap();
+    let id_x2 = insert_clipboard_history(&conn, "X", None).unwrap();
+    insert_clipboard_history(&conn, "Z", None).unwrap();
+    let id_x3 = insert_clipboard_history(&conn, "X", None).unwrap();
 
     // Assert: X の id は常に不変
     assert_eq!(id_x1, id_x2);
@@ -1486,7 +1486,7 @@ fn insert_clipboard_history_repeated_reinsert_keeps_same_id_across_timings() {
 fn insert_clipboard_history_new_row_uses_millisecond_precision_copied_at() {
     // Arrange & Act: 新規 INSERT 経路
     let conn = setup();
-    insert_clipboard_history(&conn, "precision check").unwrap();
+    insert_clipboard_history(&conn, "precision check", None).unwrap();
 
     // Assert: copied_at はミリ秒精度（小数点以下を含む）で記録されること。
     // SQLite の datetime('now') は秒精度のため、これに依存すると同一秒内の
@@ -1504,10 +1504,10 @@ fn insert_clipboard_history_new_row_uses_millisecond_precision_copied_at() {
 fn insert_clipboard_history_move_to_top_uses_millisecond_precision_copied_at() {
     // Arrange: 既存行を用意し、move-to-top（UPDATE）経路を実行する
     let conn = setup();
-    insert_clipboard_history(&conn, "A").unwrap();
+    insert_clipboard_history(&conn, "A", None).unwrap();
 
     // Act: 同一テキストの再挿入（既存行の copied_at を UPDATE）
-    insert_clipboard_history(&conn, "A").unwrap();
+    insert_clipboard_history(&conn, "A", None).unwrap();
 
     // Assert: move-to-top による UPDATE 後の copied_at もミリ秒精度であること
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1536,7 +1536,7 @@ fn insert_clipboard_history_move_to_top_uses_millisecond_precision_copied_at() {
 fn insert_clipboard_history_new_row_sets_copy_count_to_one() {
     // Arrange & Act: 新規テキストの挿入
     let conn = setup();
-    insert_clipboard_history(&conn, "new item").unwrap();
+    insert_clipboard_history(&conn, "new item", None).unwrap();
 
     // Assert: 新規挿入時は copy_count が 1 であること
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1547,7 +1547,7 @@ fn insert_clipboard_history_new_row_sets_copy_count_to_one() {
 fn insert_clipboard_history_new_row_first_copied_at_equals_copied_at() {
     // Arrange & Act: 新規テキストの挿入
     let conn = setup();
-    insert_clipboard_history(&conn, "new item").unwrap();
+    insert_clipboard_history(&conn, "new item", None).unwrap();
 
     // Assert: 新規挿入時は first_copied_at が copied_at と一致すること
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1561,9 +1561,9 @@ fn insert_clipboard_history_new_row_first_copied_at_equals_copied_at() {
 fn insert_clipboard_history_repeated_insert_increments_copy_count_by_insertion_count() {
     // Arrange & Act: 同一テキストを3回挿入（1回目は新規、2・3回目は move-to-top）
     let conn = setup();
-    insert_clipboard_history(&conn, "repeat").unwrap();
-    insert_clipboard_history(&conn, "repeat").unwrap();
-    insert_clipboard_history(&conn, "repeat").unwrap();
+    insert_clipboard_history(&conn, "repeat", None).unwrap();
+    insert_clipboard_history(&conn, "repeat", None).unwrap();
+    insert_clipboard_history(&conn, "repeat", None).unwrap();
 
     // Assert: 挿入回数分 copy_count がインクリメントされること（3回挿入で copy_count=3）
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1575,7 +1575,7 @@ fn insert_clipboard_history_repeated_insert_increments_copy_count_by_insertion_c
 fn insert_clipboard_history_move_to_top_keeps_first_copied_at_but_updates_copied_at() {
     // Arrange: 初回挿入後、copied_at / first_copied_at を過去日時に固定する
     let conn = setup();
-    let id = insert_clipboard_history(&conn, "history item").unwrap();
+    let id = insert_clipboard_history(&conn, "history item", None).unwrap();
     conn.execute(
         "UPDATE clipboard_history SET copied_at = '2020-01-01 00:00:00.000', \
          first_copied_at = '2020-01-01 00:00:00.000' WHERE id = ?1",
@@ -1585,7 +1585,7 @@ fn insert_clipboard_history_move_to_top_keeps_first_copied_at_but_updates_copied
 
     // Act: move-to-top（copy_count のみインクリメントされ、first_copied_at は
     // 更新されない実装であることを検証する）
-    insert_clipboard_history(&conn, "history item").unwrap();
+    insert_clipboard_history(&conn, "history item", None).unwrap();
 
     // Assert: first_copied_at は固定した過去日時のまま変化しないこと
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1613,7 +1613,7 @@ fn insert_clipboard_history_move_to_top_keeps_first_copied_at_but_updates_copied
 fn insert_clipboard_history_copy_count_reaches_cap_at_five_insertions() {
     let conn = setup();
     for _ in 0..5 {
-        insert_clipboard_history(&conn, "capped").unwrap();
+        insert_clipboard_history(&conn, "capped", None).unwrap();
     }
 
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1627,7 +1627,7 @@ fn insert_clipboard_history_copy_count_reaches_cap_at_five_insertions() {
 fn insert_clipboard_history_copy_count_does_not_exceed_cap_beyond_five_insertions() {
     let conn = setup();
     for _ in 0..10 {
-        insert_clipboard_history(&conn, "capped").unwrap();
+        insert_clipboard_history(&conn, "capped", None).unwrap();
     }
 
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1645,7 +1645,7 @@ fn insert_clipboard_history_copy_count_does_not_exceed_cap_beyond_five_insertion
 fn insert_clipboard_history_still_updates_copied_at_after_copy_count_capped() {
     let conn = setup();
     for _ in 0..5 {
-        insert_clipboard_history(&conn, "capped and fresh").unwrap();
+        insert_clipboard_history(&conn, "capped and fresh", None).unwrap();
     }
     let rows = list_clipboard_history(&conn, 10).unwrap();
     assert_eq!(rows[0].copy_count, 5);
@@ -1657,7 +1657,7 @@ fn insert_clipboard_history_still_updates_copied_at_after_copy_count_capped() {
         [],
     )
     .unwrap();
-    insert_clipboard_history(&conn, "capped and fresh").unwrap();
+    insert_clipboard_history(&conn, "capped and fresh", None).unwrap();
 
     let rows = list_clipboard_history(&conn, 10).unwrap();
     assert_eq!(
@@ -1668,6 +1668,132 @@ fn insert_clipboard_history_still_updates_copied_at_after_copy_count_capped() {
         rows[0].copied_at, "2020-01-01 00:00:00.000",
         "copy_count が上限でも copied_at は move-to-top で更新され続けること"
     );
+}
+
+// ── truncated / original_char_count（issue #196: 切り詰められたエントリの識別）──
+//
+// ブラックボックス テスト設計:
+//   [同値分割]
+//     有効クラス①: original_char_count = Some(n) を渡す新規挿入 →
+//                   truncated = true, original_char_count = Some(n)
+//     有効クラス②: original_char_count = None を渡す新規挿入 →
+//                   truncated = false, original_char_count = None
+//     有効クラス③: 既存テキストへの move-to-top 時に渡された original_char_count
+//                   引数は無視され、初回 INSERT 時点の値がそのまま保持される
+//   [境界値分析]
+//     original_char_count = Some(0)（Option の内部値としての境界値）
+//
+// ホワイトボックス テスト設計:
+//   - insert_clipboard_history の新規 INSERT 分岐で
+//     `truncated = original_char_count.is_some()` の計算式どおりに動作することを検証
+//   - move-to-top（既存行 UPDATE）分岐では、引数で渡された original_char_count を
+//     一切参照せず既存行の値を保持することを検証（true→true, false→false の両方）
+
+#[test]
+fn insert_clipboard_history_with_original_char_count_sets_truncated_true() {
+    // Arrange & Act: 切り詰め発生を示す original_char_count を渡して新規挿入
+    let conn = setup();
+    insert_clipboard_history(&conn, "truncated text", Some(500)).unwrap();
+
+    // Assert
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert!(
+        rows[0].truncated,
+        "original_char_count を渡した新規挿入は truncated = true になること"
+    );
+    assert_eq!(rows[0].original_char_count, Some(500));
+}
+
+#[test]
+fn insert_clipboard_history_without_original_char_count_sets_truncated_false() {
+    // Arrange & Act: original_char_count = None（切り詰めなし）で新規挿入
+    let conn = setup();
+    insert_clipboard_history(&conn, "not truncated", None).unwrap();
+
+    // Assert
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert!(
+        !rows[0].truncated,
+        "original_char_count を渡さない新規挿入は truncated = false になること"
+    );
+    assert_eq!(rows[0].original_char_count, None);
+}
+
+#[test]
+fn insert_clipboard_history_original_char_count_zero_is_allowed() {
+    // 境界値: original_char_count = Some(0)。実運用では発生しにくいが、
+    // Option<i64> の内部値として 0 も正しく Some として扱われることを確認する
+    let conn = setup();
+    insert_clipboard_history(&conn, "edge", Some(0)).unwrap();
+
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert!(
+        rows[0].truncated,
+        "Some(0) でも Some である以上 truncated = true になること"
+    );
+    assert_eq!(rows[0].original_char_count, Some(0));
+}
+
+#[test]
+fn insert_clipboard_history_move_to_top_preserves_truncated_state() {
+    // Arrange: 初回は切り詰めあり（Some(500)）で保存
+    let conn = setup();
+    let first_id = insert_clipboard_history(&conn, "preserved", Some(500)).unwrap();
+
+    // Act: 2回目は再コピー相当で None を渡す
+    // （record_clipboard_history_recopy が常に None を渡すのと同じ呼び出し方）
+    let second_id = insert_clipboard_history(&conn, "preserved", None).unwrap();
+
+    // Assert: move-to-top のため同じ行が更新され、初回の truncated /
+    // original_char_count が変更されずに保持されること（2回目に渡した None は無視される）
+    assert_eq!(second_id, first_id, "move-to-top のため同じIDが返ること");
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(rows.len(), 1);
+    assert!(
+        rows[0].truncated,
+        "move-to-top では引数の original_char_count を無視し、既存行の値が保持されること"
+    );
+    assert_eq!(rows[0].original_char_count, Some(500));
+}
+
+#[test]
+fn insert_clipboard_history_move_to_top_preserves_untruncated_state() {
+    // Arrange: 初回は切り詰めなし（None）で保存
+    let conn = setup();
+    let first_id = insert_clipboard_history(&conn, "still not truncated", None).unwrap();
+
+    // Act: 2回目に Some を渡しても、move-to-top では無視される
+    let second_id = insert_clipboard_history(&conn, "still not truncated", Some(999)).unwrap();
+
+    // Assert
+    assert_eq!(second_id, first_id, "move-to-top のため同じIDが返ること");
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert!(
+        !rows[0].truncated,
+        "move-to-top では2回目に Some を渡しても既存行の truncated=false が保持されること"
+    );
+    assert_eq!(rows[0].original_char_count, None);
+}
+
+#[test]
+fn list_clipboard_history_returns_truncated_and_original_char_count_fields() {
+    // Arrange: 切り詰めあり/なしの2行を挿入
+    let conn = setup();
+    insert_history_with_timestamp(&conn, "not truncated", "2024-01-01 00:00:00");
+    insert_clipboard_history(&conn, "truncated", Some(1000)).unwrap();
+
+    // Act
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+
+    // Assert
+    assert_eq!(rows.len(), 2);
+    let truncated_row = rows.iter().find(|r| r.text == "truncated").unwrap();
+    assert!(truncated_row.truncated);
+    assert_eq!(truncated_row.original_char_count, Some(1000));
+
+    let not_truncated_row = rows.iter().find(|r| r.text == "not truncated").unwrap();
+    assert!(!not_truncated_row.truncated);
+    assert_eq!(not_truncated_row.original_char_count, None);
 }
 
 // ── list_clipboard_history ────────────────────────────────────
@@ -1688,7 +1814,7 @@ fn list_clipboard_history_returns_empty_for_empty_table() {
 fn list_clipboard_history_limit_zero_returns_empty() {
     // Arrange: limit の最小境界値 0
     let conn = setup();
-    insert_clipboard_history(&conn, "x").unwrap();
+    insert_clipboard_history(&conn, "x", None).unwrap();
 
     // Act
     let rows = list_clipboard_history(&conn, 0).unwrap();
@@ -1701,9 +1827,9 @@ fn list_clipboard_history_limit_zero_returns_empty() {
 fn list_clipboard_history_respects_limit_less_than_total() {
     // Arrange: 3件登録し、limit=2 で取得
     let conn = setup();
-    insert_clipboard_history(&conn, "a").unwrap();
-    insert_clipboard_history(&conn, "b").unwrap();
-    insert_clipboard_history(&conn, "c").unwrap();
+    insert_clipboard_history(&conn, "a", None).unwrap();
+    insert_clipboard_history(&conn, "b", None).unwrap();
+    insert_clipboard_history(&conn, "c", None).unwrap();
 
     // Act
     let rows = list_clipboard_history(&conn, 2).unwrap();
@@ -1716,9 +1842,9 @@ fn list_clipboard_history_respects_limit_less_than_total() {
 fn list_clipboard_history_limit_equal_to_total_returns_all() {
     // Arrange: 3件登録し、limit=3（総数と同じ）で取得
     let conn = setup();
-    insert_clipboard_history(&conn, "a").unwrap();
-    insert_clipboard_history(&conn, "b").unwrap();
-    insert_clipboard_history(&conn, "c").unwrap();
+    insert_clipboard_history(&conn, "a", None).unwrap();
+    insert_clipboard_history(&conn, "b", None).unwrap();
+    insert_clipboard_history(&conn, "c", None).unwrap();
 
     // Act
     let rows = list_clipboard_history(&conn, 3).unwrap();
@@ -1731,8 +1857,8 @@ fn list_clipboard_history_limit_equal_to_total_returns_all() {
 fn list_clipboard_history_limit_greater_than_total_returns_all() {
     // Arrange: 2件登録し、limit=100（総数より大きい）で取得
     let conn = setup();
-    insert_clipboard_history(&conn, "a").unwrap();
-    insert_clipboard_history(&conn, "b").unwrap();
+    insert_clipboard_history(&conn, "a", None).unwrap();
+    insert_clipboard_history(&conn, "b", None).unwrap();
 
     // Act
     let rows = list_clipboard_history(&conn, 100).unwrap();
@@ -1781,7 +1907,7 @@ fn list_clipboard_history_tie_breaks_by_id_desc_when_copied_at_equal() {
 fn list_clipboard_history_returns_correct_fields() {
     // Arrange
     let conn = setup();
-    insert_clipboard_history(&conn, "field check").unwrap();
+    insert_clipboard_history(&conn, "field check", None).unwrap();
 
     // Act
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1797,7 +1923,7 @@ fn list_clipboard_history_returns_correct_fields() {
 fn list_clipboard_history_returns_copy_count_and_first_copied_at() {
     // Arrange: 新規挿入行（issue #195 で追加された copy_count / first_copied_at）
     let conn = setup();
-    insert_clipboard_history(&conn, "heat bar field check").unwrap();
+    insert_clipboard_history(&conn, "heat bar field check", None).unwrap();
 
     // Act
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1812,8 +1938,8 @@ fn list_clipboard_history_returns_copy_count_and_first_copied_at() {
 fn list_clipboard_history_returns_incremented_copy_count_after_move_to_top() {
     // Arrange: move-to-top を経由して copy_count がインクリメントされた行
     let conn = setup();
-    insert_clipboard_history(&conn, "incremented").unwrap();
-    insert_clipboard_history(&conn, "incremented").unwrap();
+    insert_clipboard_history(&conn, "incremented", None).unwrap();
+    insert_clipboard_history(&conn, "incremented", None).unwrap();
 
     // Act
     let rows = list_clipboard_history(&conn, 10).unwrap();
@@ -1829,7 +1955,7 @@ fn list_clipboard_history_returns_incremented_copy_count_after_move_to_top() {
 fn delete_clipboard_history_removes_existing_row() {
     // Arrange
     let conn = setup();
-    let id = insert_clipboard_history(&conn, "to delete").unwrap();
+    let id = insert_clipboard_history(&conn, "to delete", None).unwrap();
 
     // Act
     delete_clipboard_history(&conn, id).unwrap();
@@ -1852,8 +1978,8 @@ fn delete_clipboard_history_on_nonexistent_id_does_not_error() {
 fn delete_clipboard_history_only_removes_target() {
     // Arrange: 2件登録し、片方だけ削除する
     let conn = setup();
-    let id1 = insert_clipboard_history(&conn, "keep_me").unwrap();
-    let id2 = insert_clipboard_history(&conn, "delete_me").unwrap();
+    let id1 = insert_clipboard_history(&conn, "keep_me", None).unwrap();
+    let id2 = insert_clipboard_history(&conn, "delete_me", None).unwrap();
 
     // Act: id2 だけ削除
     delete_clipboard_history(&conn, id2).unwrap();
@@ -1871,9 +1997,9 @@ fn delete_clipboard_history_only_removes_target() {
 fn clear_clipboard_history_removes_all_rows() {
     // Arrange
     let conn = setup();
-    insert_clipboard_history(&conn, "a").unwrap();
-    insert_clipboard_history(&conn, "b").unwrap();
-    insert_clipboard_history(&conn, "c").unwrap();
+    insert_clipboard_history(&conn, "a", None).unwrap();
+    insert_clipboard_history(&conn, "b", None).unwrap();
+    insert_clipboard_history(&conn, "c", None).unwrap();
 
     // Act
     clear_clipboard_history(&conn).unwrap();
@@ -1909,8 +2035,8 @@ fn count_clipboard_history_returns_zero_for_empty_table() {
 fn count_clipboard_history_returns_correct_count() {
     // Arrange
     let conn = setup();
-    insert_clipboard_history(&conn, "a").unwrap();
-    insert_clipboard_history(&conn, "b").unwrap();
+    insert_clipboard_history(&conn, "a", None).unwrap();
+    insert_clipboard_history(&conn, "b", None).unwrap();
 
     // Act & Assert
     assert_eq!(count_clipboard_history(&conn).unwrap(), 2);
@@ -1920,10 +2046,10 @@ fn count_clipboard_history_returns_correct_count() {
 fn count_clipboard_history_unchanged_after_duplicate_insert() {
     // Arrange: 直前と同一テキストの挿入は重複排除されカウントが増えない
     let conn = setup();
-    insert_clipboard_history(&conn, "dup").unwrap();
+    insert_clipboard_history(&conn, "dup", None).unwrap();
 
     // Act
-    insert_clipboard_history(&conn, "dup").unwrap();
+    insert_clipboard_history(&conn, "dup", None).unwrap();
 
     // Assert
     assert_eq!(count_clipboard_history(&conn).unwrap(), 1);
@@ -1935,8 +2061,8 @@ fn count_clipboard_history_unchanged_after_duplicate_insert() {
 fn delete_oldest_clipboard_history_keep_count_zero_deletes_all() {
     // Arrange: keep_count の最小境界値 0
     let conn = setup();
-    insert_clipboard_history(&conn, "a").unwrap();
-    insert_clipboard_history(&conn, "b").unwrap();
+    insert_clipboard_history(&conn, "a", None).unwrap();
+    insert_clipboard_history(&conn, "b", None).unwrap();
 
     // Act
     delete_oldest_clipboard_history(&conn, 0).unwrap();
@@ -1969,9 +2095,9 @@ fn delete_oldest_clipboard_history_keeps_newest_n_rows() {
 fn delete_oldest_clipboard_history_keep_count_equal_to_total_keeps_all() {
     // Arrange: keep_count と総件数が一致する境界値
     let conn = setup();
-    insert_clipboard_history(&conn, "a").unwrap();
-    insert_clipboard_history(&conn, "b").unwrap();
-    insert_clipboard_history(&conn, "c").unwrap();
+    insert_clipboard_history(&conn, "a", None).unwrap();
+    insert_clipboard_history(&conn, "b", None).unwrap();
+    insert_clipboard_history(&conn, "c", None).unwrap();
 
     // Act
     delete_oldest_clipboard_history(&conn, 3).unwrap();
@@ -1984,8 +2110,8 @@ fn delete_oldest_clipboard_history_keep_count_equal_to_total_keeps_all() {
 fn delete_oldest_clipboard_history_keep_count_greater_than_total_keeps_all() {
     // Arrange: keep_count が総件数より大きい境界値
     let conn = setup();
-    insert_clipboard_history(&conn, "a").unwrap();
-    insert_clipboard_history(&conn, "b").unwrap();
+    insert_clipboard_history(&conn, "a", None).unwrap();
+    insert_clipboard_history(&conn, "b", None).unwrap();
 
     // Act
     delete_oldest_clipboard_history(&conn, 100).unwrap();

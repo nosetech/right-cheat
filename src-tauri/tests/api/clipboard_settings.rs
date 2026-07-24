@@ -907,9 +907,9 @@ mod clear_history_on_quit_if_enabled {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "a").unwrap();
-            insert_clipboard_history(&conn, "b").unwrap();
-            insert_clipboard_history(&conn, "c").unwrap();
+            insert_clipboard_history(&conn, "a", None).unwrap();
+            insert_clipboard_history(&conn, "b", None).unwrap();
+            insert_clipboard_history(&conn, "c", None).unwrap();
             assert_eq!(count_clipboard_history(&conn).unwrap(), 3);
         }
 
@@ -935,8 +935,8 @@ mod clear_history_on_quit_if_enabled {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "a").unwrap();
-            insert_clipboard_history(&conn, "b").unwrap();
+            insert_clipboard_history(&conn, "a", None).unwrap();
+            insert_clipboard_history(&conn, "b", None).unwrap();
             assert_eq!(count_clipboard_history(&conn).unwrap(), 2);
         }
 
@@ -957,7 +957,7 @@ mod clear_history_on_quit_if_enabled {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "a").unwrap();
+            insert_clipboard_history(&conn, "a", None).unwrap();
         }
 
         let settings = ClipboardSettings {

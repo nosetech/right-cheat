@@ -108,6 +108,30 @@ export function getCommandTextSx(
   } as const
 }
 
+/**
+ * クリップボード履歴の切り詰めメタ情報行（issue #196）のスタイル。
+ * v19 mockup の「案D — メタ情報行」に準拠し、テキスト本文の下に dashed の区切り線を
+ * 挟んで表示する。色は既存の警告用トークン（`theme.palette.amber.*`）を流用する。
+ */
+export function getTruncatedInfoRowSx(theme: Theme) {
+  return {
+    paddingTop: '5px',
+    borderTop: `0.5px dashed ${theme.palette.amber.border}`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    color: alpha(theme.palette.amber.text, 0.82),
+  } as const
+}
+
+/** ハサミアイコン（9px）に合わせ、numberHint（9.5px）を使用する */
+export function getTruncatedInfoTextSx(theme: Theme) {
+  return {
+    fontFamily: FONT_CODE,
+    fontSize: scaledPx(theme.custom.fontSize.numberHint),
+  } as const
+}
+
 /** 右端のアクションアイコン（コピー/実行/チェック）ラッパー用スタイル */
 export function getActionIconBoxSx(
   theme: Theme,

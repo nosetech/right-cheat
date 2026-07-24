@@ -12,6 +12,8 @@ pub struct ClipboardHistoryItem {
     pub copied_at: String,
     pub copy_count: i64,
     pub first_copied_at: String,
+    pub truncated: bool,
+    pub original_char_count: Option<i64>,
 }
 
 impl From<repository::ClipboardHistoryRow> for ClipboardHistoryItem {
@@ -23,6 +25,8 @@ impl From<repository::ClipboardHistoryRow> for ClipboardHistoryItem {
             copied_at: row.copied_at,
             copy_count: row.copy_count,
             first_copied_at: row.first_copied_at,
+            truncated: row.truncated,
+            original_char_count: row.original_char_count,
         }
     }
 }
@@ -56,7 +60,7 @@ pub fn record_clipboard_history_recopy<R: Runtime>(
 ) -> Result<(), String> {
     let db = app.state::<DbConnection>();
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    repository::insert_clipboard_history(&conn, &text).map_err(|e| e.to_string())?;
+    repository::insert_clipboard_history(&conn, &text, None).map_err(|e| e.to_string())?;
     log::debug!(
         "[clipboard_history] record_clipboard_history_recopy: {} char(s)",
         text.chars().count()

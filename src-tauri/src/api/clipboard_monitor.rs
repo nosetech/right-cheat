@@ -278,9 +278,16 @@ pub fn save_clipboard_text<R: Runtime>(
         text.to_string()
     };
 
+    let original_char_count = if truncated {
+        Some(char_count as i64)
+    } else {
+        None
+    };
+
     let db = app.state::<DbConnection>();
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    repository::insert_clipboard_history(&conn, &text_to_save).map_err(|e| e.to_string())?;
+    repository::insert_clipboard_history(&conn, &text_to_save, original_char_count)
+        .map_err(|e| e.to_string())?;
     repository::delete_oldest_clipboard_history(&conn, settings.max_items)
         .map_err(|e| e.to_string())?;
 

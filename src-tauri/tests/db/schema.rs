@@ -52,7 +52,7 @@ fn schema_version_is_set() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(version, 4);
+    assert_eq!(version, 5);
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn apply_migrations_is_idempotent() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(version, 4);
+    assert_eq!(version, 5);
 }
 
 // ── v3: clipboard_history テーブルのテスト ─────────────────────
@@ -402,8 +402,10 @@ fn migrate_v4_multiple_existing_rows_are_all_backfilled() {
 }
 
 #[test]
-fn migrate_v4_applied_from_v3_updates_schema_version_to_4() {
+fn apply_migrations_from_v3_updates_schema_version_to_5() {
     // Arrange: schema_version = 3（境界値: 0件のbackfill対象ではなく1件のみ）
+    // apply_migrations は version を1回だけ読み取り、それ以降の全マイグレーション
+    // （v4, v5）を1回の呼び出しでまとめて適用するため、最終的に最新版（5）になる
     let conn = v3_conn_with_row("v", 1, "2025-01-01 00:00:00.000");
 
     // Act
@@ -417,13 +419,14 @@ fn migrate_v4_applied_from_v3_updates_schema_version_to_4() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(version, 4);
+    assert_eq!(version, 5);
 }
 
 #[test]
 fn apply_migrations_from_v3_is_idempotent() {
     // v3 相当の状態から apply_migrations を複数回呼んでもエラーにならないこと
-    // （migrate_v4 の ALTER TABLE がスキーマバージョンガードにより再実行されないこと）
+    // （migrate_v4 / migrate_v5 の ALTER TABLE がスキーマバージョンガードにより
+    // 再実行されないこと）
     let conn = v3_conn_with_row("idem", 4, "2025-01-01 00:00:00.000");
 
     apply_migrations(&conn).unwrap();
@@ -441,5 +444,301 @@ fn apply_migrations_from_v3_is_idempotent() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(version, 4);
+    assert_eq!(version, 5);
+}
+
+// ── v5: clipboard_history への truncated / original_char_count 追加マイグレーションのテスト
+//    （issue #196: 切り詰められたエントリの識別）───────────────────
+//
+// テスト対象: migrate_v5 で追加される truncated（DEFAULT 0）/ original_char_count
+// （NULL可）カラムと、既存データ（v4 スキーマ相当）に対する truncated の backfill 処理
+//
+// ブラックボックス テスト設計:
+//   [同値分割]
+//     有効クラス①: truncated / original_char_count を指定しない INSERT →
+//                   DEFAULT 0 / NULL が適用される
+//     有効クラス②: truncated / original_char_count を明示指定した INSERT →
+//                   指定値がそのまま入る
+//     有効クラス③: マイグレーション適用前（v4 相当）に存在した行 → truncated が
+//                   0 で backfill され、original_char_count は NULL のまま
+//   [境界値分析]
+//     backfill 対象行が 1 件 / 複数件
+//
+// ホワイトボックス テスト設計:
+//   - apply_migrations を schema_version = 4 の状態から呼び出すと migrate_v5 のみが
+//     実行される分岐を通ることを検証する
+//   - apply_migrations は v4 → v5 の部分適用後も冪等であること（重複 ALTER TABLE で
+//     エラーにならないこと）
+
+/// v4 スキーマ相当（truncated / original_char_count カラムがまだ存在しない状態）を
+/// 手動で構築し、1行だけ登録した Connection を返す。
+/// migrate_v1〜v4 は private のため直接呼べず、apply_migrations 経由では一気に
+/// 最新版まで進んでしまうため、ここでは v4 相当のテーブル定義を直接実行して
+/// schema_version を 4 に設定する。
+fn v4_conn_with_row(
+    text: &str,
+    char_count: i64,
+    copied_at: &str,
+    copy_count: i64,
+    first_copied_at: &str,
+) -> Connection {
+    let conn = in_memory_conn();
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS schema_meta (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+        CREATE TABLE clipboard_history (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            text            TEXT NOT NULL,
+            char_count      INTEGER NOT NULL,
+            copied_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
+            copy_count      INTEGER NOT NULL DEFAULT 1,
+            first_copied_at TEXT
+        );
+        INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('schema_version', '4');
+        ",
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO clipboard_history (text, char_count, copied_at, copy_count, first_copied_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        rusqlite::params![text, char_count, copied_at, copy_count, first_copied_at],
+    )
+    .unwrap();
+    conn
+}
+
+#[test]
+fn apply_migrations_adds_truncated_and_original_char_count_columns() {
+    let conn = in_memory_conn();
+    apply_migrations(&conn).unwrap();
+
+    let mut stmt = conn
+        .prepare("PRAGMA table_info(clipboard_history)")
+        .unwrap();
+    let columns: Vec<String> = stmt
+        .query_map([], |row| row.get::<_, String>(1))
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+
+    assert!(
+        columns.contains(&"truncated".to_string()),
+        "truncated カラムが追加されること"
+    );
+    assert!(
+        columns.contains(&"original_char_count".to_string()),
+        "original_char_count カラムが追加されること"
+    );
+}
+
+#[test]
+fn clipboard_history_truncated_defaults_to_zero_when_omitted() {
+    let conn = in_memory_conn();
+    apply_migrations(&conn).unwrap();
+
+    conn.execute(
+        "INSERT INTO clipboard_history (text, char_count, first_copied_at) \
+         VALUES ('abc', 3, '2026-01-01 00:00:00.000')",
+        [],
+    )
+    .unwrap();
+
+    let truncated: i64 = conn
+        .query_row(
+            "SELECT truncated FROM clipboard_history WHERE text = 'abc'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        truncated, 0,
+        "truncated を指定しない INSERT では DEFAULT 0 が適用されること"
+    );
+}
+
+#[test]
+fn clipboard_history_original_char_count_defaults_to_null_when_omitted() {
+    let conn = in_memory_conn();
+    apply_migrations(&conn).unwrap();
+
+    conn.execute(
+        "INSERT INTO clipboard_history (text, char_count, first_copied_at) \
+         VALUES ('abc', 3, '2026-01-01 00:00:00.000')",
+        [],
+    )
+    .unwrap();
+
+    let original_char_count: Option<i64> = conn
+        .query_row(
+            "SELECT original_char_count FROM clipboard_history WHERE text = 'abc'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert!(
+        original_char_count.is_none(),
+        "original_char_count は NULL 許容でありデフォルト値が設定されないこと"
+    );
+}
+
+#[test]
+fn clipboard_history_truncated_and_original_char_count_can_be_set_explicitly() {
+    let conn = in_memory_conn();
+    apply_migrations(&conn).unwrap();
+
+    conn.execute(
+        "INSERT INTO clipboard_history \
+         (text, char_count, first_copied_at, truncated, original_char_count) \
+         VALUES ('xyz', 200, '2026-01-01 00:00:00.000', 1, 500)",
+        [],
+    )
+    .unwrap();
+
+    let (truncated, original_char_count): (i64, i64) = conn
+        .query_row(
+            "SELECT truncated, original_char_count FROM clipboard_history WHERE text = 'xyz'",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(
+        truncated, 1,
+        "truncated を明示指定した場合はその値が入ること"
+    );
+    assert_eq!(
+        original_char_count, 500,
+        "original_char_count を明示指定した場合はその値が入ること"
+    );
+}
+
+#[test]
+fn migrate_v5_backfills_truncated_zero_for_existing_row() {
+    // Arrange: v4 相当のスキーマ・データ（truncated / original_char_count カラムが
+    // まだ存在しない状態）
+    let conn = v4_conn_with_row(
+        "legacy",
+        6,
+        "2025-06-01 10:00:00.000",
+        1,
+        "2025-06-01 10:00:00.000",
+    );
+
+    // Act: schema_version=4 から apply_migrations を呼ぶと migrate_v5 のみが実行される
+    apply_migrations(&conn).unwrap();
+
+    // Assert: 既存行の truncated は 0 で backfill され、original_char_count は
+    // 過去の切り詰め有無が判別できないため NULL のままであること
+    let (truncated, original_char_count): (i64, Option<i64>) = conn
+        .query_row(
+            "SELECT truncated, original_char_count FROM clipboard_history WHERE text = 'legacy'",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(
+        truncated, 0,
+        "既存行の truncated は 0 で backfill されること"
+    );
+    assert!(
+        original_char_count.is_none(),
+        "既存行の original_char_count は NULL のままであること"
+    );
+}
+
+#[test]
+fn migrate_v5_multiple_existing_rows_are_all_backfilled_with_truncated_zero() {
+    // Arrange: 複数行が存在する v4 相当データ（境界値: 1件 → 複数件）
+    let conn = v4_conn_with_row(
+        "row1",
+        4,
+        "2025-01-01 00:00:00.000",
+        1,
+        "2025-01-01 00:00:00.000",
+    );
+    conn.execute(
+        "INSERT INTO clipboard_history (text, char_count, copied_at, copy_count, first_copied_at) \
+         VALUES ('row2', 4, '2025-01-02 00:00:00.000', 1, '2025-01-02 00:00:00.000')",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO clipboard_history (text, char_count, copied_at, copy_count, first_copied_at) \
+         VALUES ('row3', 4, '2025-01-03 00:00:00.000', 1, '2025-01-03 00:00:00.000')",
+        [],
+    )
+    .unwrap();
+
+    // Act
+    apply_migrations(&conn).unwrap();
+
+    // Assert: 全行が truncated = 0 で backfill されること（0 以外の行が残らない）
+    let non_zero_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM clipboard_history WHERE truncated != 0",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        non_zero_count, 0,
+        "全ての既存行の truncated が 0 で backfill されること"
+    );
+}
+
+#[test]
+fn apply_migrations_from_v4_updates_schema_version_to_5() {
+    // Arrange: schema_version = 4
+    let conn = v4_conn_with_row(
+        "v",
+        1,
+        "2025-01-01 00:00:00.000",
+        1,
+        "2025-01-01 00:00:00.000",
+    );
+
+    // Act
+    apply_migrations(&conn).unwrap();
+
+    // Assert
+    let version: i64 = conn
+        .query_row(
+            "SELECT CAST(value AS INTEGER) FROM schema_meta WHERE key = 'schema_version'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 5);
+}
+
+#[test]
+fn apply_migrations_from_v4_is_idempotent() {
+    // v4 相当の状態から apply_migrations を複数回呼んでもエラーにならないこと
+    // （migrate_v5 の ALTER TABLE がスキーマバージョンガードにより再実行されないこと）
+    let conn = v4_conn_with_row(
+        "idem",
+        4,
+        "2025-01-01 00:00:00.000",
+        1,
+        "2025-01-01 00:00:00.000",
+    );
+
+    apply_migrations(&conn).unwrap();
+    let result = apply_migrations(&conn);
+
+    assert!(
+        result.is_ok(),
+        "v4 から適用後、再度 apply_migrations を呼んでもエラーにならないこと"
+    );
+
+    let version: i64 = conn
+        .query_row(
+            "SELECT CAST(value AS INTEGER) FROM schema_meta WHERE key = 'schema_version'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 5);
 }

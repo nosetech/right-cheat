@@ -78,6 +78,9 @@ export function ClipboardHistorySheet({
                 firstCopiedAt={item.first_copied_at}
                 lastCopiedAt={item.copied_at}
                 heatColor={heatBarColor}
+                truncated={item.truncated}
+                charCount={item.char_count}
+                originalCharCount={item.original_char_count ?? undefined}
               />
             ))}
           </Box>
