@@ -28,8 +28,24 @@ pub fn apply_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     if version < 4 {
         migrate_v4(conn)?;
     }
+    if version < 5 {
+        migrate_v5(conn)?;
+    }
 
     Ok(())
+}
+
+/// クリップボード履歴に切り詰め情報（truncated / original_char_count）を追加する。
+/// 既存行は truncated = 0（過去分は切り詰めの有無を判別できないため通常表示）のまま。
+fn migrate_v5(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(
+        "
+        ALTER TABLE clipboard_history ADD COLUMN truncated INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE clipboard_history ADD COLUMN original_char_count INTEGER;
+
+        INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('schema_version', '5');
+        ",
+    )
 }
 
 /// クリップボード履歴にコピー回数（copy_count）と初回コピー日時（first_copied_at）を追加する。

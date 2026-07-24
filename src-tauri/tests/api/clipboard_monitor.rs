@@ -31,6 +31,9 @@
 //     ② char_count <= max_chars → truncated=false（text.to_string() 経路）
 //     ③ char_count > max_chars → truncated=true（text.chars().take() 経路）
 //   - delete_oldest_clipboard_history が保存の都度呼ばれること（max_items 超過時に反映される）
+//   - （issue #196）truncated=true の場合のみ original_char_count = Some(切り詰め前の文字数)
+//     を repository::insert_clipboard_history に渡す分岐。SaveOutcome の戻り値だけでなく、
+//     DB に永続化された行の truncated / original_char_count も併せて検証する
 
 #[cfg(target_os = "macos")]
 mod save_clipboard_text {
@@ -174,6 +177,14 @@ mod save_clipboard_text {
         let conn = state.0.lock().unwrap();
         let rows = list_clipboard_history(&conn, 10).unwrap();
         assert_eq!(rows[0].text, text);
+        assert!(
+            !rows[0].truncated,
+            "max_chars ちょうどの場合、DB行の truncated は false であること"
+        );
+        assert_eq!(
+            rows[0].original_char_count, None,
+            "切り詰めが発生しない場合、DB行の original_char_count は None であること"
+        );
     }
 
     /// 文字数 = max_chars + 1（上限の直上）は先頭 max_chars 文字に切り詰めて保存される
@@ -198,6 +209,15 @@ mod save_clipboard_text {
         let rows = list_clipboard_history(&conn, 10).unwrap();
         assert_eq!(rows[0].text, "a".repeat(10));
         assert_eq!(rows[0].char_count, 10);
+        assert!(
+            rows[0].truncated,
+            "max_chars を超える場合、DB行の truncated は true であること"
+        );
+        assert_eq!(
+            rows[0].original_char_count,
+            Some(11),
+            "DB行の original_char_count は切り詰め前の文字数（11）であること"
+        );
     }
 
     // ── マルチバイト文字での「文字数」基準の切り詰め ────────
@@ -226,6 +246,12 @@ mod save_clipboard_text {
         let rows = list_clipboard_history(&conn, 10).unwrap();
         assert_eq!(rows[0].text, "あいう");
         assert_eq!(rows[0].text.chars().count(), 3);
+        assert!(rows[0].truncated);
+        assert_eq!(
+            rows[0].original_char_count,
+            Some(5),
+            "DB行の original_char_count は切り詰め前の文字数（5文字）であること"
+        );
     }
 
     /// 絵文字（4バイト/文字の Unicode スカラー値）テキストの切り詰めも文字数基準で
@@ -250,6 +276,12 @@ mod save_clipboard_text {
         let conn = state.0.lock().unwrap();
         let rows = list_clipboard_history(&conn, 10).unwrap();
         assert_eq!(rows[0].text, "🎉🎊");
+        assert!(rows[0].truncated);
+        assert_eq!(
+            rows[0].original_char_count,
+            Some(4),
+            "DB行の original_char_count は切り詰め前の文字数（4文字）であること"
+        );
     }
 
     /// 日本語テキストが max_chars 以内であれば切り詰められず、文字数もそのまま。
@@ -268,6 +300,15 @@ mod save_clipboard_text {
                 truncated: false,
             }
         );
+
+        let state = app.state::<DbConnection>();
+        let conn = state.0.lock().unwrap();
+        let rows = list_clipboard_history(&conn, 10).unwrap();
+        assert!(
+            !rows[0].truncated,
+            "max_chars 以内の場合、DB行の truncated は false であること"
+        );
+        assert_eq!(rows[0].original_char_count, None);
     }
 
     // ── 重複排除（リポジトリ層との統合） ─────────────────

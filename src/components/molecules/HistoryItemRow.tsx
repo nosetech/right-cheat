@@ -9,6 +9,7 @@ import {
   CheckIcon,
   CopyIcon,
   PencilIcon,
+  ScissorsIcon,
   TrashIcon,
 } from '@/components/atoms/icons'
 import {
@@ -16,6 +17,8 @@ import {
   getCommandBoxSx,
   getCommandTextSx,
   getNumberHintTextSx,
+  getTruncatedInfoRowSx,
+  getTruncatedInfoTextSx,
   numberHintBoxSx,
 } from '@/components/molecules/commandFieldStyles'
 import { HeatBarColorId, historyHeat } from '@/constants/heatPalette'
@@ -39,6 +42,12 @@ export type HistoryItemRowProps = {
   lastCopiedAt?: string
   /** Preferences → Clipboard History の Heat bar color 設定 */
   heatColor?: HeatBarColorId
+  /** 保存時に Maximum characters to save で切り詰められたか（DB の truncated） */
+  truncated?: boolean
+  /** 保存済みの文字数（DB の char_count。切り詰め表示の分子に使う） */
+  charCount?: number
+  /** 切り詰め前の元テキストの文字数（DB の original_char_count） */
+  originalCharCount?: number
 }
 
 /**
@@ -49,6 +58,8 @@ export type HistoryItemRowProps = {
  * 見た目のスタイルは commandFieldStyles で CommandField と共有している。
  * コピー回数に応じたヒートバー（左端の inset shadow + 行背景ティント）を描画し、
  * ホバー時にコピー回数・初回/最終コピー日時を表示するツールチップを出す（issue #195）。
+ * 保存時に Maximum characters to save で切り詰められた行には、テキスト本文の下に
+ * 「保存文字数 / 元の文字数」を常時表示する（issue #196）。
  */
 export const HistoryItemRow = forwardRef<HTMLDivElement, HistoryItemRowProps>(
   (
@@ -63,6 +74,9 @@ export const HistoryItemRow = forwardRef<HTMLDivElement, HistoryItemRowProps>(
       firstCopiedAt,
       lastCopiedAt,
       heatColor = 'none',
+      truncated = false,
+      charCount,
+      originalCharCount,
     },
     ref,
   ) => {
@@ -132,9 +146,8 @@ export const HistoryItemRow = forwardRef<HTMLDivElement, HistoryItemRowProps>(
               cursor: editMode ? 'default' : 'pointer',
               transition: 'all 0.14s ease',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              gap: 1,
+              flexDirection: 'column',
+              gap: '4px',
               outline: 'none',
               flex: 1,
               minWidth: 0,
@@ -152,24 +165,53 @@ export const HistoryItemRow = forwardRef<HTMLDivElement, HistoryItemRowProps>(
               }
             }}
           >
-            <Typography
-              sx={getCommandTextSx(theme, { isMultiLine, hasDone: hasCopied })}
-            >
-              {text}
-            </Typography>
             <Box
-              sx={getActionIconBoxSx(theme, {
-                hasDone: hasCopied,
-                isFocused,
-                isHovered,
-              })}
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: 1,
+              }}
             >
-              {hasCopied ? (
-                <CheckIcon size={11} strokeWidth={2.5} />
-              ) : (
-                <CopyIcon size={11} strokeWidth={2} />
-              )}
+              <Typography
+                sx={getCommandTextSx(theme, {
+                  isMultiLine,
+                  hasDone: hasCopied,
+                })}
+              >
+                {text}
+              </Typography>
+              <Box
+                sx={getActionIconBoxSx(theme, {
+                  hasDone: hasCopied,
+                  isFocused,
+                  isHovered,
+                })}
+              >
+                {hasCopied ? (
+                  <CheckIcon size={11} strokeWidth={2.5} />
+                ) : (
+                  <CopyIcon size={11} strokeWidth={2} />
+                )}
+              </Box>
             </Box>
+
+            {/* 切り詰めメタ情報行（保存文字数 / 元の文字数） */}
+            {truncated && !hasCopied && (
+              <Box sx={getTruncatedInfoRowSx(theme)}>
+                <ScissorsIcon size={9} strokeWidth={2} />
+                <Typography sx={getTruncatedInfoTextSx(theme)}>
+                  <Typography
+                    component='span'
+                    sx={{ fontWeight: 700, color: theme.palette.amber.text }}
+                  >
+                    {(charCount ?? 0).toLocaleString('en-US')}
+                  </Typography>
+                  {' / '}
+                  {(originalCharCount ?? 0).toLocaleString('en-US')}
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Tooltip>
 

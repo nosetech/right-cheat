@@ -23,9 +23,14 @@
 //     id: 存在しない最小値相当（0） / 負値 / 存在しない大きな値
 //
 // ホワイトボックス テスト設計:
-//   - ClipboardHistoryItem::from の全フィールド（id, text, char_count, copied_at）が
-//     ClipboardHistoryRow から漏れなくコピーされることを検証
+//   - ClipboardHistoryItem::from の全フィールド（id, text, char_count, copied_at,
+//     truncated, original_char_count）が ClipboardHistoryRow から漏れなく
+//     コピーされることを検証（issue #196）
 //   - list_clipboard_history はリポジトリの新しい順ソートをそのまま維持して返す
+//   - record_clipboard_history_recopy は insert_clipboard_history に常に
+//     original_char_count = None を渡すため、新規行では truncated = false 固定、
+//     既存行の move-to-top では既存の truncated / original_char_count を
+//     上書きしないことを検証（issue #196）
 
 #[cfg(test)]
 mod test_support {
@@ -63,6 +68,8 @@ mod clipboard_history_item_from {
             copied_at: "2026-07-14 12:00:00".to_string(),
             copy_count: 3,
             first_copied_at: "2026-07-01 09:00:00".to_string(),
+            truncated: false,
+            original_char_count: None,
         };
 
         let item: ClipboardHistoryItem = row.into();
@@ -73,6 +80,34 @@ mod clipboard_history_item_from {
         assert_eq!(item.copied_at, "2026-07-14 12:00:00");
         assert_eq!(item.copy_count, 3);
         assert_eq!(item.first_copied_at, "2026-07-01 09:00:00");
+        assert!(!item.truncated);
+        assert_eq!(item.original_char_count, None);
+    }
+
+    /// 同値クラス: truncated = true / original_char_count = Some(n) の行（issue #196）
+    /// truncated / original_char_count が漏れなくコピーされることを検証する
+    #[test]
+    fn maps_truncated_row_with_original_char_count() {
+        let row = ClipboardHistoryRow {
+            id: 43,
+            text: "truncated conte".to_string(),
+            char_count: 16,
+            copied_at: "2026-07-14 12:00:00".to_string(),
+            copy_count: 1,
+            first_copied_at: "2026-07-14 12:00:00".to_string(),
+            truncated: true,
+            original_char_count: Some(500),
+        };
+
+        let item: ClipboardHistoryItem = row.into();
+
+        assert_eq!(item.id, 43);
+        assert!(item.truncated, "truncated = true が正しくコピーされること");
+        assert_eq!(
+            item.original_char_count,
+            Some(500),
+            "original_char_count が正しくコピーされること"
+        );
     }
 
     /// 境界値: 空文字列・char_count = 0 の行も正しく変換される
@@ -85,6 +120,8 @@ mod clipboard_history_item_from {
             copied_at: "2026-07-14 00:00:00".to_string(),
             copy_count: 1,
             first_copied_at: "2026-07-14 00:00:00".to_string(),
+            truncated: false,
+            original_char_count: None,
         };
 
         let item: ClipboardHistoryItem = row.into();
@@ -93,6 +130,8 @@ mod clipboard_history_item_from {
         assert_eq!(item.char_count, 0);
         assert_eq!(item.copy_count, 1);
         assert_eq!(item.first_copied_at, "2026-07-14 00:00:00");
+        assert!(!item.truncated);
+        assert_eq!(item.original_char_count, None);
     }
 
     /// マルチバイト文字を含む行も文字列がそのまま保持される
@@ -105,6 +144,8 @@ mod clipboard_history_item_from {
             copied_at: "2026-07-14 09:30:00".to_string(),
             copy_count: 1,
             first_copied_at: "2026-07-14 09:30:00".to_string(),
+            truncated: false,
+            original_char_count: None,
         };
 
         let item: ClipboardHistoryItem = row.into();
@@ -113,6 +154,8 @@ mod clipboard_history_item_from {
         assert_eq!(item.char_count, 6);
         assert_eq!(item.copy_count, 1);
         assert_eq!(item.first_copied_at, "2026-07-14 09:30:00");
+        assert!(!item.truncated);
+        assert_eq!(item.original_char_count, None);
     }
 }
 
@@ -146,7 +189,7 @@ mod list_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "only one").unwrap();
+            insert_clipboard_history(&conn, "only one", None).unwrap();
         }
 
         let result = list_clipboard_history(app.handle().clone(), 10).unwrap();
@@ -164,9 +207,9 @@ mod list_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "a").unwrap();
-            insert_clipboard_history(&conn, "b").unwrap();
-            insert_clipboard_history(&conn, "c").unwrap();
+            insert_clipboard_history(&conn, "a", None).unwrap();
+            insert_clipboard_history(&conn, "b", None).unwrap();
+            insert_clipboard_history(&conn, "c", None).unwrap();
         }
 
         let result = list_clipboard_history(app.handle().clone(), 10).unwrap();
@@ -184,7 +227,7 @@ mod list_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "x").unwrap();
+            insert_clipboard_history(&conn, "x", None).unwrap();
         }
 
         let result = list_clipboard_history(app.handle().clone(), 0).unwrap();
@@ -199,9 +242,9 @@ mod list_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "a").unwrap();
-            insert_clipboard_history(&conn, "b").unwrap();
-            insert_clipboard_history(&conn, "c").unwrap();
+            insert_clipboard_history(&conn, "a", None).unwrap();
+            insert_clipboard_history(&conn, "b", None).unwrap();
+            insert_clipboard_history(&conn, "c", None).unwrap();
         }
 
         let result = list_clipboard_history(app.handle().clone(), 2).unwrap();
@@ -217,8 +260,8 @@ mod list_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "a").unwrap();
-            insert_clipboard_history(&conn, "b").unwrap();
+            insert_clipboard_history(&conn, "a", None).unwrap();
+            insert_clipboard_history(&conn, "b", None).unwrap();
         }
 
         let result = list_clipboard_history(app.handle().clone(), 2).unwrap();
@@ -233,7 +276,7 @@ mod list_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "a").unwrap();
+            insert_clipboard_history(&conn, "a", None).unwrap();
         }
 
         let result = list_clipboard_history(app.handle().clone(), 100).unwrap();
@@ -262,8 +305,8 @@ mod delete_clipboard_history_item {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "keep me").unwrap();
-            target_id = insert_clipboard_history(&conn, "delete me").unwrap();
+            insert_clipboard_history(&conn, "keep me", None).unwrap();
+            target_id = insert_clipboard_history(&conn, "delete me", None).unwrap();
         }
 
         delete_clipboard_history_item(app.handle().clone(), target_id).unwrap();
@@ -281,9 +324,9 @@ mod delete_clipboard_history_item {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            target_id = insert_clipboard_history(&conn, "a").unwrap();
-            insert_clipboard_history(&conn, "b").unwrap();
-            insert_clipboard_history(&conn, "c").unwrap();
+            target_id = insert_clipboard_history(&conn, "a", None).unwrap();
+            insert_clipboard_history(&conn, "b", None).unwrap();
+            insert_clipboard_history(&conn, "c", None).unwrap();
         }
 
         delete_clipboard_history_item(app.handle().clone(), target_id).unwrap();
@@ -311,7 +354,7 @@ mod delete_clipboard_history_item {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "untouched").unwrap();
+            insert_clipboard_history(&conn, "untouched", None).unwrap();
         }
 
         let result = delete_clipboard_history_item(app.handle().clone(), 0);
@@ -328,7 +371,7 @@ mod delete_clipboard_history_item {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "untouched").unwrap();
+            insert_clipboard_history(&conn, "untouched", None).unwrap();
         }
 
         let result = delete_clipboard_history_item(app.handle().clone(), -1);
@@ -358,9 +401,9 @@ mod clear_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "a").unwrap();
-            insert_clipboard_history(&conn, "b").unwrap();
-            insert_clipboard_history(&conn, "c").unwrap();
+            insert_clipboard_history(&conn, "a", None).unwrap();
+            insert_clipboard_history(&conn, "b", None).unwrap();
+            insert_clipboard_history(&conn, "c", None).unwrap();
         }
 
         clear_clipboard_history(app.handle().clone()).unwrap();
@@ -390,7 +433,7 @@ mod clear_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "old").unwrap();
+            insert_clipboard_history(&conn, "old", None).unwrap();
         }
 
         clear_clipboard_history(app.handle().clone()).unwrap();
@@ -398,7 +441,7 @@ mod clear_clipboard_history {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "new").unwrap();
+            insert_clipboard_history(&conn, "new", None).unwrap();
         }
 
         let result = list_clipboard_history(app.handle().clone(), 10).unwrap();
@@ -419,6 +462,14 @@ mod clear_clipboard_history {
 //     既存テキストの再コピー（move-to-top 分岐） / 未知テキストの再コピー（新規 INSERT 分岐）
 //   [境界値分析]
 //     同一テキストを複数回連続で再コピー → copy_count が呼び出し回数分インクリメントされる
+//
+// （issue #196 追記）
+//   record_clipboard_history_recopy は insert_clipboard_history に常に
+//   original_char_count = None を渡す。そのため:
+//     - 新規 INSERT 分岐: 常に truncated = false, original_char_count = None で保存される
+//     - move-to-top 分岐: 引数の None は無視され、既存行の truncated /
+//       original_char_count がそのまま保持される（切り詰め済みエントリの再コピーで
+//       truncated フラグが誤って false にリセットされないこと）
 // ─────────────────────────────────────────────────────────────
 #[cfg(test)]
 mod record_clipboard_history_recopy {
@@ -438,7 +489,7 @@ mod record_clipboard_history_recopy {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "hello").unwrap();
+            insert_clipboard_history(&conn, "hello", None).unwrap();
         }
 
         record_clipboard_history_recopy(app.handle().clone(), "hello".to_string()).unwrap();
@@ -456,7 +507,7 @@ mod record_clipboard_history_recopy {
         {
             let state = app.state::<DbConnection>();
             let conn = state.0.lock().unwrap();
-            insert_clipboard_history(&conn, "repeat").unwrap();
+            insert_clipboard_history(&conn, "repeat", None).unwrap();
         }
 
         for _ in 0..3 {
@@ -481,6 +532,34 @@ mod record_clipboard_history_recopy {
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].text, "brand new");
         assert_eq!(result[0].copy_count, 1);
+        assert!(
+            !result[0].truncated,
+            "新規行作成時、truncated は常に false であること"
+        );
+        assert_eq!(result[0].original_char_count, None);
+    }
+
+    /// 同値クラス: 既に truncated = true として保存されているエントリを再コピー
+    /// 期待値: record_clipboard_history_recopy が None を渡しても move-to-top では
+    /// 既存行の truncated / original_char_count が上書きされず、そのまま保持される
+    #[test]
+    fn recopy_of_already_truncated_entry_preserves_truncated_flag() {
+        let app = setup_mock_app_with_db();
+        {
+            let state = app.state::<DbConnection>();
+            let conn = state.0.lock().unwrap();
+            insert_clipboard_history(&conn, "was truncated", Some(999)).unwrap();
+        }
+
+        record_clipboard_history_recopy(app.handle().clone(), "was truncated".to_string()).unwrap();
+
+        let result = list_clipboard_history(app.handle().clone(), 10).unwrap();
+        assert_eq!(result.len(), 1, "行が増えず既存行が更新されること");
+        assert!(
+            result[0].truncated,
+            "recopy が None を渡しても、既存の truncated=true は move-to-top で保持されること"
+        );
+        assert_eq!(result[0].original_char_count, Some(999));
     }
 }
 

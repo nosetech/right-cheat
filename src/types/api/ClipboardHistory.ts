@@ -14,6 +14,8 @@ export type ClipboardHistoryItem = {
   copied_at: string
   copy_count: number
   first_copied_at: string
+  truncated: boolean
+  original_char_count: number | null
 }
 
 // 一覧取得時の上限件数。設定の「Max history entries」上限（1000）に合わせる。
