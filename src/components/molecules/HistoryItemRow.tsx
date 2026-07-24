@@ -99,6 +99,20 @@ export const HistoryItemRow = forwardRef<HTMLDivElement, HistoryItemRowProps>(
           }
           disableInteractive
           placement='top-start'
+          slotProps={{
+            tooltip: {
+              sx: {
+                backgroundColor: theme.palette.glass.overlay,
+                border: `0.5px solid ${theme.palette.divider}`,
+                borderRadius: '9px',
+                boxShadow: '0 10px 30px -8px rgba(0,0,0,0.55)',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)',
+                padding: '9px 11px',
+                maxWidth: 'none',
+              },
+            },
+          }}
         >
           <Box
             ref={ref}
