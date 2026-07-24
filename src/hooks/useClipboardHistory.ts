@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { debug, error as logError } from '@tauri-apps/plugin-log'
 
+import { MAX_COPY_COUNT } from '@/constants/heatPalette'
 import { useNotificationContext } from '@/context/NotificationContext'
 import {
   CLIPBOARD_HISTORY_LIST_LIMIT,
@@ -86,12 +87,19 @@ export function useClipboardHistory() {
   // copy_count のインクリメントを明示的に記録する。DB への反映を待たずに一覧へ
   // 即時反映するため、まずローカル state を楽観的に更新する（失敗してもログのみで
   // ロールバックはしない。次回リロードで DB の実状態に自然と同期される）。
+  // バックエンド（insert_clipboard_history の MIN(copy_count + 1, MAX_COPY_COUNT)）と
+  // 同じ上限でカウントアップを止めないと、同一セッション内で連続再コピーした際に
+  // 表示上のカウントだけ上限を超えて増え続けてしまう。
   const recordRecopy = useCallback((id: number, text: string) => {
     const copiedAt = nowAsCopiedAtString()
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
-          ? { ...item, copy_count: item.copy_count + 1, copied_at: copiedAt }
+          ? {
+              ...item,
+              copy_count: Math.min(item.copy_count + 1, MAX_COPY_COUNT),
+              copied_at: copiedAt,
+            }
           : item,
       ),
     )

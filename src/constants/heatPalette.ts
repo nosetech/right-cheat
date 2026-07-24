@@ -40,6 +40,13 @@ export const HEAT_COLOR_OPTIONS: { id: HeatBarColorId; label: string }[] = [
 
 export const DEFAULT_HEAT_BAR_COLOR: HeatBarColorId = 'orange'
 
+/**
+ * コピー回数（copy_count）の上限。バックエンド（`insert_clipboard_history` の
+ * `MIN(copy_count + 1, 5)`）と同じ値を持ち、フロントエンドの楽観的更新
+ * （`useClipboardHistory.recordRecopy`）でも同じ上限でカウントアップを止める。
+ */
+export const MAX_COPY_COUNT = 5
+
 export type HeatBarStyle = {
   /** inset shadow の幅（px） */
   width: number
@@ -62,7 +69,7 @@ export function historyHeat(
   const palette = HEAT_COLOR_PALETTES.find((p) => p.id === heatColor)
   if (!palette) return null
 
-  const level = Math.max(1, Math.min(5, count || 1)) - 1
+  const level = Math.max(1, Math.min(MAX_COPY_COUNT, count || 1)) - 1
   const [r, g, b] = palette.rgb
   const rgba = (a: number) => `rgba(${r},${g},${b},${a})`
 
