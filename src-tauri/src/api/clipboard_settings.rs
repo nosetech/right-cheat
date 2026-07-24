@@ -31,7 +31,17 @@ pub struct ClipboardSettings {
     pub max_chars: u32,
     pub max_items: u32,
     pub clear_on_quit: bool,
+    // issue #195 で追加したフィールド。旧バージョンで永続化された設定ファイルには
+    // このキーが存在しないため、デシリアライズ時に欠落していてもエラーにならず
+    // デフォルト値で補完されるようにする（#[serde(default)] がないと
+    // get_clipboard_settings が Err を返し、Preferences 画面が
+    // 「Failed to get clipboard history settings」で起動不能になる）。
+    #[serde(default = "default_heat_bar_color")]
     pub heat_bar_color: String,
+}
+
+fn default_heat_bar_color() -> String {
+    DEFAULT_HEAT_BAR_COLOR.to_string()
 }
 
 impl Default for ClipboardSettings {

@@ -519,6 +519,43 @@ mod get_clipboard_settings {
         let result = get_clipboard_settings(app.handle().clone()).unwrap();
         assert_eq!(result.heat_bar_color, "orange");
     }
+
+    /// 後方互換性の回帰テスト（issue #195）: heat_bar_color 追加前の
+    /// バージョンで永続化された設定ファイルには heat_bar_color キー自体が
+    /// 存在しない。`#[serde(default)]` が付いていないと serde_json::from_value
+    /// が Err を返し、get_clipboard_settings 全体が失敗して Preferences 画面が
+    /// 「Failed to get clipboard history settings」エラーで起動できなくなる。
+    #[test]
+    fn get_succeeds_when_persisted_json_predates_heat_bar_color_field() {
+        let app = mock_app();
+        let _ = app
+            .handle()
+            .plugin(tauri_plugin_store::Builder::new().build());
+        let settings_store = TauriSettingsStore;
+        settings_store.initialize_settings("unittest-clipboard-get-legacy-no-heat-bar-color.json");
+        settings_store
+            .clear_settings(&app.handle().clone())
+            .unwrap();
+
+        // heat_bar_color フィールドを持たない、issue #195 以前の形式の JSON を直接書き込む
+        let legacy_json = serde_json::json!({
+            "monitoring_enabled": true,
+            "min_chars": 2,
+            "max_chars": 200,
+            "max_items": 100,
+            "clear_on_quit": false,
+        });
+        settings_store
+            .set_setting(&app.handle().clone(), "clipboard_settings", legacy_json)
+            .unwrap();
+
+        let result = get_clipboard_settings(app.handle().clone());
+        assert!(
+            result.is_ok(),
+            "heat_bar_color 欠落時もエラーにならないこと: {result:?}"
+        );
+        assert_eq!(result.unwrap().heat_bar_color, "orange");
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
