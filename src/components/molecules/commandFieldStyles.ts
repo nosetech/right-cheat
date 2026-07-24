@@ -124,10 +124,11 @@ export function getTruncatedInfoRowSx(theme: Theme) {
   } as const
 }
 
+/** ハサミアイコン（9px）に合わせ、numberHint（9.5px）を使用する */
 export function getTruncatedInfoTextSx(theme: Theme) {
   return {
     fontFamily: FONT_CODE,
-    fontSize: scaledPx(theme.custom.fontSize.hint),
+    fontSize: scaledPx(theme.custom.fontSize.numberHint),
   } as const
 }
 
