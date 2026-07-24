@@ -3,6 +3,8 @@ export class ClipboardHistoryAPI {
   static readonly DELETE_CLIPBOARD_HISTORY_ITEM =
     'delete_clipboard_history_item'
   static readonly CLEAR_CLIPBOARD_HISTORY = 'clear_clipboard_history'
+  static readonly RECORD_CLIPBOARD_HISTORY_RECOPY =
+    'record_clipboard_history_recopy'
 }
 
 export type ClipboardHistoryItem = {

@@ -407,6 +407,83 @@ mod clear_clipboard_history {
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+// record_clipboard_history_recopy（issue #195 フォローアップ）
+//
+// Clipboard History ウィンドウ内でエントリを再コピーした際に呼ばれるコマンド。
+// 自前マーカー付きコピーは clipboard_monitor に検知されないため、この
+// コマンドが copy_count のインクリメントを担う唯一の経路となる。
+//
+// ブラックボックス テスト設計:
+//   [同値分割]
+//     既存テキストの再コピー（move-to-top 分岐） / 未知テキストの再コピー（新規 INSERT 分岐）
+//   [境界値分析]
+//     同一テキストを複数回連続で再コピー → copy_count が呼び出し回数分インクリメントされる
+// ─────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod record_clipboard_history_recopy {
+    use super::test_support::setup_mock_app_with_db;
+    use app_lib::api::clipboard_history::{
+        list_clipboard_history, record_clipboard_history_recopy,
+    };
+    use app_lib::db::repository::insert_clipboard_history;
+    use app_lib::db::DbConnection;
+    use tauri::Manager;
+
+    /// 同値クラス: 履歴に既に存在するテキストを再コピー
+    /// 期待値: 新規行は増えず、既存行の copy_count がインクリメントされる
+    #[test]
+    fn increments_copy_count_for_existing_text() {
+        let app = setup_mock_app_with_db();
+        {
+            let state = app.state::<DbConnection>();
+            let conn = state.0.lock().unwrap();
+            insert_clipboard_history(&conn, "hello").unwrap();
+        }
+
+        record_clipboard_history_recopy(app.handle().clone(), "hello".to_string()).unwrap();
+
+        let result = list_clipboard_history(app.handle().clone(), 10).unwrap();
+        assert_eq!(result.len(), 1, "行が増えず既存行が更新されること");
+        assert_eq!(result[0].copy_count, 2);
+    }
+
+    /// 境界値: 同一テキストを3回連続で再コピー
+    /// 期待値: copy_count が呼び出し回数分（初期値1 + 3 = 4）インクリメントされる
+    #[test]
+    fn increments_copy_count_by_call_count_for_repeated_recopy() {
+        let app = setup_mock_app_with_db();
+        {
+            let state = app.state::<DbConnection>();
+            let conn = state.0.lock().unwrap();
+            insert_clipboard_history(&conn, "repeat").unwrap();
+        }
+
+        for _ in 0..3 {
+            record_clipboard_history_recopy(app.handle().clone(), "repeat".to_string()).unwrap();
+        }
+
+        let result = list_clipboard_history(app.handle().clone(), 10).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].copy_count, 4);
+    }
+
+    /// 同値クラス: 履歴に存在しないテキストを再コピー（通常は起こらないが、
+    /// 再コピー操作の直前に別経路で削除された場合を想定した防御的なケース）
+    /// 期待値: 新規行として copy_count = 1 で保存される（自己修復的な挙動）
+    #[test]
+    fn inserts_new_row_for_unknown_text() {
+        let app = setup_mock_app_with_db();
+
+        record_clipboard_history_recopy(app.handle().clone(), "brand new".to_string()).unwrap();
+
+        let result = list_clipboard_history(app.handle().clone(), 10).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].text, "brand new");
+        assert_eq!(result[0].copy_count, 1);
+    }
+}
+
 // 注記: DB ロック失敗（Mutex poisoning）分岐は tauri::test の mock 環境では
 // 意図的に発生させる手段がなく、テスト不可能なコードとしてカバレッジ対象外とする
 // （tests/api/clipboard_settings.rs と同じ方針）。

@@ -44,6 +44,7 @@ export function ClipboardHistorySheet({
     cancelEditMode,
     saveEditMode,
     deleteItem,
+    recordRecopy,
     clearAll,
     confirmClearOpen,
     setConfirmClearOpen,
@@ -72,6 +73,7 @@ export function ClipboardHistorySheet({
                 editMode={editMode}
                 onAddToSheet={() => onAddToSheet(item)}
                 onDelete={() => deleteItem(item.id)}
+                onCopied={() => recordRecopy(item.id, item.text)}
                 copyCount={item.copy_count}
                 firstCopiedAt={item.first_copied_at}
                 lastCopiedAt={item.copied_at}

@@ -29,6 +29,8 @@ export type HistoryItemRowProps = {
   editMode?: boolean
   onAddToSheet?: () => void
   onDelete?: () => void
+  /** 再コピー成功時に呼ばれる（copy_count のカウントアップに使用） */
+  onCopied?: () => void
   /** コピー回数（ヒートバーの強調レベルとツールチップに使用） */
   copyCount?: number
   /** 初回コピー日時（DB の first_copied_at、UTC） */
@@ -56,6 +58,7 @@ export const HistoryItemRow = forwardRef<HTMLDivElement, HistoryItemRowProps>(
       editMode = false,
       onAddToSheet,
       onDelete,
+      onCopied,
       copyCount = 1,
       firstCopiedAt,
       lastCopiedAt,
@@ -65,7 +68,7 @@ export const HistoryItemRow = forwardRef<HTMLDivElement, HistoryItemRowProps>(
   ) => {
     const theme = useTheme()
     const isDark = theme.palette.mode === 'dark'
-    const { copy, hasCopied, error: copyError } = useClipboard(text)
+    const { copy, hasCopied, error: copyError } = useClipboard(text, onCopied)
 
     const [isFocused, setIsFocused] = useState(false)
     const [isHovered, setIsHovered] = useState(false)

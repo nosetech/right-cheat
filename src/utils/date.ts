@@ -12,3 +12,17 @@ export function formatCopyTimestamp(raw: string): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
+
+/**
+ * 現在時刻を、DB の `copied_at`/`first_copied_at`（UTC、`formatCopyTimestamp` が
+ * パースできる形式）と同じ書式の文字列にして返す。再コピー時のローカル楽観更新
+ * （サーバーの再取得を待たずに一覧表示へ即時反映する）に使う。
+ */
+export function nowAsCopiedAtString(): string {
+  const now = new Date()
+  const pad = (n: number, len = 2) => String(n).padStart(len, '0')
+  return (
+    `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ` +
+    `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}.${pad(now.getUTCMilliseconds(), 3)}`
+  )
+}
