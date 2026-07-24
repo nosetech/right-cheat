@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
   CheckIcon,
+  HeatColorPicker,
   StepperInput,
   ThemedSwitch,
   ThemeToggle,
@@ -12,6 +13,7 @@ import {
 import { PrefNavItem } from '@/components/molecules/PrefNavItem'
 import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
+import { DEFAULT_HEAT_BAR_COLOR, HeatBarColorId } from '@/constants/heatPalette'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
@@ -124,6 +126,7 @@ export default function Page() {
       max_chars: 200,
       max_items: 100,
       clear_on_quit: false,
+      heat_bar_color: DEFAULT_HEAT_BAR_COLOR,
     })
 
   // ── RcDialog state ──────────────────────────────────────────
@@ -569,6 +572,9 @@ export default function Page() {
   const handleMaxItemsChange = (value: number) =>
     applyClipboardSettings({ ...clipboardSettings, max_items: value })
 
+  const handleHeatBarColorChange = (value: HeatBarColorId) =>
+    applyClipboardSettings({ ...clipboardSettings, heat_bar_color: value })
+
   const handleClearOnQuitChange = (enabled: boolean) =>
     applyClipboardSettings({ ...clipboardSettings, clear_on_quit: enabled })
 
@@ -747,6 +753,27 @@ export default function Page() {
                     max={CLIPBOARD_ITEMS_UPPER_BOUND}
                     suffix='items'
                     onChange={handleMaxItemsChange}
+                  />
+                </Box>
+
+                <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+                {/* Row: Heat bar color */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <PrefRowLabel
+                    label='Heat bar color'
+                    description='Highlight frequently-copied entries with a colored bar by copy count. Choose None to turn it off.'
+                  />
+                  <HeatColorPicker
+                    value={clipboardSettings.heat_bar_color}
+                    onChange={handleHeatBarColorChange}
                   />
                 </Box>
 

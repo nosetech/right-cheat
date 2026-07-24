@@ -61,6 +61,8 @@ mod clipboard_history_item_from {
             text: "hello world".to_string(),
             char_count: 11,
             copied_at: "2026-07-14 12:00:00".to_string(),
+            copy_count: 3,
+            first_copied_at: "2026-07-01 09:00:00".to_string(),
         };
 
         let item: ClipboardHistoryItem = row.into();
@@ -69,6 +71,8 @@ mod clipboard_history_item_from {
         assert_eq!(item.text, "hello world");
         assert_eq!(item.char_count, 11);
         assert_eq!(item.copied_at, "2026-07-14 12:00:00");
+        assert_eq!(item.copy_count, 3);
+        assert_eq!(item.first_copied_at, "2026-07-01 09:00:00");
     }
 
     /// 境界値: 空文字列・char_count = 0 の行も正しく変換される
@@ -79,12 +83,16 @@ mod clipboard_history_item_from {
             text: String::new(),
             char_count: 0,
             copied_at: "2026-07-14 00:00:00".to_string(),
+            copy_count: 1,
+            first_copied_at: "2026-07-14 00:00:00".to_string(),
         };
 
         let item: ClipboardHistoryItem = row.into();
 
         assert_eq!(item.text, "");
         assert_eq!(item.char_count, 0);
+        assert_eq!(item.copy_count, 1);
+        assert_eq!(item.first_copied_at, "2026-07-14 00:00:00");
     }
 
     /// マルチバイト文字を含む行も文字列がそのまま保持される
@@ -95,12 +103,16 @@ mod clipboard_history_item_from {
             text: "こんにちは🎉".to_string(),
             char_count: 6,
             copied_at: "2026-07-14 09:30:00".to_string(),
+            copy_count: 1,
+            first_copied_at: "2026-07-14 09:30:00".to_string(),
         };
 
         let item: ClipboardHistoryItem = row.into();
 
         assert_eq!(item.text, "こんにちは🎉");
         assert_eq!(item.char_count, 6);
+        assert_eq!(item.copy_count, 1);
+        assert_eq!(item.first_copied_at, "2026-07-14 09:30:00");
     }
 }
 

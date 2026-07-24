@@ -12,11 +12,17 @@ pub const DEFAULT_MIN_CHARS: u32 = 2;
 pub const DEFAULT_MAX_CHARS: u32 = 200;
 pub const DEFAULT_MAX_ITEMS: u32 = 100;
 pub const DEFAULT_CLEAR_ON_QUIT: bool = false;
+pub const DEFAULT_HEAT_BAR_COLOR: &str = "orange";
 
 pub const MIN_CHARS_LOWER_BOUND: u32 = 2;
 pub const CHARS_UPPER_BOUND: u32 = 1000;
 pub const MAX_ITEMS_LOWER_BOUND: u32 = 10;
 pub const MAX_ITEMS_UPPER_BOUND: u32 = 1000;
+
+/// Heat bar color の許容値（issue #195）。7色 + None（表示オフ）。
+pub const HEAT_BAR_COLORS: [&str; 8] = [
+    "red", "orange", "amber", "green", "teal", "blue", "purple", "none",
+];
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ClipboardSettings {
@@ -25,6 +31,7 @@ pub struct ClipboardSettings {
     pub max_chars: u32,
     pub max_items: u32,
     pub clear_on_quit: bool,
+    pub heat_bar_color: String,
 }
 
 impl Default for ClipboardSettings {
@@ -35,6 +42,7 @@ impl Default for ClipboardSettings {
             max_chars: DEFAULT_MAX_CHARS,
             max_items: DEFAULT_MAX_ITEMS,
             clear_on_quit: DEFAULT_CLEAR_ON_QUIT,
+            heat_bar_color: DEFAULT_HEAT_BAR_COLOR.to_string(),
         }
     }
 }
@@ -42,6 +50,7 @@ impl Default for ClipboardSettings {
 impl ClipboardSettings {
     /// 各値を有効範囲にクランプする。max_chars の下限は常に
     /// max(MIN_CHARS_LOWER_BOUND, min_chars) とする（issue #180 の整合性ルール）。
+    /// heat_bar_color は許容値（HEAT_BAR_COLORS）以外であればデフォルトに補正する。
     pub fn normalized(&self) -> Self {
         let min_chars = self
             .min_chars
@@ -50,12 +59,18 @@ impl ClipboardSettings {
         let max_items = self
             .max_items
             .clamp(MAX_ITEMS_LOWER_BOUND, MAX_ITEMS_UPPER_BOUND);
+        let heat_bar_color = if HEAT_BAR_COLORS.contains(&self.heat_bar_color.as_str()) {
+            self.heat_bar_color.clone()
+        } else {
+            DEFAULT_HEAT_BAR_COLOR.to_string()
+        };
         Self {
             monitoring_enabled: self.monitoring_enabled,
             min_chars,
             max_chars,
             max_items,
             clear_on_quit: self.clear_on_quit,
+            heat_bar_color,
         }
     }
 }

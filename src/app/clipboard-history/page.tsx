@@ -17,6 +17,7 @@ import { FOCUS_FALLBACK_ID } from '@/constants/focus'
 import { useNotificationContext } from '@/context/NotificationContext'
 import { useClipboardHistory } from '@/hooks/useClipboardHistory'
 import { useClipboardHistoryWindowSize } from '@/hooks/useClipboardHistoryWindowSize'
+import { useHeatBarColor } from '@/hooks/useHeatBarColor'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { ClipboardHistoryItem } from '@/types/api/ClipboardHistory'
 
@@ -30,6 +31,7 @@ export default function ClipboardHistoryPage() {
   const history = useClipboardHistory()
   const { editMode } = history
   const { isPinned, togglePin } = useClipboardHistoryWindowSize(editMode)
+  const heatBarColor = useHeatBarColor()
   const { showSuccess } = useNotificationContext() ?? {}
 
   const itemRefs = useRef<Array<HTMLDivElement | null>>([])
@@ -166,6 +168,7 @@ export default function ClipboardHistoryPage() {
           history={history}
           itemRefs={itemRefs}
           onAddToSheet={openAddToCheatSheetWindow}
+          heatBarColor={heatBarColor}
         />
       </Box>
     </Box>

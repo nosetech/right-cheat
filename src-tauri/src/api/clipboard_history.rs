@@ -10,6 +10,8 @@ pub struct ClipboardHistoryItem {
     pub text: String,
     pub char_count: i64,
     pub copied_at: String,
+    pub copy_count: i64,
+    pub first_copied_at: String,
 }
 
 impl From<repository::ClipboardHistoryRow> for ClipboardHistoryItem {
@@ -19,6 +21,8 @@ impl From<repository::ClipboardHistoryRow> for ClipboardHistoryItem {
             text: row.text,
             char_count: row.char_count,
             copied_at: row.copied_at,
+            copy_count: row.copy_count,
+            first_copied_at: row.first_copied_at,
         }
     }
 }

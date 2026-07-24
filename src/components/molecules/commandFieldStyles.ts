@@ -1,5 +1,6 @@
 import { alpha, Theme } from '@mui/material/styles'
 
+import { HeatBarStyle } from '@/constants/heatPalette'
 import { COMMAND_HINT_WIDTH } from '@/constants/layout'
 import { FONT_CODE } from '@/theme/fonts'
 import { scaledPx } from '@/utils/css'
@@ -17,8 +18,16 @@ export type CommandBoxState = {
   isHovered: boolean
 }
 
-/** コマンドボックスの状態別スタイル（エラー > 完了 > フォーカス > ホバー/通常） */
-export function getCommandBoxSx(theme: Theme, state: CommandBoxState) {
+/**
+ * コマンドボックスの状態別スタイル（エラー > 完了 > フォーカス > ホバー/通常）。
+ * `heat`（クリップボード履歴のヒートバー）はエラー・完了・フォーカスのいずれでもない
+ * 通常状態（ホバー含む）でのみ適用する。
+ */
+export function getCommandBoxSx(
+  theme: Theme,
+  state: CommandBoxState,
+  heat: HeatBarStyle | null = null,
+) {
   const isDark = theme.palette.mode === 'dark'
   const accentColor = theme.palette.accent.main
 
@@ -44,12 +53,18 @@ export function getCommandBoxSx(theme: Theme, state: CommandBoxState) {
       borderRadius: '0 4px 4px 0',
     }
   }
+  const baseBackground = state.isHovered
+    ? theme.palette.glass.field
+    : theme.palette.glass.panel
   return {
-    background: state.isHovered
-      ? theme.palette.glass.field
-      : theme.palette.glass.panel,
+    background: heat?.bgTint
+      ? `linear-gradient(0deg, ${heat.bgTint}, ${heat.bgTint}), ${baseBackground}`
+      : baseBackground,
     border: `0.5px solid ${theme.palette.divider}`,
     borderRadius: 1,
+    ...(heat
+      ? { boxShadow: `inset ${heat.width}px 0 0 ${heat.barColor}` }
+      : {}),
   }
 }
 

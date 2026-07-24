@@ -16,4 +16,7 @@ export class Event {
   static readonly ADD_TO_CHEATSHEET_READY = 'add-to-cheatsheet-ready'
   static readonly ADD_TO_CHEATSHEET_INIT = 'add-to-cheatsheet-init'
   static readonly ADD_TO_CHEATSHEET_ADDED = 'add-to-cheatsheet-added'
+  // クリップボード設定（Heat bar color 含む）が変更されたことを全ウィンドウへ
+  // 通知するイベント（バックエンドの common::event::CLIPBOARD_SETTINGS_CHANGED と対応）
+  static readonly CLIPBOARD_SETTINGS_CHANGED = 'clipboard_settings_changed'
 }

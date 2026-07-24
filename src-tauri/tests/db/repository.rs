@@ -1271,9 +1271,14 @@ fn replace_commandlist_by_title_old_commands_are_not_searchable_after_replace() 
 /// copied_at を明示的に指定してクリップボード履歴行を直接挿入するテスト用ヘルパー。
 /// insert_clipboard_history は copied_at を制御できないため、
 /// 「copied_at DESC」ソート順の検証には SQL を直接発行して固定値を与える。
+/// first_copied_at は本番の insert_clipboard_history の新規 INSERT 経路と同様に
+/// copied_at と同じ値で設定する（NOT NULL ではないが、list_clipboard_history が
+/// ClipboardHistoryRow::first_copied_at を String として読み取るため NULL のままだと
+/// 行の取得時にエラーになる）。
 fn insert_history_with_timestamp(conn: &Connection, text: &str, copied_at: &str) -> i64 {
     conn.execute(
-        "INSERT INTO clipboard_history (text, char_count, copied_at) VALUES (?1, ?2, ?3)",
+        "INSERT INTO clipboard_history (text, char_count, copied_at, first_copied_at) \
+         VALUES (?1, ?2, ?3, ?3)",
         rusqlite::params![text, text.chars().count() as i64, copied_at],
     )
     .unwrap();
@@ -1513,6 +1518,92 @@ fn insert_clipboard_history_move_to_top_uses_millisecond_precision_copied_at() {
     );
 }
 
+// ── copy_count / first_copied_at（issue #195: Heat bar color）────
+//
+// ブラックボックス テスト設計:
+//   [同値分割]
+//     有効クラス①: 新規テキストの挿入 → copy_count = 1, first_copied_at = copied_at
+//     有効クラス②: 既存テキストの move-to-top → copy_count がインクリメントされ、
+//                   first_copied_at は変化しない（copied_at のみ更新される）
+//   [境界値分析]
+//     挿入回数 1回（新規のみ）/ 3回（新規 + move-to-top 2回）での copy_count の値
+//
+// ホワイトボックス テスト設計:
+//   - insert_clipboard_history の新規 INSERT 分岐・既存行 UPDATE（move-to-top）分岐の
+//     双方で copy_count / first_copied_at が仕様どおりに扱われることを検証する
+
+#[test]
+fn insert_clipboard_history_new_row_sets_copy_count_to_one() {
+    // Arrange & Act: 新規テキストの挿入
+    let conn = setup();
+    insert_clipboard_history(&conn, "new item").unwrap();
+
+    // Assert: 新規挿入時は copy_count が 1 であること
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(rows[0].copy_count, 1);
+}
+
+#[test]
+fn insert_clipboard_history_new_row_first_copied_at_equals_copied_at() {
+    // Arrange & Act: 新規テキストの挿入
+    let conn = setup();
+    insert_clipboard_history(&conn, "new item").unwrap();
+
+    // Assert: 新規挿入時は first_copied_at が copied_at と一致すること
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(
+        rows[0].first_copied_at, rows[0].copied_at,
+        "新規挿入時は first_copied_at が copied_at と一致すること"
+    );
+}
+
+#[test]
+fn insert_clipboard_history_repeated_insert_increments_copy_count_by_insertion_count() {
+    // Arrange & Act: 同一テキストを3回挿入（1回目は新規、2・3回目は move-to-top）
+    let conn = setup();
+    insert_clipboard_history(&conn, "repeat").unwrap();
+    insert_clipboard_history(&conn, "repeat").unwrap();
+    insert_clipboard_history(&conn, "repeat").unwrap();
+
+    // Assert: 挿入回数分 copy_count がインクリメントされること（3回挿入で copy_count=3）
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(rows.len(), 1, "move-to-top のため行数は増えないこと");
+    assert_eq!(rows[0].copy_count, 3, "3回挿入で copy_count が3になること");
+}
+
+#[test]
+fn insert_clipboard_history_move_to_top_keeps_first_copied_at_but_updates_copied_at() {
+    // Arrange: 初回挿入後、copied_at / first_copied_at を過去日時に固定する
+    let conn = setup();
+    let id = insert_clipboard_history(&conn, "history item").unwrap();
+    conn.execute(
+        "UPDATE clipboard_history SET copied_at = '2020-01-01 00:00:00.000', \
+         first_copied_at = '2020-01-01 00:00:00.000' WHERE id = ?1",
+        rusqlite::params![id],
+    )
+    .unwrap();
+
+    // Act: move-to-top（copy_count のみインクリメントされ、first_copied_at は
+    // 更新されない実装であることを検証する）
+    insert_clipboard_history(&conn, "history item").unwrap();
+
+    // Assert: first_copied_at は固定した過去日時のまま変化しないこと
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(
+        rows[0].first_copied_at, "2020-01-01 00:00:00.000",
+        "move-to-top で first_copied_at は変化しないこと"
+    );
+    // Assert: copied_at は現在時刻に更新され、過去日時のままではないこと
+    assert_ne!(
+        rows[0].copied_at, "2020-01-01 00:00:00.000",
+        "move-to-top で copied_at は更新されること"
+    );
+    assert_eq!(
+        rows[0].copy_count, 2,
+        "move-to-top 1回で copy_count が2になること"
+    );
+}
+
 // ── list_clipboard_history ────────────────────────────────────
 
 #[test]
@@ -1634,6 +1725,36 @@ fn list_clipboard_history_returns_correct_fields() {
     assert_eq!(rows[0].text, "field check");
     assert_eq!(rows[0].char_count, 11);
     assert!(!rows[0].copied_at.is_empty());
+}
+
+#[test]
+fn list_clipboard_history_returns_copy_count_and_first_copied_at() {
+    // Arrange: 新規挿入行（issue #195 で追加された copy_count / first_copied_at）
+    let conn = setup();
+    insert_clipboard_history(&conn, "heat bar field check").unwrap();
+
+    // Act
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+
+    // Assert: copy_count / first_copied_at が正しく取得できること
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].copy_count, 1);
+    assert_eq!(rows[0].first_copied_at, rows[0].copied_at);
+}
+
+#[test]
+fn list_clipboard_history_returns_incremented_copy_count_after_move_to_top() {
+    // Arrange: move-to-top を経由して copy_count がインクリメントされた行
+    let conn = setup();
+    insert_clipboard_history(&conn, "incremented").unwrap();
+    insert_clipboard_history(&conn, "incremented").unwrap();
+
+    // Act
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+
+    // Assert: list_clipboard_history もインクリメント後の copy_count を正しく返すこと
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].copy_count, 2);
 }
 
 // ── delete_clipboard_history ──────────────────────────────────
