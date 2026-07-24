@@ -708,10 +708,14 @@ pub struct ClipboardHistoryRow {
 /// ミリ秒精度にすることでこの取り違えを実用上ほぼ排除する。
 const COPIED_AT_NOW_EXPR: &str = "strftime('%Y-%m-%d %H:%M:%f', 'now')";
 
+/// ヒートバーの表示レベルが 1〜5（5でキャップ）のため、`copy_count` 自体もこの値を
+/// 上限としてカウントアップを止める（issue #195 フォローアップ）。
+pub const MAX_COPY_COUNT: i64 = 5;
+
 /// クリップボード履歴を追加する。
 /// 同一テキストが履歴全体に既に存在する場合は INSERT せず、既存行の `copied_at` を
-/// 現在時刻に更新して先頭（最新）へ移動し、`copy_count` をインクリメントして既存行の
-/// id を返す（move-to-top）。
+/// 現在時刻に更新して先頭（最新）へ移動し、`copy_count` を `MAX_COPY_COUNT` を上限に
+/// インクリメントして既存行の id を返す（move-to-top）。
 pub fn insert_clipboard_history(conn: &Connection, text: &str) -> Result<i64> {
     let existing: Option<i64> = match conn.query_row(
         "SELECT id FROM clipboard_history WHERE text = ?1 ORDER BY copied_at DESC, id DESC LIMIT 1",
@@ -726,7 +730,7 @@ pub fn insert_clipboard_history(conn: &Connection, text: &str) -> Result<i64> {
     if let Some(id) = existing {
         conn.execute(
             &format!(
-                "UPDATE clipboard_history SET copied_at = {COPIED_AT_NOW_EXPR}, copy_count = copy_count + 1 WHERE id = ?1"
+                "UPDATE clipboard_history SET copied_at = {COPIED_AT_NOW_EXPR}, copy_count = MIN(copy_count + 1, {MAX_COPY_COUNT}) WHERE id = ?1"
             ),
             params![id],
         )?;

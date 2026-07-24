@@ -1604,6 +1604,72 @@ fn insert_clipboard_history_move_to_top_keeps_first_copied_at_but_updates_copied
     );
 }
 
+// ── copy_count の上限（issue #195 フォローアップ: ヒートバー表示レベルと
+//    同じ 5 でカウントアップを止める）────────────────────────────
+
+/// 境界値: ちょうど5回挿入（新規1回 + move-to-top 4回）
+/// 期待値: copy_count が上限の5になる（キャップに達するがまだ超えない）
+#[test]
+fn insert_clipboard_history_copy_count_reaches_cap_at_five_insertions() {
+    let conn = setup();
+    for _ in 0..5 {
+        insert_clipboard_history(&conn, "capped").unwrap();
+    }
+
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].copy_count, 5);
+}
+
+/// 境界値: 5回を超えて挿入（新規1回 + move-to-top 9回、計10回）
+/// 期待値: copy_count は5を超えてカウントアップされず上限の5で頭打ちになる
+#[test]
+fn insert_clipboard_history_copy_count_does_not_exceed_cap_beyond_five_insertions() {
+    let conn = setup();
+    for _ in 0..10 {
+        insert_clipboard_history(&conn, "capped").unwrap();
+    }
+
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(rows.len(), 1, "move-to-top のため行数は増えないこと");
+    assert_eq!(
+        rows[0].copy_count, 5,
+        "10回挿入しても copy_count は上限の5で頭打ちになること"
+    );
+}
+
+/// キャップに達した後も copied_at（move-to-top）自体は更新され続けることを確認する。
+/// ミリ秒精度でもテスト実行が速いと同一ミリ秒内で衝突しうるため、比較対象は
+/// 明示的に設定した過去日時（2020年）のみとし、直前の copied_at との比較はしない。
+#[test]
+fn insert_clipboard_history_still_updates_copied_at_after_copy_count_capped() {
+    let conn = setup();
+    for _ in 0..5 {
+        insert_clipboard_history(&conn, "capped and fresh").unwrap();
+    }
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(rows[0].copy_count, 5);
+
+    // copy_count が上限に達した後の move-to-top で copied_at が更新されることを
+    // 検証するため、事前に明示的な過去日時へ書き換えておく
+    conn.execute(
+        "UPDATE clipboard_history SET copied_at = '2020-01-01 00:00:00.000' WHERE id = 1",
+        [],
+    )
+    .unwrap();
+    insert_clipboard_history(&conn, "capped and fresh").unwrap();
+
+    let rows = list_clipboard_history(&conn, 10).unwrap();
+    assert_eq!(
+        rows[0].copy_count, 5,
+        "上限到達後もそれ以上インクリメントされないこと"
+    );
+    assert_ne!(
+        rows[0].copied_at, "2020-01-01 00:00:00.000",
+        "copy_count が上限でも copied_at は move-to-top で更新され続けること"
+    );
+}
+
 // ── list_clipboard_history ────────────────────────────────────
 
 #[test]
