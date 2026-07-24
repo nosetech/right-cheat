@@ -201,12 +201,7 @@ export const HistoryItemRow = forwardRef<HTMLDivElement, HistoryItemRowProps>(
               <Box sx={getTruncatedInfoRowSx(theme)}>
                 <ScissorsIcon size={9} strokeWidth={2} />
                 <Typography sx={getTruncatedInfoTextSx(theme)}>
-                  <Typography
-                    component='span'
-                    sx={{ fontWeight: 700, color: theme.palette.amber.text }}
-                  >
-                    {(charCount ?? 0).toLocaleString('en-US')}
-                  </Typography>
+                  {(charCount ?? 0).toLocaleString('en-US')}
                   {' / '}
                   {(originalCharCount ?? 0).toLocaleString('en-US')}
                 </Typography>
