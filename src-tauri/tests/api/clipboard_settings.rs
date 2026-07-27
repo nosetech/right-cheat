@@ -52,8 +52,8 @@ mod normalized {
         assert_eq!(result.min_chars, 5);
         assert_eq!(result.max_chars, 50);
         assert_eq!(result.max_items, 20);
-        assert_eq!(result.monitoring_enabled, true);
-        assert_eq!(result.clear_on_quit, false);
+        assert!(result.monitoring_enabled);
+        assert!(!result.clear_on_quit);
     }
 
     /// デフォルト値は正規化しても変化しない（冪等性の前提確認）
@@ -244,32 +244,32 @@ mod normalized {
     #[test]
     fn bool_fields_pass_through_true_true() {
         let result = settings(true, 0, 0, 0, true).normalized();
-        assert_eq!(result.monitoring_enabled, true);
-        assert_eq!(result.clear_on_quit, true);
+        assert!(result.monitoring_enabled);
+        assert!(result.clear_on_quit);
     }
 
     /// bool フィールドの素通し確認（true, false の組み合わせ）
     #[test]
     fn bool_fields_pass_through_true_false() {
         let result = settings(true, 0, 0, 0, false).normalized();
-        assert_eq!(result.monitoring_enabled, true);
-        assert_eq!(result.clear_on_quit, false);
+        assert!(result.monitoring_enabled);
+        assert!(!result.clear_on_quit);
     }
 
     /// bool フィールドの素通し確認（false, true の組み合わせ）
     #[test]
     fn bool_fields_pass_through_false_true() {
         let result = settings(false, 0, 0, 0, true).normalized();
-        assert_eq!(result.monitoring_enabled, false);
-        assert_eq!(result.clear_on_quit, true);
+        assert!(!result.monitoring_enabled);
+        assert!(result.clear_on_quit);
     }
 
     /// bool フィールドの素通し確認（false, false の組み合わせ）
     #[test]
     fn bool_fields_pass_through_false_false() {
         let result = settings(false, 0, 0, 0, false).normalized();
-        assert_eq!(result.monitoring_enabled, false);
-        assert_eq!(result.clear_on_quit, false);
+        assert!(!result.monitoring_enabled);
+        assert!(!result.clear_on_quit);
     }
 
     /// normalized() は冪等: 一度正規化した結果を再度正規化しても変化しない
@@ -670,8 +670,8 @@ mod set_clipboard_settings {
 
         // デフォルト（monitoring_enabled = true, clear_on_quit = false）から開始
         let result = get_clipboard_settings(app.handle().clone()).unwrap();
-        assert_eq!(result.monitoring_enabled, true);
-        assert_eq!(result.clear_on_quit, false);
+        assert!(result.monitoring_enabled);
+        assert!(!result.clear_on_quit);
 
         // 両方反転
         let mut toggled = result.clone();
@@ -680,8 +680,8 @@ mod set_clipboard_settings {
         set_clipboard_settings(app.handle().clone(), toggled).unwrap();
 
         let result = get_clipboard_settings(app.handle().clone()).unwrap();
-        assert_eq!(result.monitoring_enabled, false);
-        assert_eq!(result.clear_on_quit, true);
+        assert!(!result.monitoring_enabled);
+        assert!(result.clear_on_quit);
 
         // 元に戻す
         let mut restored = result.clone();
@@ -690,8 +690,8 @@ mod set_clipboard_settings {
         set_clipboard_settings(app.handle().clone(), restored).unwrap();
 
         let result = get_clipboard_settings(app.handle().clone()).unwrap();
-        assert_eq!(result.monitoring_enabled, true);
-        assert_eq!(result.clear_on_quit, false);
+        assert!(result.monitoring_enabled);
+        assert!(!result.clear_on_quit);
     }
 
     /// set_clipboard_settings は内部で clipboard_settings_changed イベントを emit する
