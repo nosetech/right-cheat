@@ -13,7 +13,7 @@ import {
 import { PrefNavItem } from '@/components/molecules/PrefNavItem'
 import { WindowHeader } from '@/components/molecules/WindowHeader'
 import { DialogVariant, RcDialog } from '@/components/organisms/RcDialog'
-import { DEFAULT_HEAT_BAR_COLOR, HeatBarColorId } from '@/constants/heatPalette'
+import { HeatBarColorId } from '@/constants/heatPalette'
 import { TITLEBAR_HEIGHT } from '@/constants/layout'
 import { usePreferencesStore } from '@/hooks/usePreferencesStore'
 import { useThemeStore } from '@/hooks/useThemeStore'
@@ -48,6 +48,7 @@ import {
   DialogTitle,
   Divider,
   IconButton,
+  Skeleton,
   Tooltip,
   Typography,
 } from '@mui/material'
@@ -57,11 +58,6 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
-
-// Fallback values matching backend defaults (log_settings.rs).
-// Overwritten immediately by GET_LOG_SETTINGS on mount.
-const DEFAULT_MAX_FILE_SIZE_BYTES = 1_048_576
-const DEFAULT_ROTATION_COUNT = 3
 
 type PrefSectionKey = 'clipboard' | 'shortcut' | 'ui' | 'other'
 
@@ -104,11 +100,9 @@ export default function Page() {
   const [clipboardHistoryShortcut, setClipboardHistoryShortcut] =
     useState<ShortcutDef>()
 
-  const [logSettings, setLogSettings] = useState<LogSettings>({
-    output_dir: null,
-    max_file_size: DEFAULT_MAX_FILE_SIZE_BYTES,
-    rotation_count: DEFAULT_ROTATION_COUNT,
-  })
+  // null は「未取得」を表す。GET_LOG_SETTINGS 完了まで Log セクションの概要行は
+  // スケルトン表示とし、フロントエンドにデフォルト値を持たない。
+  const [logSettings, setLogSettings] = useState<LogSettings | null>(null)
   const [effectiveLogDir, setEffectiveLogDir] = useState<string>('')
   const [logDialogOpen, setLogDialogOpen] = useState<boolean>(false)
 
@@ -117,17 +111,10 @@ export default function Page() {
   })
   const [effectiveDbPath, setEffectiveDbPath] = useState<string>('')
 
-  // Fallback values matching backend defaults (clipboard_settings.rs).
-  // Overwritten immediately by GET_CLIPBOARD_SETTINGS on mount.
+  // null は「未取得」を表す。GET_CLIPBOARD_SETTINGS 完了まで Clipboard History
+  // セクションはスケルトン表示とし、フロントエンドにデフォルト値を持たない。
   const [clipboardSettings, setClipboardSettingsState] =
-    useState<ClipboardSettings>({
-      monitoring_enabled: true,
-      min_chars: 2,
-      max_chars: 200,
-      max_items: 100,
-      clear_on_quit: false,
-      heat_bar_color: DEFAULT_HEAT_BAR_COLOR,
-    })
+    useState<ClipboardSettings | null>(null)
 
   // ── RcDialog state ──────────────────────────────────────────
   const [rcDialog, setRcDialog] = useState<{
@@ -552,31 +539,52 @@ export default function Page() {
     }
   }
 
-  const handleClipboardMonitoringChange = (enabled: boolean) =>
-    applyClipboardSettings({
+  // 取得完了前（clipboardSettings === null）は対応するコントロールが
+  // スケルトン表示で操作不能なため、これらのハンドラは実際には呼ばれない。
+  // null ガードは TypeScript の型安全性のために必要。
+  const handleClipboardMonitoringChange = (enabled: boolean) => {
+    if (!clipboardSettings) return
+    return applyClipboardSettings({
       ...clipboardSettings,
       monitoring_enabled: enabled,
     })
+  }
 
-  const handleMinCharsChange = (value: number) =>
+  const handleMinCharsChange = (value: number) => {
+    if (!clipboardSettings) return
     // 最小文字数が最大文字数を超えた場合は、最大文字数を同じ値まで引き上げる
-    applyClipboardSettings({
+    return applyClipboardSettings({
       ...clipboardSettings,
       min_chars: value,
       max_chars: Math.max(clipboardSettings.max_chars, value),
     })
+  }
 
-  const handleMaxCharsChange = (value: number) =>
-    applyClipboardSettings({ ...clipboardSettings, max_chars: value })
+  const handleMaxCharsChange = (value: number) => {
+    if (!clipboardSettings) return
+    return applyClipboardSettings({ ...clipboardSettings, max_chars: value })
+  }
 
-  const handleMaxItemsChange = (value: number) =>
-    applyClipboardSettings({ ...clipboardSettings, max_items: value })
+  const handleMaxItemsChange = (value: number) => {
+    if (!clipboardSettings) return
+    return applyClipboardSettings({ ...clipboardSettings, max_items: value })
+  }
 
-  const handleHeatBarColorChange = (value: HeatBarColorId) =>
-    applyClipboardSettings({ ...clipboardSettings, heat_bar_color: value })
+  const handleHeatBarColorChange = (value: HeatBarColorId) => {
+    if (!clipboardSettings) return
+    return applyClipboardSettings({
+      ...clipboardSettings,
+      heat_bar_color: value,
+    })
+  }
 
-  const handleClearOnQuitChange = (enabled: boolean) =>
-    applyClipboardSettings({ ...clipboardSettings, clear_on_quit: enabled })
+  const handleClearOnQuitChange = (enabled: boolean) => {
+    if (!clipboardSettings) return
+    return applyClipboardSettings({
+      ...clipboardSettings,
+      clear_on_quit: enabled,
+    })
+  }
 
   const handleOpenLatestLog = async () => {
     try {
@@ -639,51 +647,14 @@ export default function Page() {
           }}
         >
           {/* Clipboard History */}
-          {activeSection === 'clipboard' && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Row: Clipboard monitoring on/off */}
+          {activeSection === 'clipboard' &&
+            (clipboardSettings === null ? (
+              <ClipboardSectionSkeleton />
+            ) : (
               <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                }}
+                sx={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
               >
-                <PrefRowLabel
-                  label='Clipboard monitoring'
-                  description='Watch the system clipboard and record new copies automatically.'
-                />
-                <ThemedSwitch
-                  checked={clipboardSettings.monitoring_enabled}
-                  onChange={(e) =>
-                    handleClipboardMonitoringChange(e.target.checked)
-                  }
-                />
-              </Box>
-
-              <Divider
-                sx={{
-                  borderBottomWidth: '0.5px',
-                  opacity: clipboardSettings.monitoring_enabled ? 1 : 0.4,
-                  transition: 'opacity 0.14s',
-                }}
-              />
-
-              {/* Rows below are disabled while monitoring is off */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '14px',
-                  opacity: clipboardSettings.monitoring_enabled ? 1 : 0.4,
-                  pointerEvents: clipboardSettings.monitoring_enabled
-                    ? 'auto'
-                    : 'none',
-                  transition: 'opacity 0.14s',
-                }}
-              >
-                {/* Row: Minimum characters to save */}
+                {/* Row: Clipboard monitoring on/off */}
                 <Box
                   sx={{
                     display: 'flex',
@@ -693,113 +664,157 @@ export default function Page() {
                   }}
                 >
                   <PrefRowLabel
-                    label='Minimum characters to save'
-                    description='Copies shorter than this are ignored and not saved to history.'
-                  />
-                  <StepperInput
-                    value={clipboardSettings.min_chars}
-                    min={CLIPBOARD_CHARS_LOWER_BOUND}
-                    max={CLIPBOARD_CHARS_UPPER_BOUND}
-                    suffix='chars'
-                    onChange={handleMinCharsChange}
-                  />
-                </Box>
-
-                <Divider sx={{ borderBottomWidth: '0.5px' }} />
-
-                {/* Row: Maximum characters to save */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                  }}
-                >
-                  <PrefRowLabel
-                    label='Maximum characters to save'
-                    description={`Copies longer than this are truncated to the first ${clipboardSettings.max_chars} characters.`}
-                  />
-                  <StepperInput
-                    value={clipboardSettings.max_chars}
-                    min={Math.max(
-                      CLIPBOARD_CHARS_LOWER_BOUND,
-                      clipboardSettings.min_chars,
-                    )}
-                    max={CLIPBOARD_CHARS_UPPER_BOUND}
-                    suffix='chars'
-                    onChange={handleMaxCharsChange}
-                  />
-                </Box>
-
-                <Divider sx={{ borderBottomWidth: '0.5px' }} />
-
-                {/* Row: Max history entries */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                  }}
-                >
-                  <PrefRowLabel
-                    label='Max history entries'
-                    description='The oldest entries are removed once this limit is reached.'
-                  />
-                  <StepperInput
-                    value={clipboardSettings.max_items}
-                    min={CLIPBOARD_ITEMS_LOWER_BOUND}
-                    max={CLIPBOARD_ITEMS_UPPER_BOUND}
-                    suffix='items'
-                    onChange={handleMaxItemsChange}
-                  />
-                </Box>
-
-                <Divider sx={{ borderBottomWidth: '0.5px' }} />
-
-                {/* Row: Heat bar color */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                  }}
-                >
-                  <PrefRowLabel
-                    label='Heat bar color'
-                    description='Highlight frequently-copied entries with a colored bar by copy count. Choose None to turn it off.'
-                  />
-                  <HeatColorPicker
-                    value={clipboardSettings.heat_bar_color}
-                    onChange={handleHeatBarColorChange}
-                  />
-                </Box>
-
-                <Divider sx={{ borderBottomWidth: '0.5px' }} />
-
-                {/* Row: Clear history on quit */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                  }}
-                >
-                  <PrefRowLabel
-                    label='Clear history on quit'
-                    description='Erase all saved clipboard history when the application exits.'
+                    label='Clipboard monitoring'
+                    description='Watch the system clipboard and record new copies automatically.'
                   />
                   <ThemedSwitch
-                    checked={clipboardSettings.clear_on_quit}
-                    onChange={(e) => handleClearOnQuitChange(e.target.checked)}
+                    checked={clipboardSettings.monitoring_enabled}
+                    onChange={(e) =>
+                      handleClipboardMonitoringChange(e.target.checked)
+                    }
                   />
                 </Box>
+
+                <Divider
+                  sx={{
+                    borderBottomWidth: '0.5px',
+                    opacity: clipboardSettings.monitoring_enabled ? 1 : 0.4,
+                    transition: 'opacity 0.14s',
+                  }}
+                />
+
+                {/* Rows below are disabled while monitoring is off */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
+                    opacity: clipboardSettings.monitoring_enabled ? 1 : 0.4,
+                    pointerEvents: clipboardSettings.monitoring_enabled
+                      ? 'auto'
+                      : 'none',
+                    transition: 'opacity 0.14s',
+                  }}
+                >
+                  {/* Row: Minimum characters to save */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                    }}
+                  >
+                    <PrefRowLabel
+                      label='Minimum characters to save'
+                      description='Copies shorter than this are ignored and not saved to history.'
+                    />
+                    <StepperInput
+                      value={clipboardSettings.min_chars}
+                      min={CLIPBOARD_CHARS_LOWER_BOUND}
+                      max={CLIPBOARD_CHARS_UPPER_BOUND}
+                      suffix='chars'
+                      onChange={handleMinCharsChange}
+                    />
+                  </Box>
+
+                  <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+                  {/* Row: Maximum characters to save */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                    }}
+                  >
+                    <PrefRowLabel
+                      label='Maximum characters to save'
+                      description={`Copies longer than this are truncated to the first ${clipboardSettings.max_chars} characters.`}
+                    />
+                    <StepperInput
+                      value={clipboardSettings.max_chars}
+                      min={Math.max(
+                        CLIPBOARD_CHARS_LOWER_BOUND,
+                        clipboardSettings.min_chars,
+                      )}
+                      max={CLIPBOARD_CHARS_UPPER_BOUND}
+                      suffix='chars'
+                      onChange={handleMaxCharsChange}
+                    />
+                  </Box>
+
+                  <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+                  {/* Row: Max history entries */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                    }}
+                  >
+                    <PrefRowLabel
+                      label='Max history entries'
+                      description='The oldest entries are removed once this limit is reached.'
+                    />
+                    <StepperInput
+                      value={clipboardSettings.max_items}
+                      min={CLIPBOARD_ITEMS_LOWER_BOUND}
+                      max={CLIPBOARD_ITEMS_UPPER_BOUND}
+                      suffix='items'
+                      onChange={handleMaxItemsChange}
+                    />
+                  </Box>
+
+                  <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+                  {/* Row: Heat bar color */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                    }}
+                  >
+                    <PrefRowLabel
+                      label='Heat bar color'
+                      description='Highlight frequently-copied entries with a colored bar by copy count. Choose None to turn it off.'
+                    />
+                    <HeatColorPicker
+                      value={clipboardSettings.heat_bar_color}
+                      onChange={handleHeatBarColorChange}
+                    />
+                  </Box>
+
+                  <Divider sx={{ borderBottomWidth: '0.5px' }} />
+
+                  {/* Row: Clear history on quit */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                    }}
+                  >
+                    <PrefRowLabel
+                      label='Clear history on quit'
+                      description='Erase all saved clipboard history when the application exits.'
+                    />
+                    <ThemedSwitch
+                      checked={clipboardSettings.clear_on_quit}
+                      onChange={(e) =>
+                        handleClearOnQuitChange(e.target.checked)
+                      }
+                    />
+                  </Box>
+                </Box>
               </Box>
-            </Box>
-          )}
+            ))}
 
           {/* Global Shortcut */}
           {activeSection === 'shortcut' && (
@@ -1171,27 +1186,30 @@ export default function Page() {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title='Edit log settings'>
-                      <IconButton
-                        size='small'
-                        onClick={() => setLogDialogOpen(true)}
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: '7px',
-                          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
-                          backgroundColor: alpha(
-                            theme.palette.accent.main,
-                            isDark ? 0.1 : 0.07,
-                          ),
-                          color: theme.palette.text.disabled,
-                          '&:hover': {
-                            borderColor: theme.palette.primary.main,
-                            color: theme.palette.primary.main,
-                          },
-                        }}
-                      >
-                        <SettingsOutlinedIcon sx={{ fontSize: '13px' }} />
-                      </IconButton>
+                      <span>
+                        <IconButton
+                          size='small'
+                          disabled={!logSettings}
+                          onClick={() => setLogDialogOpen(true)}
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: '7px',
+                            border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                            backgroundColor: alpha(
+                              theme.palette.accent.main,
+                              isDark ? 0.1 : 0.07,
+                            ),
+                            color: theme.palette.text.disabled,
+                            '&:hover': {
+                              borderColor: theme.palette.primary.main,
+                              color: theme.palette.primary.main,
+                            },
+                          }}
+                        >
+                          <SettingsOutlinedIcon sx={{ fontSize: '13px' }} />
+                        </IconButton>
+                      </span>
                     </Tooltip>
                   </Box>
                 </Box>
@@ -1205,19 +1223,25 @@ export default function Page() {
                     gap: '4px',
                   }}
                 >
-                  <LogSummaryRow
-                    label='Output Directory'
-                    value={effectiveLogDir}
-                  />
-                  <LogSummaryRow
-                    label='Max File Size'
-                    // Rounding is safe because validation enforces integer-MB values.
-                    value={`${Math.round(logSettings.max_file_size / (1024 * 1024))} MB`}
-                  />
-                  <LogSummaryRow
-                    label='Rotation Count'
-                    value={`${logSettings.rotation_count} files`}
-                  />
+                  {logSettings === null ? (
+                    <LogSummarySkeleton />
+                  ) : (
+                    <>
+                      <LogSummaryRow
+                        label='Output Directory'
+                        value={effectiveLogDir}
+                      />
+                      <LogSummaryRow
+                        label='Max File Size'
+                        // Rounding is safe because validation enforces integer-MB values.
+                        value={`${Math.round(logSettings.max_file_size / (1024 * 1024))} MB`}
+                      />
+                      <LogSummaryRow
+                        label='Rotation Count'
+                        value={`${logSettings.rotation_count} files`}
+                      />
+                    </>
+                  )}
                 </Box>
               </Box>
             </Box>
@@ -1225,13 +1249,15 @@ export default function Page() {
         </Box>
       </Box>
 
-      <LogSettingsDialog
-        open={logDialogOpen}
-        settings={logSettings}
-        effectiveDir={effectiveLogDir}
-        onSave={handleLogSettingsSave}
-        onCancel={() => setLogDialogOpen(false)}
-      />
+      {logSettings && (
+        <LogSettingsDialog
+          open={logDialogOpen}
+          settings={logSettings}
+          effectiveDir={effectiveLogDir}
+          onSave={handleLogSettingsSave}
+          onCancel={() => setLogDialogOpen(false)}
+        />
+      )}
       {toggleVisibleShortcut && (
         <ShortcutSettingsDialog
           open={shortcutDialogOpen}
@@ -1318,6 +1344,32 @@ function PrefRowLabel({
   )
 }
 
+// GET_CLIPBOARD_SETTINGS 完了前（取得失敗時を含む）に Clipboard History
+// セクションを非活性表示するためのプレースホルダー。行数は実際のコントロール数（6行）に合わせる。
+function ClipboardSectionSkeleton() {
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Box
+          key={i}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <Skeleton variant='text' width={140} height={16} />
+            <Skeleton variant='text' width={220} height={14} />
+          </Box>
+          <Skeleton variant='rounded' width={64} height={26} />
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
 function RowDot() {
   const theme = useTheme()
   return (
@@ -1377,6 +1429,24 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
         {value}
       </Typography>
     </Box>
+  )
+}
+
+// GET_LOG_SETTINGS 完了前（取得失敗時を含む）に Log セクションの概要行を
+// 非活性表示するためのプレースホルダー。行数は LogSummaryRow の表示数（3行）に合わせる。
+function LogSummarySkeleton() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Box
+          key={i}
+          sx={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}
+        >
+          <Skeleton variant='text' width={110} height={14} />
+          <Skeleton variant='text' width={160} height={14} sx={{ flex: 1 }} />
+        </Box>
+      ))}
+    </>
   )
 }
 
