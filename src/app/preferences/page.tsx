@@ -573,24 +573,47 @@ export default function Page() {
     }, CLIPBOARD_SETTINGS_SAVE_DEBOUNCE_MS)
   }
 
-  // unmount 時（ウィンドウを閉じる操作を含む）に保留中の変更を保存する。
-  // コンポーネントは既に破棄されているため、失敗してもロールバック・ダイアログ表示は行わず
+  // 保留中の debounce タイマーをクリアし、未保存の最新値があれば保存を試みる。
+  // 呼び出し元は既に画面が閉じる途中のため、失敗してもロールバック・ダイアログ表示は行わず
   // ベストエフォートで保存のみ試みる。
+  const flushPendingClipboardSettingsOnExit = () => {
+    if (clipboardSaveTimerRef.current) {
+      clearTimeout(clipboardSaveTimerRef.current)
+      clipboardSaveTimerRef.current = null
+    }
+    const pending = pendingClipboardSettingsRef.current
+    if (pending === null) return Promise.resolve()
+    pendingClipboardSettingsRef.current = null
+    return saveClipboardSettingsNow(pending).catch((err) => {
+      error(`[preferences] Error flushing clipboard settings on exit: ${err}`)
+    })
+  }
+
+  // React の unmount（画面遷移等）時の保険。
   useEffect(() => {
     return () => {
-      if (clipboardSaveTimerRef.current) {
-        clearTimeout(clipboardSaveTimerRef.current)
-        clipboardSaveTimerRef.current = null
-      }
-      const pending = pendingClipboardSettingsRef.current
-      if (pending === null) return
-      pendingClipboardSettingsRef.current = null
-      saveClipboardSettingsNow(pending).catch((err) => {
-        error(
-          `[preferences] Error flushing clipboard settings on unmount: ${err}`,
-        )
-      })
+      void flushPendingClipboardSettingsOnExit()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ウィンドウを閉じる操作（Esc 経由の `close()` 呼び出し・タイトルバーの閉じるボタン）は
+  // どちらも Tauri の closeRequested イベントを経由するため、実際の保存漏れ対策としては
+  // こちらが本命となる。React の unmount はプロセスごとクローズされる場合には発火しない
+  // ことがあるため、上記の unmount cleanup だけでは信頼できない。
+  useEffect(() => {
+    let unlisten: (() => void) | undefined
+    ;(async () => {
+      unlisten = await getCurrentWindow().onCloseRequested(async (event) => {
+        event.preventDefault()
+        await flushPendingClipboardSettingsOnExit()
+        await getCurrentWindow().destroy()
+      })
+    })()
+    return () => {
+      unlisten?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 取得完了前（clipboardSettings === null）は対応するコントロールが
