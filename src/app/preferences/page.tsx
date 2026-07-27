@@ -59,6 +59,10 @@ import { open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 
+// Stepper 連打・キーリピート時に SET_CLIPBOARD_SETTINGS の IPC / ディスク保存が
+// 毎回実行されるのを防ぐための debounce 間隔。
+const CLIPBOARD_SETTINGS_SAVE_DEBOUNCE_MS = 300
+
 type PrefSectionKey = 'clipboard' | 'shortcut' | 'ui' | 'other'
 
 const PREF_SECTIONS: { key: PrefSectionKey; label: string }[] = [
@@ -115,6 +119,16 @@ export default function Page() {
   // セクションはスケルトン表示とし、フロントエンドにデフォルト値を持たない。
   const [clipboardSettings, setClipboardSettingsState] =
     useState<ClipboardSettings | null>(null)
+
+  // SET_CLIPBOARD_SETTINGS の debounce 保存用。UI (clipboardSettings) は即時更新し、
+  // バックエンドへの保存のみを CLIPBOARD_SETTINGS_SAVE_DEBOUNCE_MS だけ遅延させる。
+  const clipboardSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
+  // debounce 待機中の未保存の最新値。
+  const pendingClipboardSettingsRef = useRef<ClipboardSettings | null>(null)
+  // 直近に保存が成功した値。保存失敗時のロールバック先として使う。
+  const lastSavedClipboardSettingsRef = useRef<ClipboardSettings | null>(null)
 
   // ── RcDialog state ──────────────────────────────────────────
   const [rcDialog, setRcDialog] = useState<{
@@ -293,6 +307,7 @@ export default function Page() {
           `[preferences] invoke '${ClipboardSettingsAPI.GET_CLIPBOARD_SETTINGS}' response=${JSON.stringify(settings)}`,
         )
         setClipboardSettingsState(settings)
+        lastSavedClipboardSettingsRef.current = settings
       } catch (err) {
         error(`[preferences] Error getting clipboard settings: ${err}`)
         await showRcError(
@@ -517,27 +532,89 @@ export default function Page() {
     }
   }
 
-  // 即時保存・即時反映（Saveボタンや確認ダイアログは設けない）。
-  // 失敗時は変更前の値に戻す。
-  const applyClipboardSettings = async (next: ClipboardSettings) => {
-    const prev = clipboardSettings
-    setClipboardSettingsState(next)
+  // 実際に SET_CLIPBOARD_SETTINGS を呼び出す。状態の更新は行わず、呼び出し元が
+  // 成功時・失敗時の後処理を担う。
+  const saveClipboardSettingsNow = (settings: ClipboardSettings) =>
+    invoke(ClipboardSettingsAPI.SET_CLIPBOARD_SETTINGS, { settings })
+
+  // debounce 待機後に呼ばれ、保留中の最新値を実際に保存する。
+  // 失敗時は直近の保存成功値へロールバックし、エラーダイアログを表示する。
+  const flushClipboardSettings = async () => {
+    clipboardSaveTimerRef.current = null
+    const next = pendingClipboardSettingsRef.current
+    if (next === null) return
+    pendingClipboardSettingsRef.current = null
     try {
-      await invoke(ClipboardSettingsAPI.SET_CLIPBOARD_SETTINGS, {
-        settings: next,
-      })
+      await saveClipboardSettingsNow(next)
       debug(
         `[preferences] invoke '${ClipboardSettingsAPI.SET_CLIPBOARD_SETTINGS}' succeeded: ${JSON.stringify(next)}`,
       )
+      lastSavedClipboardSettingsRef.current = next
     } catch (err) {
       error(`[preferences] Error setting clipboard settings: ${err}`)
       await showRcError(
         'Preferences',
         'Failed to save clipboard history settings',
       )
-      setClipboardSettingsState(prev)
+      setClipboardSettingsState(lastSavedClipboardSettingsRef.current)
     }
   }
+
+  // UI (clipboardSettings) は即時更新して体感の応答性を維持しつつ、バックエンドへの
+  // 保存は debounce する。連続変更時は保留中のタイマーを差し替え、最新値のみ保存する。
+  const applyClipboardSettings = (next: ClipboardSettings) => {
+    setClipboardSettingsState(next)
+    pendingClipboardSettingsRef.current = next
+    if (clipboardSaveTimerRef.current) {
+      clearTimeout(clipboardSaveTimerRef.current)
+    }
+    clipboardSaveTimerRef.current = setTimeout(() => {
+      void flushClipboardSettings()
+    }, CLIPBOARD_SETTINGS_SAVE_DEBOUNCE_MS)
+  }
+
+  // 保留中の debounce タイマーをクリアし、未保存の最新値があれば保存を試みる。
+  // 呼び出し元は既に画面が閉じる途中のため、失敗してもロールバック・ダイアログ表示は行わず
+  // ベストエフォートで保存のみ試みる。
+  const flushPendingClipboardSettingsOnExit = () => {
+    if (clipboardSaveTimerRef.current) {
+      clearTimeout(clipboardSaveTimerRef.current)
+      clipboardSaveTimerRef.current = null
+    }
+    const pending = pendingClipboardSettingsRef.current
+    if (pending === null) return Promise.resolve()
+    pendingClipboardSettingsRef.current = null
+    return saveClipboardSettingsNow(pending).catch((err) => {
+      error(`[preferences] Error flushing clipboard settings on exit: ${err}`)
+    })
+  }
+
+  // React の unmount（画面遷移等）時の保険。
+  useEffect(() => {
+    return () => {
+      void flushPendingClipboardSettingsOnExit()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ウィンドウを閉じる操作（Esc 経由の `close()` 呼び出し・タイトルバーの閉じるボタン）は
+  // どちらも Tauri の closeRequested イベントを経由するため、実際の保存漏れ対策としては
+  // こちらが本命となる。React の unmount はプロセスごとクローズされる場合には発火しない
+  // ことがあるため、上記の unmount cleanup だけでは信頼できない。
+  useEffect(() => {
+    let unlisten: (() => void) | undefined
+    ;(async () => {
+      unlisten = await getCurrentWindow().onCloseRequested(async (event) => {
+        event.preventDefault()
+        await flushPendingClipboardSettingsOnExit()
+        await getCurrentWindow().destroy()
+      })
+    })()
+    return () => {
+      unlisten?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 取得完了前（clipboardSettings === null）は対応するコントロールが
   // スケルトン表示で操作不能なため、これらのハンドラは実際には呼ばれない。
