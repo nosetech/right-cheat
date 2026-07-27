@@ -59,11 +59,6 @@ import { open as openOsDialog } from '@tauri-apps/plugin-dialog'
 import { debug, error } from '@tauri-apps/plugin-log'
 import { relaunch } from '@tauri-apps/plugin-process'
 
-// Fallback values matching backend defaults (log_settings.rs).
-// Overwritten immediately by GET_LOG_SETTINGS on mount.
-const DEFAULT_MAX_FILE_SIZE_BYTES = 1_048_576
-const DEFAULT_ROTATION_COUNT = 3
-
 type PrefSectionKey = 'clipboard' | 'shortcut' | 'ui' | 'other'
 
 const PREF_SECTIONS: { key: PrefSectionKey; label: string }[] = [
@@ -105,11 +100,9 @@ export default function Page() {
   const [clipboardHistoryShortcut, setClipboardHistoryShortcut] =
     useState<ShortcutDef>()
 
-  const [logSettings, setLogSettings] = useState<LogSettings>({
-    output_dir: null,
-    max_file_size: DEFAULT_MAX_FILE_SIZE_BYTES,
-    rotation_count: DEFAULT_ROTATION_COUNT,
-  })
+  // null は「未取得」を表す。GET_LOG_SETTINGS 完了まで Log セクションの概要行は
+  // スケルトン表示とし、フロントエンドにデフォルト値を持たない。
+  const [logSettings, setLogSettings] = useState<LogSettings | null>(null)
   const [effectiveLogDir, setEffectiveLogDir] = useState<string>('')
   const [logDialogOpen, setLogDialogOpen] = useState<boolean>(false)
 
@@ -1193,27 +1186,30 @@ export default function Page() {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title='Edit log settings'>
-                      <IconButton
-                        size='small'
-                        onClick={() => setLogDialogOpen(true)}
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: '7px',
-                          border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
-                          backgroundColor: alpha(
-                            theme.palette.accent.main,
-                            isDark ? 0.1 : 0.07,
-                          ),
-                          color: theme.palette.text.disabled,
-                          '&:hover': {
-                            borderColor: theme.palette.primary.main,
-                            color: theme.palette.primary.main,
-                          },
-                        }}
-                      >
-                        <SettingsOutlinedIcon sx={{ fontSize: '13px' }} />
-                      </IconButton>
+                      <span>
+                        <IconButton
+                          size='small'
+                          disabled={!logSettings}
+                          onClick={() => setLogDialogOpen(true)}
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: '7px',
+                            border: `0.5px solid ${alpha(theme.palette.accent.main, isDark ? 0.18 : 0.14)}`,
+                            backgroundColor: alpha(
+                              theme.palette.accent.main,
+                              isDark ? 0.1 : 0.07,
+                            ),
+                            color: theme.palette.text.disabled,
+                            '&:hover': {
+                              borderColor: theme.palette.primary.main,
+                              color: theme.palette.primary.main,
+                            },
+                          }}
+                        >
+                          <SettingsOutlinedIcon sx={{ fontSize: '13px' }} />
+                        </IconButton>
+                      </span>
                     </Tooltip>
                   </Box>
                 </Box>
@@ -1227,19 +1223,25 @@ export default function Page() {
                     gap: '4px',
                   }}
                 >
-                  <LogSummaryRow
-                    label='Output Directory'
-                    value={effectiveLogDir}
-                  />
-                  <LogSummaryRow
-                    label='Max File Size'
-                    // Rounding is safe because validation enforces integer-MB values.
-                    value={`${Math.round(logSettings.max_file_size / (1024 * 1024))} MB`}
-                  />
-                  <LogSummaryRow
-                    label='Rotation Count'
-                    value={`${logSettings.rotation_count} files`}
-                  />
+                  {logSettings === null ? (
+                    <LogSummarySkeleton />
+                  ) : (
+                    <>
+                      <LogSummaryRow
+                        label='Output Directory'
+                        value={effectiveLogDir}
+                      />
+                      <LogSummaryRow
+                        label='Max File Size'
+                        // Rounding is safe because validation enforces integer-MB values.
+                        value={`${Math.round(logSettings.max_file_size / (1024 * 1024))} MB`}
+                      />
+                      <LogSummaryRow
+                        label='Rotation Count'
+                        value={`${logSettings.rotation_count} files`}
+                      />
+                    </>
+                  )}
                 </Box>
               </Box>
             </Box>
@@ -1247,13 +1249,15 @@ export default function Page() {
         </Box>
       </Box>
 
-      <LogSettingsDialog
-        open={logDialogOpen}
-        settings={logSettings}
-        effectiveDir={effectiveLogDir}
-        onSave={handleLogSettingsSave}
-        onCancel={() => setLogDialogOpen(false)}
-      />
+      {logSettings && (
+        <LogSettingsDialog
+          open={logDialogOpen}
+          settings={logSettings}
+          effectiveDir={effectiveLogDir}
+          onSave={handleLogSettingsSave}
+          onCancel={() => setLogDialogOpen(false)}
+        />
+      )}
       {toggleVisibleShortcut && (
         <ShortcutSettingsDialog
           open={shortcutDialogOpen}
@@ -1425,6 +1429,24 @@ function LogSummaryRow({ label, value }: { label: string; value: string }) {
         {value}
       </Typography>
     </Box>
+  )
+}
+
+// GET_LOG_SETTINGS 完了前（取得失敗時を含む）に Log セクションの概要行を
+// 非活性表示するためのプレースホルダー。行数は LogSummaryRow の表示数（3行）に合わせる。
+function LogSummarySkeleton() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Box
+          key={i}
+          sx={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}
+        >
+          <Skeleton variant='text' width={110} height={14} />
+          <Skeleton variant='text' width={160} height={14} sx={{ flex: 1 }} />
+        </Box>
+      ))}
+    </>
   )
 }
 
